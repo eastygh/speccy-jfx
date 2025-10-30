@@ -5,72 +5,71 @@ package spectrum.jfx.z80core;
  * @author jsanchez
  */
 public class Z80State {
-    // Acumulador y resto de registros de 8 bits
+    // Accumulator and other 8-bit registers
     private int regA, regB, regC, regD, regE, regH, regL;
-    // Flags sIGN, zERO, 5, hALFCARRY, 3, pARITY y ADDSUB (n), carryFlag
+    // Flags SIGN, ZERO, 5, HALFCARRY, 3, PARITY and ADDSUB (n), carryFlag
     private int regF;
-    // La última instrucción modificó los flags
+    // The last instruction modified the flags
     private boolean flagQ;
-    // Acumulador alternativo y flags -- 8 bits
+    // Alternate accumulator and flags -- 8 bits
     private int regAx;
     private int regFx;
-    // Registros alternativos
+    // Alternate registers
     private int regBx, regCx, regDx, regEx, regHx, regLx;
-    // Registros de propósito específico
+    // Special purpose registers
     // *PC -- Program Counter -- 16 bits*
     private int regPC;
-    // *IX -- Registro de índice -- 16 bits*
+    // *IX -- Index register -- 16 bits*
     private int regIX;
-    // *IY -- Registro de índice -- 16 bits*
+    // *IY -- Index register -- 16 bits*
     private int regIY;
     // *SP -- Stack Pointer -- 16 bits*
     private int regSP;
-    // *I -- Vector de interrupción -- 8 bits*
+    // *I -- Interrupt vector -- 8 bits*
     private int regI;
-    // *R -- Refresco de memoria -- 7 bits*
+    // *R -- Memory refresh -- 7 bits*
     private int regR;
-    //Flip-flops de interrupción
+    // Interrupt flip-flops
     private boolean ffIFF1 = false;
     private boolean ffIFF2 = false;
-    // EI solo habilita las interrupciones DESPUES de ejecutar la
-    // siguiente instrucción (excepto si la siguiente instrucción es un EI...)
+    // EI only enables interrupts AFTER executing the
+    // next instruction (except if the next instruction is an EI...)
     private boolean pendingEI = false;
-    // Estado de la línea NMI
+    // NMI line status
     private boolean activeNMI = false;
-    // Si está activa la línea INT
-    // En el 48 la línea INT se activa durante 32 ciclos de reloj
-    // En el 128 y superiores, se activa 36 ciclos de reloj
+    // Whether the INT line is active
+    // On the 48 the INT line is active for 32 clock cycles
+    // On the 128 and higher, it's active for 36 clock cycles
     private boolean activeINT = false;
-    // Modos de interrupción
+    // Interrupt modes
     private Z80.IntMode modeINT = Z80.IntMode.IM0;
-    // halted == true cuando la CPU está ejecutando un HALT (28/03/2010)
+    // halted == true when the CPU is executing a HALT (28/03/2010)
     private boolean halted = false;
     /**
-     * Registro interno que usa la CPU de la siguiente forma
-     *
-     * ADD HL,xx      = Valor del registro H antes de la suma
-     * LD r,(IX/IY+d) = Byte superior de la suma de IX/IY+d
-     * JR d           = Byte superior de la dirección de destino del salto
-     *
-     * 04/12/2008     No se vayan todavía, aún hay más. Con lo que se ha
-     *                implementado hasta ahora parece que funciona. El resto de
-     *                la historia está contada en:
-     *                http://zx.pk.ru/attachment.php?attachmentid=2989
-     *
-     * 25/09/2009     Se ha completado la emulación de MEMPTR. A señalar que
-     *                no se puede comprobar si MEMPTR se ha emulado bien hasta
-     *                que no se emula el comportamiento del registro en las
-     *                instrucciones CPI y CPD. Sin ello, todos los tests de
-     *                z80tests.tap fallarán aunque se haya emulado bien al
-     *                registro en TODAS las otras instrucciones.
-     *                Shit yourself, little parrot.
+     * Internal register that the CPU uses as follows
+     * <p>
+     * ADD HL,xx      = H register value before the addition
+     * LD r,(IX/IY+d) = Upper byte of the IX/IY+d sum
+     * JR d           = Upper byte of the jump destination address
+     * <p>
+     * 04/12/2008     Don't leave yet, there's more. With what has been
+     * implemented so far it seems to work. The rest of
+     * the story is told in:
+     * http://zx.pk.ru/attachment.php?attachmentid=2989
+     * <p>
+     * 25/09/2009     MEMPTR emulation has been completed. Note that
+     * it's not possible to check if MEMPTR has been emulated well until
+     * the register behavior in CPI and CPD instructions is emulated.
+     * Without this, all z80tests.tap tests will fail even if the
+     * register has been emulated well in ALL other instructions.
+     * Shit yourself, little parrot.
      */
     private int memptr;
-    
+
     public Z80State() {
     }
-    
-    // Acceso a registros de 8 bits
+
+    // Access to 8-bit registers
     public final int getRegA() {
         return regA;
     }
@@ -78,7 +77,7 @@ public class Z80State {
     public final void setRegA(int value) {
         regA = value & 0xff;
     }
-    
+
     public final int getRegF() {
         return regF;
     }
@@ -135,7 +134,7 @@ public class Z80State {
         regL = value & 0xff;
     }
 
-    // Acceso a registros alternativos de 8 bits
+    // Access to alternate 8-bit registers
     public final int getRegAx() {
         return regAx;
     }
@@ -143,7 +142,7 @@ public class Z80State {
     public final void setRegAx(int value) {
         regAx = value & 0xff;
     }
-    
+
     public final int getRegFx() {
         return regFx;
     }
@@ -200,7 +199,7 @@ public class Z80State {
         regLx = value & 0xff;
     }
 
-    // Acceso a registros de 16 bits
+    // Access to 16-bit registers
     public final int getRegAF() {
         return (regA << 8) | regF;
     }
@@ -274,7 +273,7 @@ public class Z80State {
         regLx = word & 0xff;
     }
 
-    // Acceso a registros de propósito específico
+    // Access to special purpose registers
     public final int getRegPC() {
         return regPC;
     }
@@ -323,7 +322,7 @@ public class Z80State {
         regR = value & 0xff;
     }
 
-    // Acceso al registro oculto MEMPTR
+    // Access to hidden MEMPTR register
     public final int getMemPtr() {
         return memptr;
     }
@@ -331,8 +330,8 @@ public class Z80State {
     public final void setMemPtr(int word) {
         memptr = word & 0xffff;
     }
-    
-    // Acceso a los flip-flops de interrupción
+
+    // Access to interrupt flip-flops
     public final boolean isIFF1() {
         return ffIFF1;
     }
@@ -352,26 +351,26 @@ public class Z80State {
     public final boolean isNMI() {
         return activeNMI;
     }
-    
+
     public final void setNMI(boolean nmi) {
         activeNMI = nmi;
     }
 
-    // La línea de NMI se activa por impulso, no por nivel
+    // The NMI line is activated by impulse, not by level
     public final void triggerNMI() {
         activeNMI = true;
     }
 
-    // La línea INT se activa por nivel
+    // The INT line is activated by level
     public final boolean isINTLine() {
         return activeINT;
     }
-    
+
     public final void setINTLine(boolean intLine) {
         activeINT = intLine;
     }
 
-    //Acceso al modo de interrupción
+    // Access to interrupt mode
     public final Z80.IntMode getIM() {
         return modeINT;
     }
@@ -387,11 +386,11 @@ public class Z80State {
     public void setHalted(boolean state) {
         halted = state;
     }
-    
+
     public final boolean isPendingEI() {
         return pendingEI;
     }
-    
+
     public final void setPendingEI(boolean state) {
         pendingEI = state;
     }

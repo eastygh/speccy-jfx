@@ -5,7 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import spectrum.jfx.ui.controller.MainController;
-import spectrum.jfx.z80.ZXSpectrumEmulator;
+import spectrum.jfx.z80.SpectrumEmulator;
 
 import java.io.IOException;
 
@@ -22,10 +22,11 @@ public class GUIApplication extends Application {
         stage.setScene(scene);
         stage.show();
 
-        ZXSpectrumEmulator emulator = new ZXSpectrumEmulator();
+        SpectrumEmulator emulator = new SpectrumEmulator();
+        emulator.init();
         emulator.getVideo().setZoomLevel(X2);
 
-        fxmlLoader.<MainController>getController().getVideoContainer().getChildren().add(new ZXSpectrumEmulator().getVideo().getCanvas());
+        fxmlLoader.<MainController>getController().getVideoContainer().getChildren().add(emulator.getVideo().getCanvas());
 
         byte[] rom = loadFile("/roms/48.rom");
         emulator.getMemory().loadROM(rom);

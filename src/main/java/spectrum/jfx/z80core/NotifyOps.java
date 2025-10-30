@@ -6,5 +6,6 @@ package spectrum.jfx.z80core;
  */
 public interface NotifyOps {
     int breakpoint(int address, int opcode);
+
     void execDone();
 }
