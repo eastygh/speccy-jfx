@@ -9,10 +9,10 @@ import java.util.Map;
 
 /**
  * Эмуляция клавиатуры ZX Spectrum
- *
+ * <p>
  * ZX Spectrum использует матричную клавиатуру 8x5 (8 полурядов по 5 клавиш)
  * Клавиатура считывается через порт 0xFE
- *
+ * <p>
  * Матрица клавиатуры:
  * Bit 0: SHIFT, Z, X, C, V
  * Bit 1: A, S, D, F, G
@@ -24,6 +24,7 @@ import java.util.Map;
  * Bit 7: SPACE, SYMBOL, M, N, B
  */
 public class Keyboard {
+
     private static final Logger logger = LoggerFactory.getLogger(Keyboard.class);
 
     // Состояние клавиатурной матрицы (8 байт)
@@ -159,6 +160,7 @@ public class Keyboard {
 
     /**
      * Читает состояние клавиатуры через порт 0xFE
+     *
      * @param addressLineMask Маска адресных линий A8-A15
      * @return Состояние клавиш (0 = нажата, 1 = не нажата)
      */

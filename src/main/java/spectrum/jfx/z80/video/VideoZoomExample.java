@@ -2,6 +2,7 @@ package spectrum.jfx.z80.video;
 
 
 import spectrum.jfx.z80.memory.Memory;
+import spectrum.jfx.z80.memory.MemoryImpl;
 
 /**
  * Пример использования масштабирования в Video системе
@@ -11,8 +12,8 @@ public class VideoZoomExample {
 
     public static void main(String[] args) {
         // Создаем объекты
-        Memory memory = new Memory();
-        Video video = new Video(memory); // По умолчанию x2 масштаб
+        Memory memory = new MemoryImpl();
+        Video video = new VideoImpl(memory); // По умолчанию x2 масштаб
 
         System.out.println("=== Пример использования масштабирования Video ===");
         System.out.println();
@@ -32,11 +33,11 @@ public class VideoZoomExample {
         System.out.println("=== Переключение масштабов ===");
 
         // Переходим на x1
-        video.setZoomLevel(Video.ZoomLevel.X1);
+        video.setZoomLevel(ZoomLevel.X1);
         printVideoInfo(video, "Масштаб x1");
 
         // Переходим на x4
-        video.setZoomLevel(Video.ZoomLevel.X4);
+        video.setZoomLevel(ZoomLevel.X4);
         printVideoInfo(video, "Масштаб x4");
 
         // Демонстрируем циклическое переключение
@@ -53,8 +54,8 @@ public class VideoZoomExample {
 
         // Показываем все доступные уровни масштабирования
         System.out.println("=== Доступные уровни масштабирования ===");
-        Video.ZoomLevel[] levels = video.getAvailableZoomLevels();
-        for (Video.ZoomLevel level : levels) {
+        ZoomLevel[] levels = video.getAvailableZoomLevels();
+        for (ZoomLevel level : levels) {
             System.out.printf("%s: масштаб %dx, размер canvas %dx%d\n",
                     level.getDisplayName(),
                     level.getScale(),
@@ -71,7 +72,7 @@ public class VideoZoomExample {
         System.out.println();
 
         // Показываем масштабированные размеры для каждого уровня
-        for (Video.ZoomLevel level : levels) {
+        for (ZoomLevel level : levels) {
             video.setZoomLevel(level);
             System.out.printf("При масштабе %s:\n", level.getDisplayName());
             System.out.printf("  Размер экрана: %dx%d\n",
@@ -79,8 +80,8 @@ public class VideoZoomExample {
             System.out.printf("  Общий размер: %dx%d\n",
                     video.getScaledTotalWidth(), video.getScaledTotalHeight());
             System.out.printf("  Размер рамки: %d\n", video.getScaledBorderSize());
-            System.out.printf("  Canvas: %.0fx%.0f\n",
-                    video.getCanvas().getWidth(), video.getCanvas().getHeight());
+//            System.out.printf("  Canvas: %.0fx%.0f\n",
+//                    video.getCanvas().getWidth(), video.getCanvas().getHeight());
             System.out.println();
         }
 
@@ -102,10 +103,10 @@ public class VideoZoomExample {
      */
     private static void printVideoInfo(Video video, String title) {
         System.out.println("--- " + title + " ---");
-        System.out.printf("Текущий масштаб: %s (x%d)\n",
-                video.getZoomDisplayName(), video.getCurrentScale());
-        System.out.printf("Размер canvas: %.0fx%.0f пикселей\n",
-                video.getCanvas().getWidth(), video.getCanvas().getHeight());
+//        System.out.printf("Текущий масштаб: %s (x%d)\n",
+//                video.getZoomDisplayName(), video.getCurrentScale());
+//        System.out.printf("Размер canvas: %.0fx%.0f пикселей\n",
+//                video.getCanvas().getWidth(), video.getCanvas().getHeight());
         System.out.printf("Масштабированный экран: %dx%d\n",
                 video.getScaledScreenWidth(), video.getScaledScreenHeight());
         System.out.printf("Масштабированная рамка: %d пикселей\n",

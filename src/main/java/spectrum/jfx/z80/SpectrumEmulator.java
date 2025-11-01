@@ -5,8 +5,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spectrum.jfx.z80.input.Keyboard;
 import spectrum.jfx.z80.memory.Memory;
+import spectrum.jfx.z80.memory.MemoryImpl;
 import spectrum.jfx.z80.sound.Sound;
+import spectrum.jfx.z80.ula.Ula;
 import spectrum.jfx.z80.video.Video;
+import spectrum.jfx.z80.video.VideoImpl;
 import spectrum.jfx.z80core.NotifyOps;
 import spectrum.jfx.z80core.Z80;
 
@@ -20,6 +23,7 @@ public class SpectrumEmulator implements NotifyOps {
     Video video;
     Keyboard keyboard;
     Sound sound;
+    Ula ula;
 
     // Состояние эмуляции
     private boolean running;
@@ -30,15 +34,17 @@ public class SpectrumEmulator implements NotifyOps {
     private static final long FRAME_TIME_NS = 16666666; // ~60 FPS
 
     public SpectrumEmulator() {
+
     }
 
     public void init() {
-        memory = new Memory();
-        this.video = new Video(memory);
+        this.memory = new MemoryImpl();
+        this.video = new VideoImpl(memory);
         this.keyboard = new Keyboard();
         this.sound = new Sound();
-        keyboard.resetKeyboard();
-        cpu = new Z80(memory, this);
+        this.keyboard.resetKeyboard();
+        this.ula = new Ula(memory);
+        cpu = new Z80(ula, this);
     }
 
     @Override
@@ -148,10 +154,9 @@ public class SpectrumEmulator implements NotifyOps {
         long executedCycles = 0;
         while (executedCycles < cyclesPerFrame && running && !paused) {
             // Выполняем одну инструкцию процессора
-            long states = memory.gettStates();
+            long startCycles = ula.gettStates();
             cpu.execute();
-            int cycles = (int) (memory.gettStates() - states);
-
+            int cycles = (int) (ula.gettStates() - startCycles);
             executedCycles += cycles;
 
             // Обновляем видеосистему
@@ -160,10 +165,9 @@ public class SpectrumEmulator implements NotifyOps {
             // Обновляем звуковую систему
             sound.update(cycles);
         }
-
         // Рендеринг кадра
         video.render();
+        ula.requestInterrupt();
     }
-
 
 }

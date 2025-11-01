@@ -2,6 +2,7 @@ package spectrum.jfx.z80.debug;
 
 
 import spectrum.jfx.z80.memory.Memory;
+import spectrum.jfx.z80.memory.MemoryImpl;
 
 import java.util.List;
 
@@ -14,7 +15,7 @@ public class DisassemblerExample {
     public static void main(String[] args) {
         // Создаем объекты
         Z80Disassembler disassembler = new Z80Disassembler();
-        Memory memory = new Memory();
+        Memory memory = new MemoryImpl();
 
         // Пример программы Z80 (простая программа для ZX Spectrum)
         // ВАЖНО: Используем адрес 0x8000+ (RAM область), так как ROM (0x0000-0x3FFF) защищена от записи

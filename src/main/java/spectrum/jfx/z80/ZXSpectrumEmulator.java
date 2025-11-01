@@ -7,8 +7,10 @@ import org.slf4j.LoggerFactory;
 import spectrum.jfx.z80.cpu.Z80CPU;
 import spectrum.jfx.z80.input.Keyboard;
 import spectrum.jfx.z80.memory.Memory;
+import spectrum.jfx.z80.memory.MemoryImpl;
 import spectrum.jfx.z80.sound.Sound;
 import spectrum.jfx.z80.video.Video;
+import spectrum.jfx.z80.video.VideoImpl;
 
 /**
  * Основной класс эмулятора ZX Spectrum
@@ -38,8 +40,8 @@ public class ZXSpectrumEmulator {
         logger.info("Initializing ZX Spectrum Emulator");
 
         // Инициализация компонентов
-        this.memory = new Memory();
-        this.video = new Video(memory);
+        this.memory = new MemoryImpl();
+        this.video = new VideoImpl(memory);
         this.keyboard = new Keyboard();
         this.sound = new Sound();
         this.cpu = new Z80CPU(memory);
@@ -121,14 +123,14 @@ public class ZXSpectrumEmulator {
             rom[4] = (byte) 0x00; // NOP
             rom[5] = (byte) 0x76; // HALT
 
-            memory.loadROM(rom);
+            //memory.loadROM(rom);
             logger.info("Test ROM loaded successfully (16384 bytes)");
         } catch (Exception e) {
             logger.error("Failed to load ROM", e);
             // Создаем минимальный ROM даже если загрузка не удалась
             byte[] emptyRom = new byte[16384];
             emptyRom[0] = (byte) 0x76; // HALT на первой позиции
-            memory.loadROM(emptyRom);
+            //memory.loadROM(emptyRom);
             logger.info("Fallback empty ROM loaded");
         }
     }
