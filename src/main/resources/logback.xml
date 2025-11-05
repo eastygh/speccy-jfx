@@ -27,24 +27,24 @@
     <!-- Логирование для конкретных пакетов -->
 
     <!-- Детальное логирование для CPU -->
-    <logger name="com.spectrum.emulator.cpu" level="INFO" />
+    <logger name="spectrum.jfx.z80.cpu" level="INFO" />
 
     <!-- Умеренное логирование для памяти -->
-    <logger name="com.spectrum.emulator.memory" level="WARN" />
+    <logger name="spectrum.jfx.z80.memory" level="WARN" />
 
     <!-- Логирование видеосистемы -->
-    <logger name="com.spectrum.emulator.video" level="INFO" />
+    <logger name="spectrum.jfx.z80.video" level="INFO" />
 
     <!-- Логирование звука -->
-    <logger name="com.spectrum.emulator.sound" level="INFO" />
+    <logger name="spectrum.jfx.z80.sound" level="INFO" />
 
     <!-- Логирование клавиатуры -->
-    <logger name="com.spectrum.emulator.input" level="INFO" />
+    <logger name="spectrum.jfx.z80.input" level="DEBUG" />
 
     <!-- Root logger -->
     <root level="INFO">
         <appender-ref ref="STDOUT" />
-        <appender-ref ref="FILE" />
+<!--        <appender-ref ref="FILE" />-->
     </root>
 
     <!-- Профиль для отладки -->

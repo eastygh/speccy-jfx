@@ -8,6 +8,7 @@ import spectrum.jfx.z80.memory.Memory;
 import spectrum.jfx.z80.memory.MemoryImpl;
 import spectrum.jfx.z80.sound.Sound;
 import spectrum.jfx.z80.ula.Ula;
+import spectrum.jfx.z80.ula.UlaImpl;
 import spectrum.jfx.z80.video.Video;
 import spectrum.jfx.z80.video.VideoImpl;
 import spectrum.jfx.z80core.NotifyOps;
@@ -43,7 +44,8 @@ public class SpectrumEmulator implements NotifyOps {
         this.keyboard = new Keyboard();
         this.sound = new Sound();
         this.keyboard.resetKeyboard();
-        this.ula = new Ula(memory);
+        this.ula = new UlaImpl(memory);
+        this.ula.addPortListener((byte) 0xfe, keyboard);
         cpu = new Z80(ula, this);
     }
 
