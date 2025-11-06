@@ -7,6 +7,7 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spectrum.jfx.z80.memory.Memory;
+import spectrum.jfx.z80.ula.OutPortListener;
 
 /**
  * Эмуляция видеосистемы ZX Spectrum
@@ -16,7 +17,7 @@ import spectrum.jfx.z80.memory.Memory;
  * 0x4000-0x57FF: Bitmap data (6144 bytes)
  * 0x5800-0x5AFF: Attribute data (768 bytes)
  */
-public class VideoImpl implements Video<Canvas> {
+public class VideoImpl implements Video<Canvas>, OutPortListener {
 
     private static final Logger logger = LoggerFactory.getLogger(VideoImpl.class);
 
@@ -56,7 +57,7 @@ public class VideoImpl implements Video<Canvas> {
     // Состояние видеосистемы
     @Getter
     private ZoomLevel currentZoom = ZoomLevel.X2; // По умолчанию x2 для удобства
-    private Color borderColor = SPECTRUM_COLORS[7]; // По умолчанию белая рамка
+    private Color borderColor = SPECTRUM_COLORS[0]; // По умолчанию белая рамка
     private boolean flashPhase = false; // Фаза мигания
     private long flashCounter = 0;
 
@@ -133,6 +134,13 @@ public class VideoImpl implements Video<Canvas> {
         drawScreen();
 
         screenDirty = false;
+    }
+
+    @Override
+    public void outPort(int port, byte value) {
+        value = (byte) (value & 0x07);
+        borderColor = SPECTRUM_COLORS[value];
+        screenDirty = true;
     }
 
     /**

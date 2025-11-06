@@ -116,10 +116,10 @@ public class Keyboard implements InPortListener {
 
         // Дополнительные маппинги для удобства
         keyMapping.put(KeyCode.CONTROL, Set.of(new KeyPosition(7, 1))); // SYMBOL SHIFT как Ctrl
-        keyMapping.put(KeyCode.LEFT, Set.of(new KeyPosition(0, 0)));    // CAPS SHIFT + 5 (LEFT)
-        keyMapping.put(KeyCode.DOWN, Set.of(new KeyPosition(0, 0)));    // CAPS SHIFT + 6 (DOWN)
-        keyMapping.put(KeyCode.UP, Set.of(new KeyPosition(0, 0)));      // CAPS SHIFT + 7 (UP)
-        keyMapping.put(KeyCode.RIGHT, Set.of(new KeyPosition(0, 0)));   // CAPS SHIFT + 8 (RIGHT)
+        keyMapping.put(KeyCode.LEFT, Set.of(new KeyPosition(0, 0), new KeyPosition(3, 4)));    // CAPS SHIFT + 5 (LEFT)
+        keyMapping.put(KeyCode.DOWN, Set.of(new KeyPosition(0, 0), new KeyPosition(4, 4)));    // CAPS SHIFT + 6 (DOWN)
+        keyMapping.put(KeyCode.UP, Set.of(new KeyPosition(0, 0), new KeyPosition(4, 3)));      // CAPS SHIFT + 7 (UP)
+        keyMapping.put(KeyCode.RIGHT, Set.of(new KeyPosition(0, 0), new KeyPosition(4, 2)));   // CAPS SHIFT + 8 (RIGHT)
 
         keyMapping.put(KeyCode.DELETE, Set.of(new KeyPosition(0, 0), new KeyPosition(4, 0)));  // CAPS SHIFT + 0 (DELETE)
         keyMapping.put(KeyCode.BACK_SPACE, Set.of(new KeyPosition(0, 0), new KeyPosition(4, 0))); // CAPS SHIFT + 0 (DELETE)

@@ -14,6 +14,7 @@ public class UlaImpl implements Ula {
     private long tStates = 0;
     private boolean interruptRequested = false;
     private final Map<Byte, Set<InPortListener>> inPortListeners = new HashMap<>();
+    private final Map<Byte, Set<OutPortListener>> outPortListeners = new HashMap<>();
 
     public UlaImpl(Memory memory) {
         this.memory = memory;
@@ -24,6 +25,13 @@ public class UlaImpl implements Ula {
         Set<InPortListener> listeners = inPortListeners.getOrDefault(port, new HashSet<>());
         listeners.add(listener);
         inPortListeners.put(port, listeners);
+    }
+
+    @Override
+    public void addPortListener(byte port, OutPortListener listener) {
+        Set<OutPortListener> listeners = outPortListeners.getOrDefault(port, new HashSet<>());
+        listeners.add(listener);
+        outPortListeners.put(port, listeners);
     }
 
     @Override
@@ -83,7 +91,11 @@ public class UlaImpl implements Ula {
     @Override
     public void outPort(int port, int value) {
         tStates += 4; // 4 clocks for write byte to bus
-        //ports[port] = (byte) value;
+        if (outPortListeners.containsKey((byte) port)) {
+            for (OutPortListener listener : outPortListeners.get((byte) port)) {
+                listener.outPort(port, (byte) value);
+            }
+        }
     }
 
     @Override

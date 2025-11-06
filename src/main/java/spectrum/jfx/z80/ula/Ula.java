@@ -6,6 +6,8 @@ public interface Ula extends MemIoOps {
 
     void addPortListener(byte port, InPortListener listener);
 
+    void addPortListener(byte port, OutPortListener listener);
+
     void requestInterrupt();
 
     default void removePortListener(byte port, InPortListener listener) {
