@@ -27,19 +27,19 @@
     <!-- Логирование для конкретных пакетов -->
 
     <!-- Детальное логирование для CPU -->
-    <logger name="spectrum.jfx.z80.cpu" level="INFO" />
+    <logger name="spectrum.jfx.hardware.cpu" level="INFO" />
 
     <!-- Умеренное логирование для памяти -->
-    <logger name="spectrum.jfx.z80.memory" level="WARN" />
+    <logger name="spectrum.jfx.hardware.memory" level="WARN" />
 
     <!-- Логирование видеосистемы -->
-    <logger name="spectrum.jfx.z80.video" level="INFO" />
+    <logger name="spectrum.jfx.hardware.video" level="INFO" />
 
     <!-- Логирование звука -->
-    <logger name="spectrum.jfx.z80.sound" level="INFO" />
+    <logger name="spectrum.jfx.hardware.sound" level="INFO" />
 
     <!-- Логирование клавиатуры -->
-    <logger name="spectrum.jfx.z80.input" level="DEBUG" />
+    <logger name="spectrum.jfx.hardware.input" level="DEBUG" />
 
     <!-- Root logger -->
     <root level="INFO">

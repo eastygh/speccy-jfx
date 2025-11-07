@@ -1,4 +1,4 @@
-package spectrum.jfx.z80.video;
+package spectrum.jfx.hardware.video;
 
 public interface Video<T> {
 

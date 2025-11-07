@@ -1,6 +1,6 @@
-package spectrum.jfx.z80.ula;
+package spectrum.jfx.hardware.ula;
 
-import spectrum.jfx.z80.memory.Memory;
+import spectrum.jfx.hardware.memory.Memory;
 
 import java.util.HashMap;
 import java.util.HashSet;

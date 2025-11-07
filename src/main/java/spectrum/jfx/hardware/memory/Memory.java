@@ -1,4 +1,4 @@
-package spectrum.jfx.z80.memory;
+package spectrum.jfx.hardware.memory;
 
 public interface Memory {
 

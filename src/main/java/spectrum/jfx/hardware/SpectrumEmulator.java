@@ -1,17 +1,17 @@
-package spectrum.jfx.z80;
+package spectrum.jfx.hardware;
 
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import spectrum.jfx.z80.input.Keyboard;
-import spectrum.jfx.z80.memory.Memory;
-import spectrum.jfx.z80.memory.MemoryImpl;
-import spectrum.jfx.z80.sound.Sound;
-import spectrum.jfx.z80.ula.OutPortListener;
-import spectrum.jfx.z80.ula.Ula;
-import spectrum.jfx.z80.ula.UlaImpl;
-import spectrum.jfx.z80.video.Video;
-import spectrum.jfx.z80.video.VideoImpl;
+import spectrum.jfx.hardware.input.Keyboard;
+import spectrum.jfx.hardware.memory.Memory;
+import spectrum.jfx.hardware.memory.MemoryImpl;
+import spectrum.jfx.hardware.sound.Sound;
+import spectrum.jfx.hardware.ula.OutPortListener;
+import spectrum.jfx.hardware.ula.Ula;
+import spectrum.jfx.hardware.ula.UlaImpl;
+import spectrum.jfx.hardware.video.Video;
+import spectrum.jfx.hardware.video.VideoImpl;
 import spectrum.jfx.z80core.NotifyOps;
 import spectrum.jfx.z80core.Z80;
 

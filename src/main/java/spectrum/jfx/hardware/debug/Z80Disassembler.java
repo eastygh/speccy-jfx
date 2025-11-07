@@ -1,7 +1,7 @@
-package spectrum.jfx.z80.debug;
+package spectrum.jfx.hardware.debug;
 
 
-import spectrum.jfx.z80.memory.Memory;
+import spectrum.jfx.hardware.memory.Memory;
 
 import java.util.ArrayList;
 import java.util.List;

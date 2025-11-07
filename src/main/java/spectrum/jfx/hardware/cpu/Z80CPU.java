@@ -1,9 +1,9 @@
-package spectrum.jfx.z80.cpu;
+package spectrum.jfx.hardware.cpu;
 
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import spectrum.jfx.z80.memory.Memory;
+import spectrum.jfx.hardware.memory.Memory;
 
 /**
  * Эмулятор процессора Zilog Z80

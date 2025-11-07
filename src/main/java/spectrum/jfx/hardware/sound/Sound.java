@@ -1,4 +1,4 @@
-package spectrum.jfx.z80.sound;
+package spectrum.jfx.hardware.sound;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

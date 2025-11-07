@@ -1,4 +1,4 @@
-package spectrum.jfx.z80.util;
+package spectrum.jfx.hardware.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

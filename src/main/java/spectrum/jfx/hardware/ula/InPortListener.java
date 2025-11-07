@@ -1,4 +1,4 @@
-package spectrum.jfx.z80.ula;
+package spectrum.jfx.hardware.ula;
 
 public interface InPortListener {
 

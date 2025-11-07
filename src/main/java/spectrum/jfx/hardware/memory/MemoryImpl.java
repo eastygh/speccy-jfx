@@ -1,4 +1,4 @@
-package spectrum.jfx.z80.memory;
+package spectrum.jfx.hardware.memory;
 
 import lombok.Getter;
 import org.slf4j.Logger;

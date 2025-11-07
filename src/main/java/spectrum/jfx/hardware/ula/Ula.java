@@ -1,4 +1,4 @@
-package spectrum.jfx.z80.ula;
+package spectrum.jfx.hardware.ula;
 
 import spectrum.jfx.z80core.MemIoOps;
 

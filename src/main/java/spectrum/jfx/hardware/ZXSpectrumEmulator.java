@@ -1,16 +1,16 @@
-package spectrum.jfx.z80;
+package spectrum.jfx.hardware;
 
 
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import spectrum.jfx.z80.cpu.Z80CPU;
-import spectrum.jfx.z80.input.Keyboard;
-import spectrum.jfx.z80.memory.Memory;
-import spectrum.jfx.z80.memory.MemoryImpl;
-import spectrum.jfx.z80.sound.Sound;
-import spectrum.jfx.z80.video.Video;
-import spectrum.jfx.z80.video.VideoImpl;
+import spectrum.jfx.hardware.cpu.Z80CPU;
+import spectrum.jfx.hardware.input.Keyboard;
+import spectrum.jfx.hardware.memory.Memory;
+import spectrum.jfx.hardware.memory.MemoryImpl;
+import spectrum.jfx.hardware.sound.Sound;
+import spectrum.jfx.hardware.video.Video;
+import spectrum.jfx.hardware.video.VideoImpl;
 
 /**
  * Основной класс эмулятора ZX Spectrum

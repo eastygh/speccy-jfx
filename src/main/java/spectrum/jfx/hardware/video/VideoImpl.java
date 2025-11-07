@@ -1,4 +1,4 @@
-package spectrum.jfx.z80.video;
+package spectrum.jfx.hardware.video;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -6,8 +6,8 @@ import javafx.scene.paint.Color;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import spectrum.jfx.z80.memory.Memory;
-import spectrum.jfx.z80.ula.OutPortListener;
+import spectrum.jfx.hardware.memory.Memory;
+import spectrum.jfx.hardware.ula.OutPortListener;
 
 /**
  * Эмуляция видеосистемы ZX Spectrum

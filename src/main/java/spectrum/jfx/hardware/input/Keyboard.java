@@ -1,10 +1,10 @@
-package spectrum.jfx.z80.input;
+package spectrum.jfx.hardware.input;
 
 import javafx.scene.input.KeyCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spectrum.jfx.helper.VolatileBoolMatrix;
-import spectrum.jfx.z80.ula.InPortListener;
+import spectrum.jfx.hardware.ula.InPortListener;
 
 import java.util.HashMap;
 import java.util.Map;

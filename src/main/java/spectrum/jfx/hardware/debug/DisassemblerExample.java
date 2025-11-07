@@ -1,8 +1,8 @@
-package spectrum.jfx.z80.debug;
+package spectrum.jfx.hardware.debug;
 
 
-import spectrum.jfx.z80.memory.Memory;
-import spectrum.jfx.z80.memory.MemoryImpl;
+import spectrum.jfx.hardware.memory.Memory;
+import spectrum.jfx.hardware.memory.MemoryImpl;
 
 import java.util.List;
 

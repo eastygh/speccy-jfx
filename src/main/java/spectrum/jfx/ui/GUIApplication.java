@@ -7,12 +7,12 @@ import javafx.scene.Scene;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import spectrum.jfx.ui.controller.MainController;
-import spectrum.jfx.z80.SpectrumEmulator;
+import spectrum.jfx.hardware.SpectrumEmulator;
 
 import java.io.IOException;
 
-import static spectrum.jfx.z80.util.EmulatorUtils.loadFile;
-import static spectrum.jfx.z80.video.ZoomLevel.X2;
+import static spectrum.jfx.hardware.util.EmulatorUtils.loadFile;
+import static spectrum.jfx.hardware.video.ZoomLevel.X2;
 
 public class GUIApplication extends Application {
 

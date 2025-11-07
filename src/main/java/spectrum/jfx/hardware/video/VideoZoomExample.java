@@ -1,8 +1,8 @@
-package spectrum.jfx.z80.video;
+package spectrum.jfx.hardware.video;
 
 
-import spectrum.jfx.z80.memory.Memory;
-import spectrum.jfx.z80.memory.MemoryImpl;
+import spectrum.jfx.hardware.memory.Memory;
+import spectrum.jfx.hardware.memory.MemoryImpl;
 
 /**
  * Пример использования масштабирования в Video системе
