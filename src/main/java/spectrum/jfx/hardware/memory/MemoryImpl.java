@@ -4,6 +4,9 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+
 /**
  * Класс для управления памятью ZX Spectrum
  * Реализует карту памяти ZX Spectrum 48K:
@@ -33,6 +36,17 @@ public class MemoryImpl implements Memory {
     private final byte[] rom;        // ROM область
     private final byte[] ram;        // RAM область (48K)
     private final byte[] ports;  // Порты ввода-вывода
+
+    // Volatile для корректной работы с многопоточностью и видимости массивов
+    private static final VarHandle BYTE_ARRAY_HANDLE;
+
+    static {
+        try {
+            BYTE_ARRAY_HANDLE = MethodHandles.arrayElementVarHandle(byte[].class);
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     // Флаги доступности записи в ROM
     @Getter
@@ -119,11 +133,11 @@ public class MemoryImpl implements Memory {
 
         if (address >= ROM_START && address <= ROM_END) {
             // Чтение из ROM
-            return rom[address] & 0xFF;
+            return readByteVolatile(rom, address) & 0xFF;
         } else if (address >= SCREEN_RAM_START && address <= USER_RAM_END) {
             // Чтение из RAM
             int ramAddress = address - SCREEN_RAM_START;
-            return ram[ramAddress] & 0xFF;
+            return readByteVolatile(ram, ramAddress) & 0xFF;
         }
 
         logger.warn("Invalid memory read at address: 0x{}", Integer.toHexString(address).toUpperCase());
@@ -150,12 +164,14 @@ public class MemoryImpl implements Memory {
                         Integer.toHexString(address).toUpperCase());
                 return; // Игнорируем запись в защищенную ROM
             } else {
-                rom[address] = (byte) value;
+                writeByteVolatile(rom, address, (byte) value);
+                //rom[address] = (byte) value;
             }
         } else if (address >= SCREEN_RAM_START && address <= USER_RAM_END) {
             // Запись в RAM
             int ramAddress = address - SCREEN_RAM_START;
-            ram[ramAddress] = (byte) value;
+            writeByteVolatile(ram, ramAddress, (byte) value);
+            //ram[ramAddress] = (byte) value;
         } else {
             logger.warn("Invalid memory write at address: 0x{}",
                     Integer.toHexString(address).toUpperCase());
@@ -285,5 +301,13 @@ public class MemoryImpl implements Memory {
         return TOTAL_MEMORY;
     }
 
+
+    private void writeByteVolatile(byte[] array, int index, byte value) {
+        BYTE_ARRAY_HANDLE.setVolatile(array, index, value);
+    }
+
+    private byte readByteVolatile(byte[] array, int index) {
+        return (byte) BYTE_ARRAY_HANDLE.getVolatile(array, index);
+    }
 
 }

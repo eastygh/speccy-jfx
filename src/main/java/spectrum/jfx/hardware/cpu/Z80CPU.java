@@ -9,7 +9,8 @@ import spectrum.jfx.hardware.memory.Memory;
  * Эмулятор процессора Zilog Z80
  * Реализует основные регистры, флаги и инструкции процессора Z80
  */
-public class Z80CPU {
+public class Z80CPU implements CPU {
+
     private static final Logger logger = LoggerFactory.getLogger(Z80CPU.class);
 
     // Ссылка на память
@@ -56,6 +57,7 @@ public class Z80CPU {
     /**
      * Сброс процессора к начальному состоянию
      */
+    @Override
     public void reset() {
         logger.debug("Resetting Z80 CPU");
 

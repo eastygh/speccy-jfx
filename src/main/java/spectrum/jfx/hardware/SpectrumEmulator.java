@@ -3,10 +3,13 @@ package spectrum.jfx.hardware;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.input.Keyboard;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.memory.MemoryImpl;
 import spectrum.jfx.hardware.sound.Sound;
+import spectrum.jfx.hardware.tape.CassetteDeck;
+import spectrum.jfx.hardware.ula.InPortListener;
 import spectrum.jfx.hardware.ula.OutPortListener;
 import spectrum.jfx.hardware.ula.Ula;
 import spectrum.jfx.hardware.ula.UlaImpl;
@@ -20,12 +23,13 @@ public class SpectrumEmulator implements NotifyOps {
 
     private static final Logger logger = LoggerFactory.getLogger(SpectrumEmulator.class);
 
-    Z80 cpu;
+    CPU cpu;
     Memory memory;
-    Video video;
+    Video<?> video;
     Keyboard keyboard;
     Sound sound;
     Ula ula;
+    CassetteDeck cassetteDeck;
 
     // Состояние эмуляции
     private boolean running;
@@ -46,9 +50,15 @@ public class SpectrumEmulator implements NotifyOps {
         this.sound = new Sound();
         this.keyboard.resetKeyboard();
         this.ula = new UlaImpl(memory);
-        this.ula.addPortListener((byte) 0xfe, keyboard); // keyboard
-        this.ula.addPortListener((byte) 0xfe, (OutPortListener) video); // Border color
+        this.ula.addPortListener(0xfe, keyboard); // keyboard
+        this.ula.addPortListener(0xfe, (OutPortListener) video); // Border color
+
+        this.cassetteDeck = new CassetteDeck(ula);
+        this.ula.addPortListener(0xfe, (InPortListener) cassetteDeck); // cassette deck IN
+        this.ula.addPortListener(0xfe, (OutPortListener) cassetteDeck); // cassette deck OUT
+
         cpu = new Z80(ula, this);
+        //cpu = new Z80CPU(memory);
     }
 
     @Override
@@ -157,10 +167,9 @@ public class SpectrumEmulator implements NotifyOps {
 
         long executedCycles = 0;
         while (executedCycles < cyclesPerFrame && running && !paused) {
+
             // Выполняем одну инструкцию процессора
-            long startCycles = ula.gettStates();
-            cpu.execute();
-            int cycles = (int) (ula.gettStates() - startCycles);
+            int cycles = cpu.executeInstruction();
             executedCycles += cycles;
 
             // Обновляем видеосистему

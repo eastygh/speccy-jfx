@@ -236,9 +236,11 @@
  */
 package spectrum.jfx.z80core;
 
+import spectrum.jfx.hardware.cpu.CPU;
+
 import java.util.BitSet;
 
-public class Z80 {
+public class Z80 implements CPU {
 
     private MemIoOps MemIoImpl;
     private NotifyOps NotifyImpl;
@@ -1914,6 +1916,13 @@ public class Z80 {
         if (ffIFF1 && !pendingEI && MemIoImpl.isActiveINT()) {
             interruption();
         }
+    }
+
+    @Override
+    public int executeInstruction() {
+        long startCycles = MemIoImpl.gettStates();
+        execute();
+        return (int) (MemIoImpl.gettStates() - startCycles);
     }
 
     private void decodeOpcode(int opCode) {
@@ -4856,7 +4865,7 @@ public class Z80 {
             }
             default: {
                 // Detrás de un DD/FD o varios en secuencia venía un código
-                // que no correspondía con una instrucción que involucra a 
+                // que no correspondía con una instrucción que involucra a
                 // IX o IY. Se trata como si fuera un código normal.
                 // Sin esto, además de emular mal, falla el test
                 // ld <bcdexya>,<bcdexya> de ZEXALL.

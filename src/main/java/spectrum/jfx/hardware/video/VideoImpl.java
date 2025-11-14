@@ -10,7 +10,7 @@ import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.ula.OutPortListener;
 
 /**
- * Эмуляция видеосистемы ZX Spectrum
+ * Эмуляция видеосистемы ZX Spectrum (не реальная реализация)
  * Управляет отображением экрана с разрешением 256x192 пикселя
  * <p>
  * Карта видеопамяти ZX Spectrum:
@@ -137,9 +137,8 @@ public class VideoImpl implements Video<Canvas>, OutPortListener {
     }
 
     @Override
-    public void outPort(int port, byte value) {
-        value = (byte) (value & 0x07);
-        borderColor = SPECTRUM_COLORS[value];
+    public void outPort(int port, int value) {
+        borderColor = SPECTRUM_COLORS[value & 0x07];
         screenDirty = true;
     }
 
