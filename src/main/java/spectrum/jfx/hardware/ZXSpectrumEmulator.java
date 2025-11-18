@@ -9,8 +9,8 @@ import spectrum.jfx.hardware.input.Keyboard;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.memory.MemoryImpl;
 import spectrum.jfx.hardware.sound.Sound;
+import spectrum.jfx.hardware.video.ScanlineVideoImpl;
 import spectrum.jfx.hardware.video.Video;
-import spectrum.jfx.hardware.video.VideoImpl;
 
 /**
  * Основной класс эмулятора ZX Spectrum
@@ -41,7 +41,8 @@ public class ZXSpectrumEmulator {
 
         // Инициализация компонентов
         this.memory = new MemoryImpl();
-        this.video = new VideoImpl(memory);
+        //this.video = new VideoImpl(memory);
+        this.video = new ScanlineVideoImpl(memory);
         this.keyboard = new Keyboard();
         this.sound = new Sound();
         this.cpu = new Z80CPU(memory);

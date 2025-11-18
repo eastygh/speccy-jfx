@@ -2,11 +2,15 @@ package spectrum.jfx.hardware.video;
 
 import lombok.experimental.UtilityClass;
 
+import static spectrum.jfx.hardware.video.SpectrumVideo.TOTAL_WIDTH;
+
 @UtilityClass
 public class ULATiming {
 
     // Тайминги для 48K Spectrum (PAL)
     static final int TSTATES_PER_LINE = 224;     // Тактов на строку
+    static final double TSRATES_PER_PIXEL = (double) TSTATES_PER_LINE / TOTAL_WIDTH; // Тактов на пиксель
+
     static final int SCREEN_LINES = 192;         // Видимые строки экрана
     static final int BORDER_TOP_LINES = 64;      // Верхний бордюр
     static final int BORDER_BOTTOM_LINES = 56;   // Нижний бордюр

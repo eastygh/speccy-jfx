@@ -13,16 +13,17 @@ public class UlaImpl implements Ula {
 
     private final Memory memory;
 
-    private volatile long tStates = 0;
     private boolean interruptRequested = false;
     @Setter
     @Getter
     private boolean ulaAddTStates = true;
     private final Map<Integer, Set<InPortListener>> inPortListeners = new HashMap<>();
     private final Map<Integer, Set<OutPortListener>> outPortListeners = new HashMap<>();
+    private final ZXClock clock;
 
     public UlaImpl(Memory memory) {
         this.memory = memory;
+        this.clock = new ZXClock();
     }
 
     @Override
@@ -40,6 +41,11 @@ public class UlaImpl implements Ula {
     }
 
     @Override
+    public void addClockListener(ClockListener listener) {
+        clock.addClockListener(listener);
+    }
+
+    @Override
     public void setRam(byte[] ram) {
         //z80Ram = ram;
     }
@@ -53,7 +59,7 @@ public class UlaImpl implements Ula {
     public int fetchOpcode(int address) {
         // 3 clocks to fetch opcode from RAM and 1 execution clock
         if (ulaAddTStates) {
-            tStates += 4;
+            clock.incrementTStates(4);
         }
         return memory.readByte(address) & 0xff;
     }
@@ -61,7 +67,7 @@ public class UlaImpl implements Ula {
     @Override
     public int peek8(int address) {
         if (ulaAddTStates) {
-            tStates += 3; // 3 clocks for read byte from RAM
+            clock.incrementTStates(3); // 3 clocks for read byte from RAM
         }
         return memory.readByte(address) & 0xff;
     }
@@ -69,7 +75,7 @@ public class UlaImpl implements Ula {
     @Override
     public void poke8(int address, int value) {
         if (ulaAddTStates) {
-            tStates += 3; // 3 clocks for write byte to RAM
+            clock.incrementTStates(3);  // 3 clocks for write byte to RAM
         }
         memory.writeByte(address, (byte) value);
     }
@@ -90,7 +96,7 @@ public class UlaImpl implements Ula {
     @Override
     public int inPort(int port) {
         if (ulaAddTStates) {
-            tStates += 4; // 4 clocks for read byte from bus
+            clock.incrementTStates(4); // 4 clocks for read byte from bus
         }
         int value = 0;
         if (inPortListeners.containsKey(port & 0xff)) {
@@ -105,7 +111,7 @@ public class UlaImpl implements Ula {
     @Override
     public void outPort(int port, int value) {
         if (ulaAddTStates) {
-            tStates += 4; // 4 clocks for write byte to bus
+            clock.incrementTStates(4); // 4 clocks for write byte to bus
         }
         port &= 0xff;
         if (outPortListeners.containsKey((port))) {
@@ -120,7 +126,8 @@ public class UlaImpl implements Ula {
         // Additional clocks to be added on some instructions
         // Not to be changed, really.
         if (ulaAddTStates) {
-            tStates += tstates;
+            clock.incrementTStates(tstates);
+            clock.addressOnBus(address, tstates);
         }
     }
 
@@ -129,7 +136,7 @@ public class UlaImpl implements Ula {
         // Additional clocks to be added on INT & NMI
         // Not to be changed, really.
         if (ulaAddTStates) {
-            tStates += tstates;
+            clock.incrementTStates(tstates);
         }
     }
 
@@ -145,7 +152,7 @@ public class UlaImpl implements Ula {
     @Override
     public void addTStates(int tStates) {
         // Adding external tStates, if CPU counts them
-        this.tStates += tStates;
+        clock.incrementTStates(tStates);
     }
 
     public void requestInterrupt() {
@@ -154,12 +161,12 @@ public class UlaImpl implements Ula {
 
     @Override
     public long gettStates() {
-        return tStates;
+        return clock.getTStates();
     }
 
     @Override
     public void reset() {
-        tStates = 0;
+        clock.reset();
     }
 
 }

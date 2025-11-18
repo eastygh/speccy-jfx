@@ -13,7 +13,7 @@ public class VideoZoomExample {
     public static void main(String[] args) {
         // Создаем объекты
         Memory memory = new MemoryImpl();
-        Video video = new VideoImpl(memory); // По умолчанию x2 масштаб
+        Video video = new SimpleVideoImpl(memory); // По умолчанию x2 масштаб
 
         System.out.println("=== Пример использования масштабирования Video ===");
         System.out.println();

@@ -9,6 +9,7 @@ module spectrum.jfx {
     requires org.slf4j;
     requires java.desktop;
     requires static lombok;
+    requires javafx.graphics;
 
     opens spectrum.jfx to javafx.fxml;
     exports spectrum.jfx;

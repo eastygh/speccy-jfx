@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.ula.OutPortListener;
 
+import static spectrum.jfx.hardware.video.SpectrumVideo.*;
+
 /**
  * Эмуляция видеосистемы ZX Spectrum (не реальная реализация)
  * Управляет отображением экрана с разрешением 256x192 пикселя
@@ -17,37 +19,9 @@ import spectrum.jfx.hardware.ula.OutPortListener;
  * 0x4000-0x57FF: Bitmap data (6144 bytes)
  * 0x5800-0x5AFF: Attribute data (768 bytes)
  */
-public class VideoImpl implements Video<Canvas>, OutPortListener {
+public class SimpleVideoImpl implements Video<Canvas>, OutPortListener {
 
-    private static final Logger logger = LoggerFactory.getLogger(VideoImpl.class);
-
-    // Адреса видеопамяти
-    private static final int BITMAP_START = 0x4000;
-    private static final int BITMAP_SIZE = 6144;   // 256*192/8
-    private static final int ATTR_START = 0x5800;
-    private static final int ATTR_SIZE = 768;      // 32*24
-
-    // Стандартная палитра ZX Spectrum
-    private static final Color[] SPECTRUM_COLORS = {
-            Color.rgb(0, 0, 0),       // 0: Black
-            Color.rgb(0, 0, 215),     // 1: Blue
-            Color.rgb(215, 0, 0),     // 2: Red
-            Color.rgb(215, 0, 215),   // 3: Magenta
-            Color.rgb(0, 215, 0),     // 4: Green
-            Color.rgb(0, 215, 215),   // 5: Cyan
-            Color.rgb(215, 215, 0),   // 6: Yellow
-            Color.rgb(215, 215, 215), // 7: White
-
-            // Bright colors (с флагом BRIGHT)
-            Color.rgb(0, 0, 0),       // 8: Bright Black
-            Color.rgb(0, 0, 255),     // 9: Bright Blue
-            Color.rgb(255, 0, 0),     // 10: Bright Red
-            Color.rgb(255, 0, 255),   // 11: Bright Magenta
-            Color.rgb(0, 255, 0),     // 12: Bright Green
-            Color.rgb(0, 255, 255),   // 13: Bright Cyan
-            Color.rgb(255, 255, 0),   // 14: Bright Yellow
-            Color.rgb(255, 255, 255)  // 15: Bright White
-    };
+    private static final Logger logger = LoggerFactory.getLogger(SimpleVideoImpl.class);
 
     private final Memory memory;
     @Getter
@@ -65,11 +39,11 @@ public class VideoImpl implements Video<Canvas>, OutPortListener {
     private final int[] pixelBuffer;
     private boolean screenDirty = true;
 
-    public VideoImpl(Memory memory) {
+    public SimpleVideoImpl(Memory memory) {
         this(memory, ZoomLevel.X2); // По умолчанию x2 масштаб для удобства
     }
 
-    public VideoImpl(Memory memory, ZoomLevel initialZoom) {
+    public SimpleVideoImpl(Memory memory, ZoomLevel initialZoom) {
         this.memory = memory;
         this.currentZoom = initialZoom;
 
@@ -147,7 +121,9 @@ public class VideoImpl implements Video<Canvas>, OutPortListener {
      */
     private void drawBorder() {
         int scale = currentZoom.getScale();
-        int scaledBorderSize = BORDER_SIZE * scale;
+
+        int scaledBorderVSize = BORDER_V_SIZE * scale;
+        int scaledBorderHSize = BORDER_H_SIZE * scale;
         int scaledScreenWidth = SCREEN_WIDTH * scale;
         int scaledScreenHeight = SCREEN_HEIGHT * scale;
         int scaledTotalWidth = TOTAL_WIDTH * scale;
@@ -155,16 +131,13 @@ public class VideoImpl implements Video<Canvas>, OutPortListener {
         gc.setFill(borderColor);
 
         // Верхняя рамка
-        gc.fillRect(0, 0, scaledTotalWidth, scaledBorderSize);
-
+        gc.fillRect(0, 0, scaledTotalWidth, scaledBorderVSize);
         // Нижняя рамка
-        gc.fillRect(0, scaledBorderSize + scaledScreenHeight, scaledTotalWidth, scaledBorderSize);
-
+        gc.fillRect(0, scaledBorderVSize + scaledScreenHeight, scaledTotalWidth, scaledBorderVSize);
         // Левая рамка
-        gc.fillRect(0, scaledBorderSize, scaledBorderSize, scaledScreenHeight);
-
+        gc.fillRect(0, scaledBorderVSize, scaledBorderHSize, scaledScreenHeight);
         // Правая рамка
-        gc.fillRect(scaledBorderSize + scaledScreenWidth, scaledBorderSize, scaledBorderSize, scaledScreenHeight);
+        gc.fillRect(scaledBorderHSize + scaledScreenWidth, scaledBorderVSize, scaledBorderHSize, scaledScreenHeight);
     }
 
     /**
@@ -216,9 +189,10 @@ public class VideoImpl implements Video<Canvas>, OutPortListener {
 
         // Рисуем масштабированный пиксель на canvas
         int scale = currentZoom.getScale();
-        int scaledBorderSize = BORDER_SIZE * scale;
-        int scaledX = scaledBorderSize + (x * scale);
-        int scaledY = scaledBorderSize + (y * scale);
+        int scaledBorderVSize = BORDER_V_SIZE * scale;
+        int scaledBorderHSize = BORDER_H_SIZE * scale;
+        int scaledX = scaledBorderHSize + (x * scale);
+        int scaledY = scaledBorderVSize + (y * scale);
 
         gc.setFill(color);
         gc.fillRect(scaledX, scaledY, scale, scale);

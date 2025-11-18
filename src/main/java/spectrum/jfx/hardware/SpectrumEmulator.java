@@ -9,12 +9,10 @@ import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.memory.MemoryImpl;
 import spectrum.jfx.hardware.sound.Sound;
 import spectrum.jfx.hardware.tape.CassetteDeck;
-import spectrum.jfx.hardware.ula.InPortListener;
-import spectrum.jfx.hardware.ula.OutPortListener;
-import spectrum.jfx.hardware.ula.Ula;
-import spectrum.jfx.hardware.ula.UlaImpl;
+import spectrum.jfx.hardware.ula.*;
+import spectrum.jfx.hardware.video.ScanlineVideoImpl;
+import spectrum.jfx.hardware.video.SimpleVideoImpl;
 import spectrum.jfx.hardware.video.Video;
-import spectrum.jfx.hardware.video.VideoImpl;
 import spectrum.jfx.z80core.NotifyOps;
 import spectrum.jfx.z80core.Z80;
 
@@ -45,9 +43,10 @@ public class SpectrumEmulator implements NotifyOps {
 
     public void init() {
         this.memory = new MemoryImpl();
-        this.video = new VideoImpl(memory);
+        //this.video = new SimpleVideoImpl(memory);
+        this.video = new ScanlineVideoImpl(memory);
         this.keyboard = new Keyboard();
-        this.sound = new Sound();
+        //this.sound = new Sound();
         this.keyboard.resetKeyboard();
         this.ula = new UlaImpl(memory);
         this.ula.addPortListener(0xfe, keyboard); // keyboard
@@ -56,6 +55,9 @@ public class SpectrumEmulator implements NotifyOps {
         this.cassetteDeck = new CassetteDeck(ula);
         this.ula.addPortListener(0xfe, (InPortListener) cassetteDeck); // cassette deck IN
         this.ula.addPortListener(0xfe, (OutPortListener) cassetteDeck); // cassette deck OUT
+        if (video instanceof ClockListener videoClock) {
+            this.ula.addClockListener(videoClock);
+        }
 
         cpu = new Z80(ula, this);
         //cpu = new Z80CPU(memory);
@@ -88,6 +90,8 @@ public class SpectrumEmulator implements NotifyOps {
         // Загрузка ROM в память
         //loadROM();
 
+        video.start();
+
         // Сброс процессора
         cpu.reset();
 
@@ -104,6 +108,7 @@ public class SpectrumEmulator implements NotifyOps {
             return;
         }
 
+        video.stop();
         logger.info("Stopping emulation");
         running = false;
         paused = false;
@@ -176,7 +181,7 @@ public class SpectrumEmulator implements NotifyOps {
             video.update(cycles);
 
             // Обновляем звуковую систему
-            sound.update(cycles);
+            //sound.update(cycles);
         }
         // Рендеринг кадра
         video.render();

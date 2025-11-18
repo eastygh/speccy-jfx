@@ -1,13 +1,14 @@
 package spectrum.jfx.hardware.video;
 
+import static spectrum.jfx.hardware.video.SpectrumVideo.TOTAL_HEIGHT;
+import static spectrum.jfx.hardware.video.SpectrumVideo.TOTAL_WIDTH;
+
 public interface Video<T> {
 
     // Разрешение экрана ZX Spectrum (оригинальное)
     int SCREEN_WIDTH = 256;
     int SCREEN_HEIGHT = 192;
     int BORDER_SIZE = 48; // Размер рамки
-    int TOTAL_WIDTH = SCREEN_WIDTH + BORDER_SIZE * 2;
-    int TOTAL_HEIGHT = SCREEN_HEIGHT + BORDER_SIZE * 2;
 
     void update(int cycles);
 
@@ -28,6 +29,22 @@ public interface Video<T> {
     T getCanvas();
 
     ZoomLevel getCurrentZoom();
+
+    default void tStatesTicks(int tStates) {
+        // ignore
+    }
+
+    default void reset() {
+        // ignore
+    }
+
+    default void start() {
+        // ignore
+    }
+
+    default void stop() {
+        // ignore
+    }
 
     /**
      * ================

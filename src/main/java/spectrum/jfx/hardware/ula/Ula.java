@@ -8,6 +8,8 @@ public interface Ula extends MemIoOps {
 
     void addPortListener(int port, OutPortListener listener);
 
+    void addClockListener(ClockListener listener);
+
     void requestInterrupt();
 
     void addTStates(int tStates);
