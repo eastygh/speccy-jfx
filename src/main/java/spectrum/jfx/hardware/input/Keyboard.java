@@ -3,8 +3,8 @@ package spectrum.jfx.hardware.input;
 import javafx.scene.input.KeyCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import spectrum.jfx.helper.VolatileBoolMatrix;
 import spectrum.jfx.hardware.ula.InPortListener;
+import spectrum.jfx.helper.VolatileBoolMatrix;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,14 +37,7 @@ public class Keyboard implements InPortListener {
     private final Map<KeyCode, Set<KeyPosition>> keyMapping = new HashMap<>();
 
     // Внутренний класс для представления позиции клавиши в матрице
-    private static class KeyPosition {
-        final int row;
-        final int col;
-
-        KeyPosition(int row, int col) {
-            this.row = row;
-            this.col = col;
-        }
+    private record KeyPosition(int row, int col) {
     }
 
     public Keyboard() {
@@ -124,6 +117,8 @@ public class Keyboard implements InPortListener {
         keyMapping.put(KeyCode.DELETE, Set.of(new KeyPosition(0, 0), new KeyPosition(4, 0)));  // CAPS SHIFT + 0 (DELETE)
         keyMapping.put(KeyCode.BACK_SPACE, Set.of(new KeyPosition(0, 0), new KeyPosition(4, 0))); // CAPS SHIFT + 0 (DELETE)
 
+        keyMapping.put(KeyCode.QUOTE, Set.of(new KeyPosition(7, 1), new KeyPosition(5, 0)));  // SYMBOL SHIFT + P (QUOTE)
+
         logger.debug("Key mapping initialized with {} keys", keyMapping.size());
     }
 
@@ -192,10 +187,6 @@ public class Keyboard implements InPortListener {
      * Проверяет, нажата ли конкретная клавиша
      */
     public boolean isKeyPressed(KeyCode keyCode) {
-//        KeyPosition pos = keyMapping.get(keyCode);
-//        if (pos != null) {
-//            return keyMatrix.get(pos.row, pos.col);
-//        }
         return false;
     }
 

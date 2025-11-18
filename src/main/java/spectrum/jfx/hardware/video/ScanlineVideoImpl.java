@@ -150,10 +150,13 @@ public class ScanlineVideoImpl implements Video<Canvas>, OutPortListener, ClockL
             return;
         }
         if (isScreenPixel(x, y)) {
-            //drawBorderPixel(x, y, borderColor);
             drawScreenPixel(x, y, x - BORDER_H_SIZE, y - BORDER_V_SIZE);
-            return;
+        } else {
+            drawBorderPixel(x, y);
         }
+    }
+
+    private void drawBorderPixel(int x, int y) {
         int index = y * TOTAL_WIDTH + x;
         int color = pixels[index];
         if (color != borderColor) {
@@ -197,8 +200,9 @@ public class ScanlineVideoImpl implements Video<Canvas>, OutPortListener, ClockL
 
     /**
      * Draw a pixel on the buffer in argb.
-     * @param x - x coordinate
-     * @param y - y coordinate
+     *
+     * @param x     - x coordinate
+     * @param y     - y coordinate
      * @param iARGB - argb color
      */
     private void setPixel(int x, int y, int iARGB) {
