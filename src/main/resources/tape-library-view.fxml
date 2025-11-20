@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="spectrum.jfx.ui.controller.TapeLibraryController"
+            prefWidth="800" prefHeight="600">
+
+    <!-- Toolbar -->
+    <top>
+        <ToolBar>
+            <Button text="▶" fx:id="playButton" onAction="#onPlay" styleClass="play-button">
+                <tooltip><Tooltip text="Воспроизвести выбранную секцию"/></tooltip>
+            </Button>
+            <Button text="⏸" fx:id="pauseButton" onAction="#onPause" styleClass="pause-button">
+                <tooltip><Tooltip text="Пауза/остановка воспроизведения"/></tooltip>
+            </Button>
+            <Button text="⏹" fx:id="stopButton" onAction="#onStop" styleClass="stop-button">
+                <tooltip><Tooltip text="Остановить воспроизведение"/></tooltip>
+            </Button>
+            <Separator/>
+            <Button text="Добавить файл" fx:id="addFileButton" onAction="#onAddFile">
+                <tooltip><Tooltip text="Добавить TAP или TZX файл в коллекцию"/></tooltip>
+            </Button>
+            <Button text="Удалить файл" fx:id="removeFileButton" onAction="#onRemoveFile">
+                <tooltip><Tooltip text="Удалить выбранный файл из коллекции"/></tooltip>
+            </Button>
+            <Separator/>
+            <Button text="Очистить всё" fx:id="clearAllButton" onAction="#onClearAll">
+                <tooltip><Tooltip text="Очистить всю коллекцию"/></tooltip>
+            </Button>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="statusLabel" text="Готов"/>
+        </ToolBar>
+    </top>
+
+    <!-- Main content -->
+    <center>
+        <SplitPane dividerPositions="0.4">
+            <!-- Left panel - File collection -->
+            <VBox spacing="5">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+
+                <Label text="Коллекция кассет" styleClass="section-header"/>
+
+                <ListView fx:id="fileListView" VBox.vgrow="ALWAYS">
+                    <placeholder>
+                        <Label text="Коллекция пуста&#10;Добавьте TAP или TZX файлы"
+                               textAlignment="CENTER" styleClass="placeholder-text"/>
+                    </placeholder>
+                </ListView>
+
+                <!-- Collection info -->
+                <VBox spacing="2">
+                    <Label fx:id="collectionInfoLabel" text="Файлов: 0, Секций: 0"
+                           styleClass="info-text"/>
+                    <Label fx:id="collectionSizeLabel" text="Размер: 0 байт"
+                           styleClass="info-text"/>
+                </VBox>
+            </VBox>
+
+            <!-- Right panel - File sections -->
+            <VBox spacing="5">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+
+                <!-- Selected file info -->
+                <VBox spacing="3">
+                    <Label text="Информация о файле" styleClass="section-header"/>
+                    <Label fx:id="fileInfoLabel" text="Файл не выбран"
+                           styleClass="file-info-text" wrapText="true"/>
+                    <Label fx:id="fileTypeLabel" text="" styleClass="info-text"/>
+                    <Label fx:id="fileSizeLabel" text="" styleClass="info-text"/>
+                </VBox>
+
+                <Separator/>
+
+                <!-- File sections -->
+                <VBox VBox.vgrow="ALWAYS" spacing="5">
+                    <Label text="Секции файла" styleClass="section-header"/>
+
+                    <ListView fx:id="sectionListView" VBox.vgrow="ALWAYS">
+                        <placeholder>
+                            <Label text="Выберите файл для просмотра секций"
+                                   textAlignment="CENTER" styleClass="placeholder-text"/>
+                        </placeholder>
+                    </ListView>
+                </VBox>
+
+                <!-- Section controls -->
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Button text="Перейти к секции" fx:id="gotoSectionButton" onAction="#onGotoSection"
+                            disable="true">
+                        <tooltip><Tooltip text="Перейти к выбранной секции"/></tooltip>
+                    </Button>
+                    <Label fx:id="sectionInfoLabel" text="" styleClass="info-text"/>
+                </HBox>
+            </VBox>
+        </SplitPane>
+    </center>
+
+    <!-- Status bar -->
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="status-bar">
+            <padding>
+                <Insets top="5" right="10" bottom="5" left="10"/>
+            </padding>
+            <Label fx:id="playbackStatusLabel" text="Остановлено"/>
+            <Separator orientation="VERTICAL"/>
+            <Label fx:id="currentFileLabel" text=""/>
+            <Separator orientation="VERTICAL"/>
+            <Label fx:id="currentSectionLabel" text=""/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <ProgressBar fx:id="playbackProgressBar" visible="false" prefWidth="150"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

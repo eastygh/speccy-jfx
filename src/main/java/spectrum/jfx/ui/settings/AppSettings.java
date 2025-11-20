@@ -2,9 +2,13 @@ package spectrum.jfx.ui.settings;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.ui.theme.ThemeManager;
+import spectrum.jfx.ui.model.TapeCollection;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +18,7 @@ import java.nio.file.Paths;
 
 @Slf4j
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AppSettings {
 
     // Настройки темы
@@ -32,9 +37,24 @@ public class AppSettings {
     private String lastRomPath = "";
     private String lastSnapshotPath = "";
 
+    // Коллекция кассет TAP/TZX
+    private TapeCollection tapeCollection = new TapeCollection();
+
     private static final String SETTINGS_DIR = System.getProperty("user.home") + "/.spectrum-emulator";
     private static final String SETTINGS_FILE = SETTINGS_DIR + "/settings.yml";
-    private static final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper mapper;
+
+    static {
+        mapper = new ObjectMapper(new YAMLFactory());
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES, false);
+
+        // Регистрируем модуль для работы с Java 8 Time API
+        mapper.registerModule(new JavaTimeModule());
+
+        // Отключаем сериализацию дат как timestamps
+        mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
 
     private static AppSettings instance;
 
@@ -130,6 +150,14 @@ public class AppSettings {
      */
     public void saveLastSnapshotPath(String path) {
         this.lastSnapshotPath = path;
+        saveSettings();
+    }
+
+    /**
+     * Сохранить коллекцию кассет
+     */
+    public void saveTapeCollection(TapeCollection collection) {
+        this.tapeCollection = collection;
         saveSettings();
     }
 }

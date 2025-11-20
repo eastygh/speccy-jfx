@@ -1,0 +1,193 @@
+package spectrum.jfx.ui.util;
+
+import spectrum.jfx.ui.model.TapeFile;
+import spectrum.jfx.ui.model.TapeSection;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+public class TapeFileParser {
+
+    /**
+     * Парсит TAP или TZX файл и заполняет список секций
+     */
+    public static void parseTapeFile(TapeFile tapeFile) throws IOException {
+        File file = new File(tapeFile.getFilePath());
+        if (!file.exists()) {
+            throw new IOException("Файл не найден: " + tapeFile.getFilePath());
+        }
+
+        tapeFile.getSections().clear();
+
+        switch (tapeFile.getType()) {
+            case TAP:
+                parseTapFile(tapeFile, file);
+                break;
+            case TZX:
+                parseTzxFile(tapeFile, file);
+                break;
+            default:
+                throw new IOException("Неподдерживаемый тип файла");
+        }
+    }
+
+    /**
+     * Парсит TAP файл
+     */
+    private static void parseTapFile(TapeFile tapeFile, File file) throws IOException {
+        try (FileInputStream fis = new FileInputStream(file)) {
+            int sectionIndex = 1;
+            byte[] lengthBytes = new byte[2];
+
+            while (fis.available() > 0) {
+                // Читаем длину блока (2 байта, little endian)
+                if (fis.read(lengthBytes) != 2) {
+                    break;
+                }
+
+                int blockLength = (lengthBytes[1] & 0xFF) << 8 | (lengthBytes[0] & 0xFF);
+
+                if (blockLength <= 0 || blockLength > fis.available()) {
+                    break;
+                }
+
+                // Читаем первый байт для определения типа блока
+                int firstByte = fis.read();
+                if (firstByte == -1) break;
+
+                TapeSection.SectionType sectionType;
+                String title = "";
+
+                if (firstByte == 0x00) {
+                    // Заголовочный блок
+                    sectionType = TapeSection.SectionType.HEADER;
+
+                    if (blockLength >= 18) {
+                        // Читаем тип программы
+                        int programType = fis.read();
+
+                        // Читаем имя файла (10 байт)
+                        byte[] nameBytes = new byte[10];
+                        fis.read(nameBytes);
+                        title = new String(nameBytes).trim().replaceAll("[\\x00-\\x1F]", "");
+
+                        // Определяем более точный тип
+                        switch (programType) {
+                            case 0: sectionType = TapeSection.SectionType.PROGRAM; break;
+                            case 1: sectionType = TapeSection.SectionType.ARRAY; break;
+                            case 2: sectionType = TapeSection.SectionType.ARRAY; break;
+                            case 3: sectionType = TapeSection.SectionType.CODE; break;
+                        }
+
+                        // Пропускаем оставшиеся байты блока
+                        fis.skip(blockLength - 12);
+                    } else {
+                        fis.skip(blockLength - 1);
+                    }
+                } else {
+                    // Блок данных
+                    sectionType = TapeSection.SectionType.DATA;
+                    title = "Данные";
+                    fis.skip(blockLength - 1);
+                }
+
+                if (title.isEmpty()) {
+                    title = sectionType.getDisplayName();
+                }
+
+                TapeSection section = new TapeSection(sectionIndex++, title, sectionType, blockLength);
+                tapeFile.getSections().add(section);
+            }
+        }
+    }
+
+    /**
+     * Парсит TZX файл (упрощенная версия)
+     */
+    private static void parseTzxFile(TapeFile tapeFile, File file) throws IOException {
+        try (FileInputStream fis = new FileInputStream(file)) {
+            // Читаем заголовок TZX
+            byte[] signature = new byte[7];
+            fis.read(signature);
+
+            if (!"ZXTape!".equals(new String(signature))) {
+                throw new IOException("Неверный формат TZX файла");
+            }
+
+            // Пропускаем EOF маркер и версию
+            fis.skip(3);
+
+            int sectionIndex = 1;
+
+            while (fis.available() > 0) {
+                int blockId = fis.read();
+                if (blockId == -1) break;
+
+                TapeSection.SectionType sectionType = TapeSection.SectionType.UNKNOWN;
+                String title = "Блок " + String.format("0x%02X", blockId);
+                int blockSize = 0;
+
+                switch (blockId) {
+                    case 0x10: // Standard Speed Data Block
+                        fis.skip(2); // Pause length
+                        blockSize = fis.read() | (fis.read() << 8);
+                        sectionType = TapeSection.SectionType.DATA;
+                        title = "Стандартные данные";
+                        fis.skip(blockSize);
+                        break;
+
+                    case 0x11: // Turbo Speed Data Block
+                        fis.skip(15); // Pilot, sync pulses, etc.
+                        int dataLen1 = fis.read();
+                        int dataLen2 = fis.read();
+                        int dataLen3 = fis.read();
+                        blockSize = dataLen1 | (dataLen2 << 8) | (dataLen3 << 16);
+                        sectionType = TapeSection.SectionType.TURBO_DATA;
+                        title = "Турбо данные";
+                        fis.skip(blockSize);
+                        break;
+
+                    case 0x20: // Pause (silence)
+                        int pauseLen = fis.read() | (fis.read() << 8);
+                        sectionType = TapeSection.SectionType.PAUSE;
+                        title = "Пауза (" + pauseLen + " мс)";
+                        blockSize = 0;
+                        break;
+
+                    case 0x30: // Text description
+                        int textLen = fis.read();
+                        byte[] textBytes = new byte[textLen];
+                        fis.read(textBytes);
+                        title = "Описание: " + new String(textBytes);
+                        blockSize = textLen;
+                        break;
+
+                    default:
+                        // Неизвестный блок, пытаемся его пропустить
+                        // Многие блоки TZX имеют переменную длину, это упрощенная обработка
+                        title = "Неизвестный блок 0x" + String.format("%02X", blockId);
+
+                        // Пытаемся прочитать длину блока из следующих байтов
+                        if (fis.available() >= 4) {
+                            int len = fis.read() | (fis.read() << 8) | (fis.read() << 16) | (fis.read() << 24);
+                            if (len > 0 && len <= fis.available()) {
+                                blockSize = len;
+                                fis.skip(len);
+                            } else {
+                                // Если длина некорректная, выходим
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                }
+
+                TapeSection section = new TapeSection(sectionIndex++, title, sectionType, blockSize);
+                // Паузы нельзя воспроизводить отдельно
+                section.setPlayable(sectionType != TapeSection.SectionType.PAUSE);
+                tapeFile.getSections().add(section);
+            }
+        }
+    }
+}

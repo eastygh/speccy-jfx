@@ -2,9 +2,11 @@ package spectrum.jfx.ui.controller;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Getter;
@@ -12,8 +14,10 @@ import lombok.Setter;
 import spectrum.jfx.hardware.SpectrumEmulator;
 import spectrum.jfx.ui.theme.ThemeManager;
 import spectrum.jfx.ui.settings.AppSettings;
+import spectrum.jfx.ui.controller.TapeLibraryController;
 
 import java.io.File;
+import java.io.IOException;
 
 @Getter
 @Setter
@@ -34,6 +38,8 @@ public class MainController {
     private MenuItem openSnapshotMenuItem;
     @FXML
     private MenuItem saveSnapshotMenuItem;
+    @FXML
+    private MenuItem tapeLibraryMenuItem;
     @FXML
     private MenuItem exitMenuItem;
     @FXML
@@ -169,6 +175,50 @@ public class MainController {
             emulator.stop();
         }
         Platform.exit();
+    }
+
+    @FXML
+    protected void onTapeLibrary() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/tape-library-view.fxml"));
+            BorderPane root = loader.load();
+
+            TapeLibraryController controller = loader.getController();
+
+            Stage libraryStage = new Stage();
+            libraryStage.setTitle("Картотека кассет TAP/TZX");
+
+            Scene libraryScene = new Scene(root, 800, 600);
+
+            // Применяем текущую тему к новому окну
+            ThemeManager.applyCurrentTheme(libraryScene);
+
+            libraryStage.setScene(libraryScene);
+            controller.setStage(libraryStage);
+
+            // Устанавливаем иконку (если есть)
+            if (scene != null && scene.getWindow() instanceof Stage) {
+                Stage mainStage = (Stage) scene.getWindow();
+                libraryStage.getIcons().addAll(mainStage.getIcons());
+            }
+
+            libraryStage.show();
+            System.out.println("Открыто окно картотеки кассет");
+
+        } catch (IOException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText("Не удалось открыть картотеку кассет");
+            alert.setContentText("Ошибка: " + e.getMessage());
+
+            // Применяем тему к диалогу
+            alert.getDialogPane().getScene().getStylesheets().clear();
+            if (scene != null) {
+                alert.getDialogPane().getScene().getStylesheets().addAll(scene.getStylesheets());
+            }
+
+            alert.showAndWait();
+        }
     }
 
     // Обработчики меню эмуляции

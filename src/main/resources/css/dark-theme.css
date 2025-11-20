@@ -141,3 +141,64 @@
 .button:pressed {
     -fx-background-color: #0d7377;
 }
+
+/* Tape Library specific styles */
+.section-header {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-text-fill: #ffffff;
+}
+
+.file-info-text {
+    -fx-font-weight: bold;
+    -fx-text-fill: #0d7377;
+}
+
+.info-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #cccccc;
+}
+
+.placeholder-text {
+    -fx-text-fill: #999999;
+    -fx-font-style: italic;
+}
+
+.status-bar {
+    -fx-background-color: #404040;
+    -fx-border-color: #555555;
+    -fx-border-width: 1 0 0 0;
+}
+
+.play-button {
+    -fx-background-color: #4caf50;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.play-button:hover {
+    -fx-background-color: #45a049;
+}
+
+.pause-button {
+    -fx-background-color: #ff9800;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.pause-button:hover {
+    -fx-background-color: #f57c00;
+}
+
+.stop-button {
+    -fx-background-color: #f44336;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.stop-button:hover {
+    -fx-background-color: #d32f2f;
+}

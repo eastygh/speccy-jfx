@@ -12,12 +12,25 @@ module spectrum.jfx {
     requires javafx.graphics;
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.dataformat.yaml;
+    requires com.fasterxml.jackson.datatype.jsr310;
 
     opens spectrum.jfx to javafx.fxml;
     exports spectrum.jfx;
+
     exports spectrum.jfx.ui;
     opens spectrum.jfx.ui to javafx.fxml;
+
     exports spectrum.jfx.ui.controller;
     opens spectrum.jfx.ui.controller to javafx.fxml;
+
+    // Экспорты и opens для Jackson сериализации
+    exports spectrum.jfx.ui.settings;
+    opens spectrum.jfx.ui.settings to com.fasterxml.jackson.databind;
+
+    exports spectrum.jfx.ui.theme;
+    opens spectrum.jfx.ui.theme to com.fasterxml.jackson.databind;
+
+    exports spectrum.jfx.ui.model;
+    opens spectrum.jfx.ui.model to com.fasterxml.jackson.databind;
 
 }
