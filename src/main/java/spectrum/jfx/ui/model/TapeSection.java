@@ -2,6 +2,7 @@ package spectrum.jfx.ui.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+import lombok.Getter;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -27,35 +28,47 @@ public class TapeSection {
         this.description = "";
     }
 
+    @Getter
     public enum SectionType {
-        HEADER("Заголовок"),
-        DATA("Данные"),
-        PROGRAM("Программа"),
-        CODE("Код"),
-        ARRAY("Массив"),
-        PAUSE("Пауза"),
-        TURBO_DATA("Турбо данные"),
-        UNKNOWN("Неизвестно");
+        HEADER,
+        DATA,
+        PROGRAM,
+        CODE,
+        ARRAY,
+        PAUSE,
+        TURBO_DATA,
+        UNKNOWN;
 
-        private final String displayName;
-
-        SectionType(String displayName) {
-            this.displayName = displayName;
+        public String getLocalizationKey() {
+            switch (this) {
+                case HEADER: return "section.type.header";
+                case DATA: return "section.type.data";
+                case PROGRAM: return "section.type.program";
+                case CODE: return "section.type.code";
+                case ARRAY: return "section.type.array";
+                case PAUSE: return "section.type.pause";
+                case TURBO_DATA: return "section.type.turboData";
+                case UNKNOWN: return "section.type.unknown";
+                default: return "section.type.unknown";
+            }
         }
 
         public String getDisplayName() {
-            return displayName;
+            // Этот метод не должен использоваться во время сериализации
+            // Используйте LocalizationManager.getInstance().getString(getLocalizationKey()) в UI
+            return name();
         }
 
         @Override
         public String toString() {
-            return displayName;
+            return name(); // Возвращаем enum name для безопасной сериализации
         }
     }
 
     @Override
     public String toString() {
-        return String.format("%02d. %s (%s) - %d байт",
-            index, title != null ? title : "Без названия", type.getDisplayName(), length);
+        // Простое toString для сериализации - локализация должна происходить в UI
+        String titleText = title != null ? title : "Untitled";
+        return String.format("%02d. %s (%s) - %d bytes", index, titleText, type.name(), length);
     }
 }

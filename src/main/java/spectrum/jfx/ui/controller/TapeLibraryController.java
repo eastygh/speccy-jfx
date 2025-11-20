@@ -15,13 +15,15 @@ import spectrum.jfx.ui.model.TapeSection;
 import spectrum.jfx.ui.settings.AppSettings;
 import spectrum.jfx.ui.theme.ThemeManager;
 import spectrum.jfx.ui.util.TapeFileParser;
+import spectrum.jfx.ui.localization.LocalizationManager;
+import spectrum.jfx.ui.localization.LocalizationManager.LocalizationChangeListener;
 
 import java.io.File;
 import java.net.URL;
 import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 
-public class TapeLibraryController implements Initializable {
+public class TapeLibraryController implements Initializable, LocalizationChangeListener {
 
     // Toolbar controls
     @FXML private Button playButton;
@@ -58,16 +60,26 @@ public class TapeLibraryController implements Initializable {
     @Setter
     private Stage stage;
 
+    private LocalizationManager localizationManager;
     private boolean isPlaying = false;
     private TapeFile currentFile = null;
     private TapeSection currentSection = null;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        // Инициализируем LocalizationManager и регистрируем слушателя
+        localizationManager = LocalizationManager.getInstance();
+        localizationManager.addLanguageChangeListener(this);
+
         // Загружаем коллекцию из настроек
         tapeCollection = AppSettings.getInstance().getTapeCollection();
         if (tapeCollection == null) {
             tapeCollection = new TapeCollection();
+        }
+
+        // Устанавливаем локализованное имя если имя пустое
+        if (tapeCollection.getName() == null || tapeCollection.getName().isEmpty()) {
+            tapeCollection.setName(localizationManager.getString("collection.defaultName"));
         }
 
         // Инициализируем списки - создаем новый ObservableList и заполняем его из коллекции
@@ -88,10 +100,11 @@ public class TapeLibraryController implements Initializable {
                     setText(null);
                     setGraphic(null);
                 } else {
-                    setText(String.format("%s (%s) - %d секций",
+                    String typeDisplayName = localizationManager.getString(file.getType().getLocalizationKey());
+                    setText(String.format("%s (%s) - %s",
                         file.getFileName(),
-                        file.getType().getDisplayName(),
-                        file.getSections().size()));
+                        typeDisplayName,
+                        localizationManager.getString("sections.count", file.getSections().size())));
                 }
             }
         });
@@ -105,7 +118,15 @@ public class TapeLibraryController implements Initializable {
                     setText(null);
                     setGraphic(null);
                 } else {
-                    setText(section.toString());
+                    String titleText = localizeTitle(section.getTitle(), section.getType());
+                    String typeDisplayName = localizationManager.getString(section.getType().getLocalizationKey());
+
+                    setText(localizationManager.getString("section.format",
+                        String.format("%02d", section.getIndex()),
+                        titleText,
+                        typeDisplayName,
+                        String.valueOf(section.getLength())));
+
                     if (!section.isPlayable()) {
                         setStyle("-fx-text-fill: gray;");
                     } else {
@@ -136,13 +157,14 @@ public class TapeLibraryController implements Initializable {
         if (file != null) {
             // Отображаем информацию о файле
             fileInfoLabel.setText(file.getFileName());
-            fileTypeLabel.setText(file.getType().getDisplayName());
+            String typeDisplayName = localizationManager.getString(file.getType().getLocalizationKey());
+            fileTypeLabel.setText(typeDisplayName);
             fileSizeLabel.setText(formatFileSize(file.getFileSize()));
 
             // Загружаем секции файла
             sectionObservableList.addAll(file.getSections());
         } else {
-            fileInfoLabel.setText("Файл не выбран");
+            fileInfoLabel.setText(localizationManager.getString("tape.noFileSelected"));
             fileTypeLabel.setText("");
             fileSizeLabel.setText("");
         }
@@ -158,20 +180,21 @@ public class TapeLibraryController implements Initializable {
 
     private void updateSectionInfo() {
         if (currentSection != null) {
-            sectionInfoLabel.setText(String.format("Секция %d: %s",
+            String localizedTitle = localizeTitle(currentSection.getTitle(), currentSection.getType());
+            sectionInfoLabel.setText(localizationManager.getString("tape.section",
                 currentSection.getIndex(),
-                currentSection.getTitle() != null ? currentSection.getTitle() : "Без названия"));
+                localizedTitle));
         } else {
             sectionInfoLabel.setText("");
         }
     }
 
     private void updateCollectionInfo() {
-        collectionInfoLabel.setText(String.format("Файлов: %d, Секций: %d",
+        collectionInfoLabel.setText(localizationManager.getString("tape.files",
             tapeCollection.getTotalFiles(),
             tapeCollection.getTotalSections()));
 
-        collectionSizeLabel.setText("Размер: " + formatFileSize(tapeCollection.getTotalSize()));
+        collectionSizeLabel.setText(localizationManager.getString("tape.size", formatFileSize(tapeCollection.getTotalSize())));
     }
 
     private void updatePlaybackControls(boolean playing) {
@@ -180,7 +203,7 @@ public class TapeLibraryController implements Initializable {
         pauseButton.setDisable(!playing);
         stopButton.setDisable(!playing);
 
-        playbackStatusLabel.setText(playing ? "Воспроизведение" : "Остановлено");
+        playbackStatusLabel.setText(playing ? localizationManager.getString("playback.playing") : localizationManager.getString("playback.stopped"));
         playbackProgressBar.setVisible(playing);
     }
 
@@ -189,15 +212,15 @@ public class TapeLibraryController implements Initializable {
     private void onPlay() {
         if (currentFile != null && currentSection != null && currentSection.isPlayable()) {
             updatePlaybackControls(true);
-            currentFileLabel.setText("Файл: " + currentFile.getFileName());
-            currentSectionLabel.setText("Секция: " + currentSection.getIndex());
-            statusLabel.setText("Воспроизведение секции " + currentSection.getIndex());
+            currentFileLabel.setText(localizationManager.getString("playback.file.prefix", currentFile.getFileName()));
+            currentSectionLabel.setText(localizationManager.getString("playback.section.prefix", currentSection.getIndex()));
+            statusLabel.setText(localizationManager.getString("playback.playingSection", currentSection.getIndex()));
 
             // TODO: Интеграция с эмулятором для воспроизведения
             System.out.println("Воспроизведение: " + currentFile.getFileName() +
                              ", секция " + currentSection.getIndex());
         } else {
-            showWarning("Выберите файл и воспроизводимую секцию");
+            showWarning(localizationManager.getString("warning.selectPlayableSection"));
         }
     }
 
@@ -205,7 +228,7 @@ public class TapeLibraryController implements Initializable {
     private void onPause() {
         if (isPlaying) {
             updatePlaybackControls(false);
-            statusLabel.setText("Пауза");
+            statusLabel.setText(localizationManager.getString("playback.paused"));
             // TODO: Интеграция с эмулятором для паузы
             System.out.println("Пауза воспроизведения");
         }
@@ -216,7 +239,7 @@ public class TapeLibraryController implements Initializable {
         updatePlaybackControls(false);
         currentFileLabel.setText("");
         currentSectionLabel.setText("");
-        statusLabel.setText("Остановлено");
+        statusLabel.setText(localizationManager.getString("playback.stopped"));
         // TODO: Интеграция с эмулятором для остановки
         System.out.println("Остановка воспроизведения");
     }
@@ -224,12 +247,12 @@ public class TapeLibraryController implements Initializable {
     @FXML
     private void onAddFile() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Добавить файл в коллекцию");
+        fileChooser.setTitle(localizationManager.getString("filechooser.tapes"));
         fileChooser.getExtensionFilters().addAll(
-            new FileChooser.ExtensionFilter("Файлы кассет", "*.tap", "*.tzx"),
-            new FileChooser.ExtensionFilter("TAP файлы", "*.tap"),
-            new FileChooser.ExtensionFilter("TZX файлы", "*.tzx"),
-            new FileChooser.ExtensionFilter("Все файлы", "*.*")
+            new FileChooser.ExtensionFilter(localizationManager.getString("filechooser.tapes"), "*.tap", "*.tzx"),
+            new FileChooser.ExtensionFilter(localizationManager.getString("filechooser.tap"), "*.tap"),
+            new FileChooser.ExtensionFilter(localizationManager.getString("filechooser.tzx"), "*.tzx"),
+            new FileChooser.ExtensionFilter(localizationManager.getString("filechooser.all"), "*.*")
         );
 
         // Устанавливаем последний использованный путь
@@ -250,7 +273,7 @@ public class TapeLibraryController implements Initializable {
 
     private void addFileToCollection(File file) {
         if (tapeCollection.containsFile(file.getAbsolutePath())) {
-            showWarning("Файл уже есть в коллекции");
+            showWarning(localizationManager.getString("tape.fileAlreadyExists"));
             return;
         }
 
@@ -269,9 +292,9 @@ public class TapeLibraryController implements Initializable {
 
             updateCollectionInfo();
             saveCollection();
-            statusLabel.setText("Добавлен: " + file.getName());
+            statusLabel.setText(localizationManager.getString("tape.fileAdded", file.getName()));
         } catch (Exception e) {
-            showError("Ошибка при добавлении файла: " + e.getMessage());
+            showError(localizationManager.getString("tape.errorAddingFile", e.getMessage()));
         }
     }
 
@@ -283,23 +306,23 @@ public class TapeLibraryController implements Initializable {
             fileObservableList.remove(selected);
             updateCollectionInfo();
             saveCollection();
-            statusLabel.setText("Удален: " + selected.getFileName());
+            statusLabel.setText(localizationManager.getString("tape.fileRemoved", selected.getFileName()));
 
             // Очищаем правую панель
             if (currentFile == selected) {
                 onFileSelected(null);
             }
         } else {
-            showWarning("Выберите файл для удаления");
+            showWarning(localizationManager.getString("warning.selectFileToRemove"));
         }
     }
 
     @FXML
     private void onClearAll() {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmation.setTitle("Подтверждение");
-        confirmation.setHeaderText("Очистить коллекцию");
-        confirmation.setContentText("Вы уверены, что хотите удалить все файлы из коллекции?");
+        confirmation.setTitle(localizationManager.getString("confirm.clearCollection.title"));
+        confirmation.setHeaderText(localizationManager.getString("confirm.clearCollection.header"));
+        confirmation.setContentText(localizationManager.getString("confirm.clearCollection.content"));
 
         // Применяем тему к диалогу
         ThemeManager.applyThemeToDialog(confirmation);
@@ -312,7 +335,7 @@ public class TapeLibraryController implements Initializable {
                 onFileSelected(null);
                 updateCollectionInfo();
                 saveCollection();
-                statusLabel.setText("Коллекция очищена");
+                statusLabel.setText(localizationManager.getString("tape.collectionCleared"));
             }
         });
     }
@@ -320,7 +343,7 @@ public class TapeLibraryController implements Initializable {
     @FXML
     private void onGotoSection() {
         if (currentSection != null && currentSection.isPlayable()) {
-            statusLabel.setText("Переход к секции " + currentSection.getIndex());
+            statusLabel.setText(localizationManager.getString("playback.gotoingSection", currentSection.getIndex()));
             // TODO: Интеграция с эмулятором для перехода к секции
             System.out.println("Переход к секции " + currentSection.getIndex());
         }
@@ -332,7 +355,7 @@ public class TapeLibraryController implements Initializable {
 
     private void showWarning(String message) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Предупреждение");
+        alert.setTitle(localizationManager.getString("warning.title"));
         alert.setHeaderText(null);
         alert.setContentText(message);
         ThemeManager.applyThemeToDialog(alert);
@@ -341,7 +364,7 @@ public class TapeLibraryController implements Initializable {
 
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Ошибка");
+        alert.setTitle(localizationManager.getString("error.title"));
         alert.setHeaderText(null);
         alert.setContentText(message);
         ThemeManager.applyThemeToDialog(alert);
@@ -349,8 +372,92 @@ public class TapeLibraryController implements Initializable {
     }
 
     private String formatFileSize(long bytes) {
-        if (bytes < 1024) return bytes + " байт";
-        if (bytes < 1024 * 1024) return String.format("%.1f КБ", bytes / 1024.0);
-        return String.format("%.1f МБ", bytes / (1024.0 * 1024.0));
+        if (bytes < 1024) return bytes + " " + localizationManager.getString("filesize.bytes");
+        if (bytes < 1024 * 1024) return String.format("%.1f %s", bytes / 1024.0, localizationManager.getString("filesize.kb"));
+        return String.format("%.1f %s", bytes / (1024.0 * 1024.0), localizationManager.getString("filesize.mb"));
+    }
+
+    // Реализация LocalizationChangeListener
+    @Override
+    public void onLanguageChanged(LocalizationManager.Language newLanguage) {
+        Platform.runLater(this::updateAllUITexts);
+    }
+
+    private void updateAllUITexts() {
+        // Обновляем имя коллекции если оно было пустым (значит, использовалось по умолчанию)
+        if (tapeCollection.getName() == null || tapeCollection.getName().isEmpty() ||
+            tapeCollection.getName().equals("My Tape Collection") || tapeCollection.getName().equals("Моя коллекция кассет")) {
+            tapeCollection.setName(localizationManager.getString("collection.defaultName"));
+        }
+
+        // Обновляем информацию о коллекции
+        updateCollectionInfo();
+
+        // Обновляем статус воспроизведения
+        updatePlaybackControls(isPlaying);
+
+        // Обновляем информацию о секции
+        updateSectionInfo();
+
+        // Обновляем статус файла, если файл выбран
+        if (currentFile == null) {
+            fileInfoLabel.setText(localizationManager.getString("tape.noFileSelected"));
+        } else {
+            // Обновляем тип файла с локализацией
+            String typeDisplayName = localizationManager.getString(currentFile.getType().getLocalizationKey());
+            fileTypeLabel.setText(typeDisplayName);
+        }
+
+        // Обновляем списки файлов и секций для перерисовки
+        fileListView.refresh();
+        sectionListView.refresh();
+
+        // Обновляем статус по умолчанию если нет воспроизведения
+        if (!isPlaying) {
+            statusLabel.setText(localizationManager.getString("tape.ready"));
+        }
+    }
+
+    /**
+     * Локализует стандартные названия секций из парсера
+     */
+    private String localizeTitle(String title, TapeSection.SectionType type) {
+        if (title == null || title.isEmpty()) {
+            return localizationManager.getString("section.untitled");
+        }
+
+        // Локализуем стандартные названия от парсера
+        switch (title) {
+            case "Data":
+                return localizationManager.getString("parser.data.block");
+            case "Standard Data":
+                return localizationManager.getString("parser.data.standard");
+            case "Turbo Data":
+                return localizationManager.getString("parser.data.turbo");
+            default:
+                // Для сложных форматов (паузы, описания, блоки)
+                if (title.startsWith("Pause (") && title.endsWith(" ms)")) {
+                    // Извлекаем число миллисекунд из "Pause (XXX ms)"
+                    String msValue = title.substring(7, title.length() - 4);
+                    return localizationManager.getString("parser.pause.format", msValue);
+                }
+                if (title.startsWith("Description: ")) {
+                    // Извлекаем текст описания из "Description: XXX"
+                    String description = title.substring(13);
+                    return localizationManager.getString("parser.description.format", description);
+                }
+                if (title.startsWith("Unknown block 0x") || title.startsWith("Block 0x")) {
+                    // Извлекаем hex код из "Unknown block 0xXX" или "Block 0xXX"
+                    String hexCode = title.substring(title.indexOf("0x") + 2);
+                    if (title.startsWith("Unknown")) {
+                        return localizationManager.getString("parser.unknown.block", hexCode);
+                    } else {
+                        return localizationManager.getString("parser.block.format", hexCode);
+                    }
+                }
+
+                // Для остальных (имена программ и т.д.) возвращаем как есть
+                return title;
+        }
     }
 }

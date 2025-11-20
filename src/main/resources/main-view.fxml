@@ -9,51 +9,55 @@
         <VBox>
             <!-- Menu Bar -->
             <MenuBar fx:id="menuBar">
-                <Menu text="Файл">
-                    <MenuItem text="Открыть ROM..." fx:id="openRomMenuItem" onAction="#onOpenRom"/>
-                    <MenuItem text="Открыть снэпшот..." fx:id="openSnapshotMenuItem" onAction="#onOpenSnapshot"/>
+                <Menu text="%menu.file">
+                    <MenuItem text="%menu.file.openRom" fx:id="openRomMenuItem" onAction="#onOpenRom"/>
+                    <MenuItem text="%menu.file.openSnapshot" fx:id="openSnapshotMenuItem" onAction="#onOpenSnapshot"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="Сохранить снэпшот..." fx:id="saveSnapshotMenuItem" onAction="#onSaveSnapshot"/>
+                    <MenuItem text="%menu.file.saveSnapshot" fx:id="saveSnapshotMenuItem" onAction="#onSaveSnapshot"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="Картотека кассет..." fx:id="tapeLibraryMenuItem" onAction="#onTapeLibrary"/>
+                    <MenuItem text="%menu.file.tapeLibrary" fx:id="tapeLibraryMenuItem" onAction="#onTapeLibrary"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="Выход" fx:id="exitMenuItem" onAction="#onExit"/>
+                    <MenuItem text="%menu.file.exit" fx:id="exitMenuItem" onAction="#onExit"/>
                 </Menu>
-                <Menu text="Эмуляция">
-                    <MenuItem text="Пауза" fx:id="pauseMenuItem" onAction="#onPause"/>
-                    <MenuItem text="Сброс" fx:id="resetMenuItem" onAction="#onReset"/>
+                <Menu text="%menu.emulation">
+                    <MenuItem text="%menu.emulation.pause" fx:id="pauseMenuItem" onAction="#onPause"/>
+                    <MenuItem text="%menu.emulation.reset" fx:id="resetMenuItem" onAction="#onReset"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="Быстрая загрузка" fx:id="fastLoadMenuItem" onAction="#onFastLoad"/>
+                    <MenuItem text="%menu.emulation.fastLoad" fx:id="fastLoadMenuItem" onAction="#onFastLoad"/>
                 </Menu>
-                <Menu text="Настройки">
-                    <Menu text="Масштаб">
-                        <RadioMenuItem text="x1" fx:id="zoom1MenuItem" onAction="#onZoom1"/>
-                        <RadioMenuItem text="x2" fx:id="zoom2MenuItem" onAction="#onZoom2" selected="true"/>
-                        <RadioMenuItem text="x3" fx:id="zoom3MenuItem" onAction="#onZoom3"/>
+                <Menu text="%menu.settings">
+                    <Menu text="%menu.settings.zoom">
+                        <RadioMenuItem text="%menu.settings.zoom.x1" fx:id="zoom1MenuItem" onAction="#onZoom1"/>
+                        <RadioMenuItem text="%menu.settings.zoom.x2" fx:id="zoom2MenuItem" onAction="#onZoom2" selected="true"/>
+                        <RadioMenuItem text="%menu.settings.zoom.x3" fx:id="zoom3MenuItem" onAction="#onZoom3"/>
                     </Menu>
-                    <Menu text="Тема">
-                        <RadioMenuItem text="Системная" fx:id="themeSystemMenuItem" onAction="#onThemeSystem" selected="true"/>
-                        <RadioMenuItem text="Светлая" fx:id="themeLightMenuItem" onAction="#onThemeLight"/>
-                        <RadioMenuItem text="Темная" fx:id="themeDarkMenuItem" onAction="#onThemeDark"/>
+                    <Menu text="%menu.settings.theme">
+                        <RadioMenuItem text="%menu.settings.theme.system" fx:id="themeSystemMenuItem" onAction="#onThemeSystem" selected="true"/>
+                        <RadioMenuItem text="%menu.settings.theme.light" fx:id="themeLightMenuItem" onAction="#onThemeLight"/>
+                        <RadioMenuItem text="%menu.settings.theme.dark" fx:id="themeDarkMenuItem" onAction="#onThemeDark"/>
                     </Menu>
-                    <MenuItem text="Настройки..." fx:id="settingsMenuItem" onAction="#onSettings"/>
+                    <Menu text="%menu.settings.language">
+                        <RadioMenuItem text="%menu.settings.language.english" fx:id="languageEnglishMenuItem" onAction="#onLanguageEnglish"/>
+                        <RadioMenuItem text="%menu.settings.language.russian" fx:id="languageRussianMenuItem" onAction="#onLanguageRussian"/>
+                    </Menu>
+                    <MenuItem text="%menu.settings.preferences" fx:id="settingsMenuItem" onAction="#onSettings"/>
                 </Menu>
-                <Menu text="Справка">
-                    <MenuItem text="О программе" fx:id="aboutMenuItem" onAction="#onAbout"/>
+                <Menu text="%menu.help">
+                    <MenuItem text="%menu.help.about" fx:id="aboutMenuItem" onAction="#onAbout"/>
                 </Menu>
             </MenuBar>
 
             <!-- Toolbar -->
             <ToolBar fx:id="toolBar">
-                <Button text="Открыть ROM" fx:id="openRomButton" onAction="#onOpenRom"/>
+                <Button text="%btn.openRom" fx:id="openRomButton" onAction="#onOpenRom"/>
                 <Separator/>
-                <Button text="Пауза" fx:id="pauseButton" onAction="#onPause"/>
-                <Button text="Сброс" fx:id="resetButton" onAction="#onReset"/>
+                <Button text="%btn.pause" fx:id="pauseButton" onAction="#onPause"/>
+                <Button text="%btn.reset" fx:id="resetButton" onAction="#onReset"/>
                 <Separator/>
-                <Button text="Снэпшот" fx:id="snapshotButton" onAction="#onOpenSnapshot"/>
-                <Button text="Сохранить" fx:id="saveButton" onAction="#onSaveSnapshot"/>
+                <Button text="%btn.snapshot" fx:id="snapshotButton" onAction="#onOpenSnapshot"/>
+                <Button text="%btn.save" fx:id="saveButton" onAction="#onSaveSnapshot"/>
                 <Separator/>
-                <Button text="Настройки" fx:id="settingsButton" onAction="#onSettings"/>
+                <Button text="%btn.settings" fx:id="settingsButton" onAction="#onSettings"/>
             </ToolBar>
         </VBox>
     </top>

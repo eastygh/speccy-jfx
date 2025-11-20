@@ -9,6 +9,7 @@ import javafx.stage.Stage;
 import spectrum.jfx.ui.controller.MainController;
 import spectrum.jfx.ui.theme.ThemeManager;
 import spectrum.jfx.ui.settings.AppSettings;
+import spectrum.jfx.ui.localization.LocalizationManager;
 import spectrum.jfx.hardware.SpectrumEmulator;
 
 import java.io.IOException;
@@ -23,8 +24,11 @@ public class GUIApplication extends Application {
 
         // Загружаем сохраненные настройки
         AppSettings settings = AppSettings.getInstance();
+        LocalizationManager localizationManager = LocalizationManager.getInstance();
 
         FXMLLoader fxmlLoader = new FXMLLoader(GUIApplication.class.getResource("/main-view.fxml"));
+        // Устанавливаем resource bundle для загрузчика FXML
+        fxmlLoader.setResources(java.util.ResourceBundle.getBundle("messages", localizationManager.getCurrentLanguage().getLocale()));
         BorderPane root = fxmlLoader.load();
 
         SpectrumEmulator emulator = new SpectrumEmulator();
@@ -69,7 +73,7 @@ public class GUIApplication extends Application {
         // Передаем ссылку на сцену в контроллер для переключения тем
         controller.setScene(scene);
 
-        stage.setTitle("ZX Spectrum Emulator");
+        stage.setTitle(localizationManager.getString("app.title"));
         stage.setScene(scene);
 
         // Устанавливаем минимальный размер окна

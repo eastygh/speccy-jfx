@@ -10,28 +10,28 @@
     <!-- Toolbar -->
     <top>
         <ToolBar>
-            <Button text="▶" fx:id="playButton" onAction="#onPlay" styleClass="play-button">
-                <tooltip><Tooltip text="Воспроизвести выбранную секцию"/></tooltip>
+            <Button text="%btn.play" fx:id="playButton" onAction="#onPlay" styleClass="play-button">
+                <tooltip><Tooltip text="%tooltip.play"/></tooltip>
             </Button>
-            <Button text="⏸" fx:id="pauseButton" onAction="#onPause" styleClass="pause-button">
-                <tooltip><Tooltip text="Пауза/остановка воспроизведения"/></tooltip>
+            <Button text="%btn.pause" fx:id="pauseButton" onAction="#onPause" styleClass="pause-button">
+                <tooltip><Tooltip text="%tooltip.pause"/></tooltip>
             </Button>
-            <Button text="⏹" fx:id="stopButton" onAction="#onStop" styleClass="stop-button">
-                <tooltip><Tooltip text="Остановить воспроизведение"/></tooltip>
-            </Button>
-            <Separator/>
-            <Button text="Добавить файл" fx:id="addFileButton" onAction="#onAddFile">
-                <tooltip><Tooltip text="Добавить TAP или TZX файл в коллекцию"/></tooltip>
-            </Button>
-            <Button text="Удалить файл" fx:id="removeFileButton" onAction="#onRemoveFile">
-                <tooltip><Tooltip text="Удалить выбранный файл из коллекции"/></tooltip>
+            <Button text="%btn.stop" fx:id="stopButton" onAction="#onStop" styleClass="stop-button">
+                <tooltip><Tooltip text="%tooltip.stop"/></tooltip>
             </Button>
             <Separator/>
-            <Button text="Очистить всё" fx:id="clearAllButton" onAction="#onClearAll">
-                <tooltip><Tooltip text="Очистить всю коллекцию"/></tooltip>
+            <Button text="%btn.addFile" fx:id="addFileButton" onAction="#onAddFile">
+                <tooltip><Tooltip text="%tooltip.addFile"/></tooltip>
+            </Button>
+            <Button text="%btn.removeFile" fx:id="removeFileButton" onAction="#onRemoveFile">
+                <tooltip><Tooltip text="%tooltip.removeFile"/></tooltip>
+            </Button>
+            <Separator/>
+            <Button text="%btn.clearAll" fx:id="clearAllButton" onAction="#onClearAll">
+                <tooltip><Tooltip text="%tooltip.clearAll"/></tooltip>
             </Button>
             <Region HBox.hgrow="ALWAYS"/>
-            <Label fx:id="statusLabel" text="Готов"/>
+            <Label fx:id="statusLabel" text="%tape.ready"/>
         </ToolBar>
     </top>
 
@@ -44,11 +44,11 @@
                     <Insets top="10" right="10" bottom="10" left="10"/>
                 </padding>
 
-                <Label text="Коллекция кассет" styleClass="section-header"/>
+                <Label text="%tape.collection" styleClass="section-header"/>
 
                 <ListView fx:id="fileListView" VBox.vgrow="ALWAYS">
                     <placeholder>
-                        <Label text="Коллекция пуста&#10;Добавьте TAP или TZX файлы"
+                        <Label text="%tape.collectionEmpty"
                                textAlignment="CENTER" styleClass="placeholder-text"/>
                     </placeholder>
                 </ListView>
@@ -70,8 +70,8 @@
 
                 <!-- Selected file info -->
                 <VBox spacing="3">
-                    <Label text="Информация о файле" styleClass="section-header"/>
-                    <Label fx:id="fileInfoLabel" text="Файл не выбран"
+                    <Label text="%tape.fileInfo" styleClass="section-header"/>
+                    <Label fx:id="fileInfoLabel" text="%tape.noFileSelected"
                            styleClass="file-info-text" wrapText="true"/>
                     <Label fx:id="fileTypeLabel" text="" styleClass="info-text"/>
                     <Label fx:id="fileSizeLabel" text="" styleClass="info-text"/>
@@ -81,11 +81,11 @@
 
                 <!-- File sections -->
                 <VBox VBox.vgrow="ALWAYS" spacing="5">
-                    <Label text="Секции файла" styleClass="section-header"/>
+                    <Label text="%tape.fileSections" styleClass="section-header"/>
 
                     <ListView fx:id="sectionListView" VBox.vgrow="ALWAYS">
                         <placeholder>
-                            <Label text="Выберите файл для просмотра секций"
+                            <Label text="%tape.noSectionsAvailable"
                                    textAlignment="CENTER" styleClass="placeholder-text"/>
                         </placeholder>
                     </ListView>
@@ -93,9 +93,9 @@
 
                 <!-- Section controls -->
                 <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Button text="Перейти к секции" fx:id="gotoSectionButton" onAction="#onGotoSection"
+                    <Button text="%btn.gotoSection" fx:id="gotoSectionButton" onAction="#onGotoSection"
                             disable="true">
-                        <tooltip><Tooltip text="Перейти к выбранной секции"/></tooltip>
+                        <tooltip><Tooltip text="%tooltip.gotoSection"/></tooltip>
                     </Button>
                     <Label fx:id="sectionInfoLabel" text="" styleClass="info-text"/>
                 </HBox>
@@ -109,7 +109,7 @@
             <padding>
                 <Insets top="5" right="10" bottom="5" left="10"/>
             </padding>
-            <Label fx:id="playbackStatusLabel" text="Остановлено"/>
+            <Label fx:id="playbackStatusLabel" text="%tape.stopped"/>
             <Separator orientation="VERTICAL"/>
             <Label fx:id="currentFileLabel" text=""/>
             <Separator orientation="VERTICAL"/>

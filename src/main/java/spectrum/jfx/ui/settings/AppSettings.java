@@ -24,6 +24,9 @@ public class AppSettings {
     // Настройки темы
     private ThemeManager.Theme theme = ThemeManager.Theme.SYSTEM;
 
+    // Настройки языка
+    private String language = ""; // Пустая строка = автоопределение
+
     // Настройки эмулятора
     private int zoomLevel = 2; // X2 по умолчанию
     private boolean fastLoad = false;
@@ -158,6 +161,14 @@ public class AppSettings {
      */
     public void saveTapeCollection(TapeCollection collection) {
         this.tapeCollection = collection;
+        saveSettings();
+    }
+
+    /**
+     * Сохранить настройки языка
+     */
+    public void saveLanguage(String language) {
+        this.language = language;
         saveSettings();
     }
 }

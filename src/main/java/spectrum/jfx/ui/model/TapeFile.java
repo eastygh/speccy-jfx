@@ -46,23 +46,27 @@ public class TapeFile {
     }
 
     public enum TapeType {
-        TAP("TAP файл"),
-        TZX("TZX файл"),
-        UNKNOWN("Неизвестный");
+        TAP,
+        TZX,
+        UNKNOWN;
 
-        private final String displayName;
-
-        TapeType(String displayName) {
-            this.displayName = displayName;
+        public String getLocalizationKey() {
+            return switch (this) {
+                case TAP -> "tape.type.tap";
+                case TZX -> "tape.type.tzx";
+                case UNKNOWN -> "tape.type.unknown";
+            };
         }
 
         public String getDisplayName() {
-            return displayName;
+            // Этот метод не должен использоваться во время сериализации
+            // Используйте LocalizationManager.getInstance().getString(getLocalizationKey()) в UI
+            return name();
         }
 
         @Override
         public String toString() {
-            return displayName;
+            return name(); // Возвращаем enum name для безопасной сериализации
         }
     }
 }

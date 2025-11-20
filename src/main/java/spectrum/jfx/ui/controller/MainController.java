@@ -14,14 +14,15 @@ import lombok.Setter;
 import spectrum.jfx.hardware.SpectrumEmulator;
 import spectrum.jfx.ui.theme.ThemeManager;
 import spectrum.jfx.ui.settings.AppSettings;
-import spectrum.jfx.ui.controller.TapeLibraryController;
+import spectrum.jfx.ui.localization.LocalizationManager;
+import spectrum.jfx.ui.localization.LocalizationManager.LocalizationChangeListener;
 
 import java.io.File;
 import java.io.IOException;
 
 @Getter
 @Setter
-public class MainController {
+public class MainController implements LocalizationChangeListener {
 
     @FXML
     public VBox videoContainer;
@@ -61,6 +62,10 @@ public class MainController {
     @FXML
     private RadioMenuItem themeDarkMenuItem;
     @FXML
+    private RadioMenuItem languageEnglishMenuItem;
+    @FXML
+    private RadioMenuItem languageRussianMenuItem;
+    @FXML
     private MenuItem settingsMenuItem;
     @FXML
     private MenuItem aboutMenuItem;
@@ -82,8 +87,13 @@ public class MainController {
     private SpectrumEmulator emulator;
     private Scene scene;
     private boolean isPaused = false;
+    private LocalizationManager localizationManager;
 
     public void initialize() {
+        // Получаем экземпляр LocalizationManager и регистрируем слушателя
+        localizationManager = LocalizationManager.getInstance();
+        localizationManager.addLanguageChangeListener(this);
+
         // Группировка радиокнопок масштаба
         ToggleGroup zoomGroup = new ToggleGroup();
         zoom1MenuItem.setToggleGroup(zoomGroup);
@@ -95,15 +105,23 @@ public class MainController {
         themeSystemMenuItem.setToggleGroup(themeGroup);
         themeLightMenuItem.setToggleGroup(themeGroup);
         themeDarkMenuItem.setToggleGroup(themeGroup);
+
+        // Группировка радиокнопок языка
+        ToggleGroup languageGroup = new ToggleGroup();
+        languageEnglishMenuItem.setToggleGroup(languageGroup);
+        languageRussianMenuItem.setToggleGroup(languageGroup);
+
+        // Устанавливаем текущий язык
+        updateLanguageSelection();
     }
 
     // Обработчики файлового меню
     @FXML
     protected void onOpenRom() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Выберите ROM файл");
+        fileChooser.setTitle(localizationManager.getString("filechooser.rom.title", "Select ROM file"));
         fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("ROM файлы", "*.rom", "*.bin")
+            new FileChooser.ExtensionFilter(localizationManager.getString("filechooser.rom", "ROM files"), "*.rom", "*.bin")
         );
 
         // Устанавливаем последний использованный путь
@@ -121,16 +139,16 @@ public class MainController {
         if (file != null && emulator != null) {
             settings.saveLastRomPath(file.getAbsolutePath());
             // TODO: Реализовать загрузку ROM файла
-            System.out.println("Загружается ROM: " + file.getAbsolutePath());
+            System.out.println(localizationManager.getString("tape.loadingRom", "Loading ROM: {0}", file.getName()));
         }
     }
 
     @FXML
     protected void onOpenSnapshot() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Выберите файл снэпшота");
+        fileChooser.setTitle(localizationManager.getString("filechooser.snapshot.title"));
         fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("Снэпшоты", "*.z80", "*.sna", "*.szx")
+            new FileChooser.ExtensionFilter(localizationManager.getString("filechooser.snapshot"), "*.z80", "*.sna", "*.szx")
         );
 
         // Устанавливаем последний использованный путь
@@ -148,16 +166,16 @@ public class MainController {
         if (file != null && emulator != null) {
             settings.saveLastSnapshotPath(file.getAbsolutePath());
             // TODO: Реализовать загрузку снэпшота
-            System.out.println("Загружается снэпшот: " + file.getAbsolutePath());
+            System.out.println(localizationManager.getString("tape.loadingSnapshot", file.getName()));
         }
     }
 
     @FXML
     protected void onSaveSnapshot() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Сохранить снэпшот");
+        fileChooser.setTitle(localizationManager.getString("filechooser.snapshot.save"));
         fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("Z80 снэпшот", "*.z80")
+            new FileChooser.ExtensionFilter("Z80 snapshot", "*.z80")
         );
 
         Stage stage = (Stage) menuBar.getScene().getWindow();
@@ -165,7 +183,7 @@ public class MainController {
 
         if (file != null && emulator != null) {
             // TODO: Реализовать сохранение снэпшота
-            System.out.println("Сохраняется снэпшот: " + file.getAbsolutePath());
+            System.out.println(localizationManager.getString("tape.savingSnapshot", file.getName()));
         }
     }
 
@@ -181,12 +199,14 @@ public class MainController {
     protected void onTapeLibrary() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/tape-library-view.fxml"));
+            // Set the resource bundle for the FXML loader
+            loader.setResources(java.util.ResourceBundle.getBundle("messages", localizationManager.getCurrentLanguage().getLocale()));
             BorderPane root = loader.load();
 
             TapeLibraryController controller = loader.getController();
 
             Stage libraryStage = new Stage();
-            libraryStage.setTitle("Картотека кассет TAP/TZX");
+            libraryStage.setTitle(localizationManager.getString("tape.title"));
 
             Scene libraryScene = new Scene(root, 800, 600);
 
@@ -203,13 +223,13 @@ public class MainController {
             }
 
             libraryStage.show();
-            System.out.println("Открыто окно картотеки кассет");
+            System.out.println(localizationManager.getString("tape.tapeLibraryOpened"));
 
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Ошибка");
-            alert.setHeaderText("Не удалось открыть картотеку кассет");
-            alert.setContentText("Ошибка: " + e.getMessage());
+            alert.setTitle(localizationManager.getString("error.title"));
+            alert.setHeaderText(localizationManager.getString("error.tapeLibraryFailed"));
+            alert.setContentText(localizationManager.getString("error.message", e.getMessage()));
 
             // Применяем тему к диалогу
             alert.getDialogPane().getScene().getStylesheets().clear();
@@ -243,7 +263,7 @@ public class MainController {
     protected void onReset() {
         if (emulator != null) {
             //emulator.reset();
-            System.out.println("Эмулятор сброшен");
+            System.out.println(localizationManager.getString("tape.resetEmulator"));
         }
     }
 
@@ -283,9 +303,9 @@ public class MainController {
     @FXML
     protected void onSettings() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Настройки");
-        alert.setHeaderText("Настройки эмулятора");
-        alert.setContentText("Окно настроек будет реализовано позже.");
+        alert.setTitle(localizationManager.getString("settings.title"));
+        alert.setHeaderText(localizationManager.getString("settings.header"));
+        alert.setContentText(localizationManager.getString("settings.content"));
 
         // Применяем текущую тему к диалогу
         alert.getDialogPane().getScene().getStylesheets().clear();
@@ -300,9 +320,9 @@ public class MainController {
     @FXML
     protected void onAbout() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("О программе");
-        alert.setHeaderText("ZX Spectrum Эмулятор");
-        alert.setContentText("Эмулятор компьютера ZX Spectrum 48K\nВерсия 1.0\n\nРазработано с использованием JavaFX");
+        alert.setTitle(localizationManager.getString("about.title"));
+        alert.setHeaderText(localizationManager.getString("about.header"));
+        alert.setContentText(localizationManager.getString("about.content"));
 
         // Применяем текущую тему к диалогу
         alert.getDialogPane().getScene().getStylesheets().clear();
@@ -338,6 +358,47 @@ public class MainController {
             ThemeManager.applyTheme(scene, ThemeManager.Theme.DARK);
             AppSettings.getInstance().saveTheme(ThemeManager.Theme.DARK);
             System.out.println("Применена темная тема");
+        }
+    }
+
+    // Обработчики переключения языка
+    @FXML
+    protected void onLanguageEnglish() {
+        localizationManager.setLanguage(LocalizationManager.Language.ENGLISH);
+    }
+
+    @FXML
+    protected void onLanguageRussian() {
+        localizationManager.setLanguage(LocalizationManager.Language.RUSSIAN);
+    }
+
+    // Реализация LocalizationChangeListener
+    @Override
+    public void onLanguageChanged(LocalizationManager.Language newLanguage) {
+        Platform.runLater(this::updateLanguageSelection);
+        updateDynamicTexts();
+    }
+
+    private void updateLanguageSelection() {
+        LocalizationManager.Language currentLanguage = localizationManager.getCurrentLanguage();
+        switch (currentLanguage) {
+            case ENGLISH:
+                languageEnglishMenuItem.setSelected(true);
+                break;
+            case RUSSIAN:
+                languageRussianMenuItem.setSelected(true);
+                break;
+        }
+    }
+
+    private void updateDynamicTexts() {
+        // Обновляем тексты, которые могут меняться динамически (например, кнопка паузы)
+        if (isPaused) {
+            pauseMenuItem.setText(localizationManager.getString("menu.emulation.resume"));
+            pauseButton.setText(localizationManager.getString("btn.resume"));
+        } else {
+            pauseMenuItem.setText(localizationManager.getString("menu.emulation.pause"));
+            pauseButton.setText(localizationManager.getString("btn.pause"));
         }
     }
 

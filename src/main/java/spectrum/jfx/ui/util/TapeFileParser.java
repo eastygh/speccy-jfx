@@ -15,7 +15,7 @@ public class TapeFileParser {
     public static void parseTapeFile(TapeFile tapeFile) throws IOException {
         File file = new File(tapeFile.getFilePath());
         if (!file.exists()) {
-            throw new IOException("Файл не найден: " + tapeFile.getFilePath());
+            throw new IOException("File not found: " + tapeFile.getFilePath());
         }
 
         tapeFile.getSections().clear();
@@ -28,7 +28,7 @@ public class TapeFileParser {
                 parseTzxFile(tapeFile, file);
                 break;
             default:
-                throw new IOException("Неподдерживаемый тип файла");
+                throw new IOException("Unsupported file type");
         }
     }
 
@@ -88,12 +88,12 @@ public class TapeFileParser {
                 } else {
                     // Блок данных
                     sectionType = TapeSection.SectionType.DATA;
-                    title = "Данные";
+                    title = "Data"; // Будет локализован в UI
                     fis.skip(blockLength - 1);
                 }
 
                 if (title.isEmpty()) {
-                    title = sectionType.getDisplayName();
+                    title = sectionType.name(); // Используем enum name, локализация в UI
                 }
 
                 TapeSection section = new TapeSection(sectionIndex++, title, sectionType, blockLength);
@@ -112,7 +112,7 @@ public class TapeFileParser {
             fis.read(signature);
 
             if (!"ZXTape!".equals(new String(signature))) {
-                throw new IOException("Неверный формат TZX файла");
+                throw new IOException("Invalid TZX file format");
             }
 
             // Пропускаем EOF маркер и версию
@@ -125,7 +125,7 @@ public class TapeFileParser {
                 if (blockId == -1) break;
 
                 TapeSection.SectionType sectionType = TapeSection.SectionType.UNKNOWN;
-                String title = "Блок " + String.format("0x%02X", blockId);
+                String title = "Block 0x" + String.format("%02X", blockId);
                 int blockSize = 0;
 
                 switch (blockId) {
@@ -133,7 +133,7 @@ public class TapeFileParser {
                         fis.skip(2); // Pause length
                         blockSize = fis.read() | (fis.read() << 8);
                         sectionType = TapeSection.SectionType.DATA;
-                        title = "Стандартные данные";
+                        title = "Standard Data"; // Будет локализован в UI
                         fis.skip(blockSize);
                         break;
 
@@ -144,14 +144,14 @@ public class TapeFileParser {
                         int dataLen3 = fis.read();
                         blockSize = dataLen1 | (dataLen2 << 8) | (dataLen3 << 16);
                         sectionType = TapeSection.SectionType.TURBO_DATA;
-                        title = "Турбо данные";
+                        title = "Turbo Data"; // Будет локализован в UI
                         fis.skip(blockSize);
                         break;
 
                     case 0x20: // Pause (silence)
                         int pauseLen = fis.read() | (fis.read() << 8);
                         sectionType = TapeSection.SectionType.PAUSE;
-                        title = "Пауза (" + pauseLen + " мс)";
+                        title = "Pause (" + pauseLen + " ms)"; // Будет локализован в UI
                         blockSize = 0;
                         break;
 
@@ -159,14 +159,14 @@ public class TapeFileParser {
                         int textLen = fis.read();
                         byte[] textBytes = new byte[textLen];
                         fis.read(textBytes);
-                        title = "Описание: " + new String(textBytes);
+                        title = "Description: " + new String(textBytes); // Будет локализован в UI
                         blockSize = textLen;
                         break;
 
                     default:
                         // Неизвестный блок, пытаемся его пропустить
                         // Многие блоки TZX имеют переменную длину, это упрощенная обработка
-                        title = "Неизвестный блок 0x" + String.format("%02X", blockId);
+                        title = "Unknown block 0x" + String.format("%02X", blockId);
 
                         // Пытаемся прочитать длину блока из следующих байтов
                         if (fis.available() >= 4) {

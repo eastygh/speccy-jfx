@@ -18,7 +18,7 @@ public class TapeCollection {
     private List<TapeFile> files;
 
     public TapeCollection() {
-        this("Моя коллекция кассет");
+        this(""); // Пустое имя будет заменено на локализованное в UI
     }
 
     public TapeCollection(String name) {
