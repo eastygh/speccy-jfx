@@ -94,6 +94,9 @@ public class MainController implements LocalizationChangeListener {
         localizationManager = LocalizationManager.getInstance();
         localizationManager.addLanguageChangeListener(this);
 
+        // Отключаем перехват клавиш для кнопок панели инструментов
+        disableKeyboardNavigationForButtons();
+
         // Группировка радиокнопок масштаба
         ToggleGroup zoomGroup = new ToggleGroup();
         zoom1MenuItem.setToggleGroup(zoomGroup);
@@ -247,13 +250,13 @@ public class MainController implements LocalizationChangeListener {
         if (emulator != null) {
             if (isPaused) {
                 //emulator.resume();
-                pauseMenuItem.setText("Пауза");
-                pauseButton.setText("Пауза");
+                pauseMenuItem.setText(localizationManager.getString("menu.emulation.pause"));
+                pauseButton.setText(localizationManager.getString("btn.pause"));
                 isPaused = false;
             } else {
                 //emulator.pause();
-                pauseMenuItem.setText("Продолжить");
-                pauseButton.setText("Продолжить");
+                pauseMenuItem.setText(localizationManager.getString("menu.emulation.resume"));
+                pauseButton.setText(localizationManager.getString("btn.resume"));
                 isPaused = true;
             }
         }
@@ -377,6 +380,19 @@ public class MainController implements LocalizationChangeListener {
     public void onLanguageChanged(LocalizationManager.Language newLanguage) {
         Platform.runLater(this::updateLanguageSelection);
         updateDynamicTexts();
+    }
+
+    /**
+     * Отключает перехват клавиш (особенно пробела) кнопками панели инструментов
+     */
+    private void disableKeyboardNavigationForButtons() {
+        // Отключаем фокус по табуляции для кнопок
+        openRomButton.setFocusTraversable(false);
+        pauseButton.setFocusTraversable(false);
+        resetButton.setFocusTraversable(false);
+        snapshotButton.setFocusTraversable(false);
+        saveButton.setFocusTraversable(false);
+        settingsButton.setFocusTraversable(false);
     }
 
     private void updateLanguageSelection() {

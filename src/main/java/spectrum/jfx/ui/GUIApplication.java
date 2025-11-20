@@ -108,10 +108,26 @@ public class GUIApplication extends Application {
 
         stage.show();
 
-        scene.setOnKeyPressed(event -> emulator.getKeyboard().keyPressed(event.getCode()));
-        scene.setOnKeyReleased(event -> emulator.getKeyboard().keyReleased(event.getCode()));
+        // Настраиваем videoContainer для получения событий клавиатуры
+        controller.getVideoContainer().setFocusTraversable(true);
+        controller.getVideoContainer().setOnKeyPressed(event -> {
+            emulator.getKeyboard().keyPressed(event.getCode());
+            event.consume(); // Предотвращаем дальнейшую обработку события
+        });
+        controller.getVideoContainer().setOnKeyReleased(event -> {
+            emulator.getKeyboard().keyReleased(event.getCode());
+            event.consume(); // Предотвращаем дальнейшую обработку события
+        });
+
+        // Возвращаем фокус на videoContainer при клике мыши
+        controller.getVideoContainer().setOnMouseClicked(event -> {
+            controller.getVideoContainer().requestFocus();
+        });
 
         controller.getVideoContainer().getChildren().add((Node) emulator.getVideo().getCanvas());
+
+        // Устанавливаем фокус на videoContainer после добавления canvas
+        controller.getVideoContainer().requestFocus();
 
         byte[] rom = loadFile("/roms/48.rom");
         emulator.getMemory().loadROM(rom);

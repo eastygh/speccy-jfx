@@ -8,10 +8,9 @@ import spectrum.jfx.hardware.input.Keyboard;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.memory.MemoryImpl;
 import spectrum.jfx.hardware.sound.Sound;
-import spectrum.jfx.hardware.tape.CassetteDeck;
+import spectrum.jfx.hardware.tape.CassetteDeckImpl;
 import spectrum.jfx.hardware.ula.*;
 import spectrum.jfx.hardware.video.ScanlineVideoImpl;
-import spectrum.jfx.hardware.video.SimpleVideoImpl;
 import spectrum.jfx.hardware.video.Video;
 import spectrum.jfx.z80core.NotifyOps;
 import spectrum.jfx.z80core.Z80;
@@ -27,7 +26,7 @@ public class SpectrumEmulator implements NotifyOps {
     Keyboard keyboard;
     Sound sound;
     Ula ula;
-    CassetteDeck cassetteDeck;
+    CassetteDeckImpl cassetteDeck;
 
     // Состояние эмуляции
     private boolean running;
@@ -52,11 +51,12 @@ public class SpectrumEmulator implements NotifyOps {
         this.ula.addPortListener(0xfe, keyboard); // keyboard
         this.ula.addPortListener(0xfe, (OutPortListener) video); // Border color
 
-        this.cassetteDeck = new CassetteDeck(ula);
+        this.cassetteDeck = new CassetteDeckImpl(null);
         this.ula.addPortListener(0xfe, (InPortListener) cassetteDeck); // cassette deck IN
         this.ula.addPortListener(0xfe, (OutPortListener) cassetteDeck); // cassette deck OUT
         if (video instanceof ClockListener videoClock) {
             this.ula.addClockListener(videoClock);
+            this.ula.addClockListener(cassetteDeck);
         }
 
         cpu = new Z80(ula, this);

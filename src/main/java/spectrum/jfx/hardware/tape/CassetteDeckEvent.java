@@ -1,4 +1,6 @@
 package spectrum.jfx.hardware.tape;
 
-public interface CassetteDeck {
+public interface CassetteDeckEvent {
+
+
 }
