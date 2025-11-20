@@ -10,6 +10,8 @@ module spectrum.jfx {
     requires java.desktop;
     requires static lombok;
     requires javafx.graphics;
+    requires com.fasterxml.jackson.databind;
+    requires com.fasterxml.jackson.dataformat.yaml;
 
     opens spectrum.jfx to javafx.fxml;
     exports spectrum.jfx;

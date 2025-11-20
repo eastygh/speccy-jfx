@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="spectrum.jfx.ui.controller.MainController">
+    <top>
+        <VBox>
+            <!-- Menu Bar -->
+            <MenuBar fx:id="menuBar">
+                <Menu text="Файл">
+                    <MenuItem text="Открыть ROM..." fx:id="openRomMenuItem" onAction="#onOpenRom"/>
+                    <MenuItem text="Открыть снэпшот..." fx:id="openSnapshotMenuItem" onAction="#onOpenSnapshot"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem text="Сохранить снэпшот..." fx:id="saveSnapshotMenuItem" onAction="#onSaveSnapshot"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem text="Выход" fx:id="exitMenuItem" onAction="#onExit"/>
+                </Menu>
+                <Menu text="Эмуляция">
+                    <MenuItem text="Пауза" fx:id="pauseMenuItem" onAction="#onPause"/>
+                    <MenuItem text="Сброс" fx:id="resetMenuItem" onAction="#onReset"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem text="Быстрая загрузка" fx:id="fastLoadMenuItem" onAction="#onFastLoad"/>
+                </Menu>
+                <Menu text="Настройки">
+                    <Menu text="Масштаб">
+                        <RadioMenuItem text="x1" fx:id="zoom1MenuItem" onAction="#onZoom1"/>
+                        <RadioMenuItem text="x2" fx:id="zoom2MenuItem" onAction="#onZoom2" selected="true"/>
+                        <RadioMenuItem text="x3" fx:id="zoom3MenuItem" onAction="#onZoom3"/>
+                    </Menu>
+                    <Menu text="Тема">
+                        <RadioMenuItem text="Системная" fx:id="themeSystemMenuItem" onAction="#onThemeSystem" selected="true"/>
+                        <RadioMenuItem text="Светлая" fx:id="themeLightMenuItem" onAction="#onThemeLight"/>
+                        <RadioMenuItem text="Темная" fx:id="themeDarkMenuItem" onAction="#onThemeDark"/>
+                    </Menu>
+                    <MenuItem text="Настройки..." fx:id="settingsMenuItem" onAction="#onSettings"/>
+                </Menu>
+                <Menu text="Справка">
+                    <MenuItem text="О программе" fx:id="aboutMenuItem" onAction="#onAbout"/>
+                </Menu>
+            </MenuBar>
+
+            <!-- Toolbar -->
+            <ToolBar fx:id="toolBar">
+                <Button text="Открыть ROM" fx:id="openRomButton" onAction="#onOpenRom"/>
+                <Separator/>
+                <Button text="Пауза" fx:id="pauseButton" onAction="#onPause"/>
+                <Button text="Сброс" fx:id="resetButton" onAction="#onReset"/>
+                <Separator/>
+                <Button text="Снэпшот" fx:id="snapshotButton" onAction="#onOpenSnapshot"/>
+                <Button text="Сохранить" fx:id="saveButton" onAction="#onSaveSnapshot"/>
+                <Separator/>
+                <Button text="Настройки" fx:id="settingsButton" onAction="#onSettings"/>
+            </ToolBar>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox alignment="CENTER" spacing="10.0">
+            <padding>
+                <Insets bottom="10.0" left="20.0" right="20.0" top="10.0"/>
+            </padding>
+            <VBox spacing="10.0" fx:id="videoContainer" alignment="CENTER">
+            </VBox>
+        </VBox>
+    </center>
+</BorderPane>

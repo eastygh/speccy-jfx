@@ -1,0 +1,86 @@
+/* Светлая тема для ZX Spectrum Emulator */
+
+.root {
+    -fx-base: #f4f4f4;
+    -fx-background: #ffffff;
+    -fx-control-inner-background: #ffffff;
+    -fx-accent: #0078d4;
+    -fx-default-button: #0078d4;
+    -fx-focus-color: #0078d4;
+    -fx-faint-focus-color: #0078d422;
+    -fx-text-fill: #000000;
+}
+
+/* Menu Bar */
+.menu-bar {
+    -fx-background-color: #f0f0f0;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.menu-bar .menu {
+    -fx-text-fill: #333333;
+}
+
+.menu-bar .menu:hover {
+    -fx-background-color: #e0e0e0;
+}
+
+.menu-bar .menu:showing {
+    -fx-background-color: #d0d0d0;
+}
+
+/* Menu Items */
+.context-menu {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 8, 0, 0, 2);
+}
+
+.menu-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: #333333;
+}
+
+.menu-item:hover,
+.menu-item:focused {
+    -fx-background-color: #e3f2fd;
+}
+
+.radio-menu-item:selected {
+    -fx-background-color: #e3f2fd;
+}
+
+/* Toolbar */
+.tool-bar {
+    -fx-background-color: #f8f8f8;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.tool-bar .button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #333333;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-padding: 4 8 4 8;
+}
+
+.tool-bar .button:hover {
+    -fx-background-color: #e0e0e0;
+}
+
+.tool-bar .button:pressed {
+    -fx-background-color: #d0d0d0;
+}
+
+/* Separator */
+.separator {
+    -fx-background-color: #e0e0e0;
+}
+
+/* BorderPane center area */
+.border-pane > .center {
+    -fx-background-color: #f9f9f9;
+}
