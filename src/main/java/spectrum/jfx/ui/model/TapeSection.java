@@ -14,6 +14,7 @@ public class TapeSection {
     private int length;
     private String description;
     private boolean isPlayable;
+    private byte[] data; // Данные секции для HEX редактора
 
     public TapeSection() {
         // Конструктор по умолчанию для Jackson

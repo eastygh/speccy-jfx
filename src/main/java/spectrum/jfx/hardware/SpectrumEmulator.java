@@ -56,9 +56,10 @@ public class SpectrumEmulator implements NotifyOps {
         this.ula.addPortListener(0xfe, (OutPortListener) cassetteDeck); // cassette deck OUT
         if (video instanceof ClockListener videoClock) {
             this.ula.addClockListener(videoClock);
-            this.ula.addClockListener(cassetteDeck);
         }
-
+        if (cassetteDeck instanceof ClockListener cassetteDeckClock) {
+            this.ula.addClockListener(cassetteDeckClock);
+        }
         cpu = new Z80(ula, this);
         //cpu = new Z80CPU(memory);
     }

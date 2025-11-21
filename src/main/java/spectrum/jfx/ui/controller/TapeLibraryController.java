@@ -4,7 +4,9 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -142,6 +144,19 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
 
         sectionListView.getSelectionModel().selectedItemProperty().addListener(
             (obs, oldSection, newSection) -> onSectionSelected(newSection));
+
+        // Обработчик двойного клика для открытия HEX редактора
+        sectionListView.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                TapeSection selectedSection = sectionListView.getSelectionModel().getSelectedItem();
+
+                if (selectedSection != null && selectedSection.getData() != null) {
+                    openHexEditor(selectedSection);
+                } else if (selectedSection != null) {
+                    showWarning(localizationManager.getString("warning.sectionNoData"));
+                }
+            }
+        });
 
         // Изначально отключаем кнопки воспроизведения
         updatePlaybackControls(false);
@@ -458,6 +473,51 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
 
                 // Для остальных (имена программ и т.д.) возвращаем как есть
                 return title;
+        }
+    }
+
+    /**
+     * Открывает HEX редактор для выбранной секции
+     */
+    private void openHexEditor(TapeSection section) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/hex-editor-view.fxml"));
+
+            // Set the resource bundle for the FXML loader
+            loader.setResources(java.util.ResourceBundle.getBundle("messages", localizationManager.getCurrentLanguage().getLocale()));
+
+            // Загружаем корневой элемент (BorderPane)
+            Object root = loader.load();
+
+            // Создаем Scene из корневого элемента
+            Scene hexScene = new Scene((javafx.scene.Parent) root, 900, 700);
+
+            HexEditorController hexController = loader.getController();
+
+            Stage hexStage = new Stage();
+            hexStage.setTitle(localizationManager.getString("hex.editor.title",
+                section.getIndex(),
+                localizeTitle(section.getTitle(), section.getType())));
+
+            // Применяем текущую тему к новому окну
+            ThemeManager.applyCurrentTheme(hexScene);
+
+            hexStage.setScene(hexScene);
+            hexStage.setMinWidth(700);
+            hexStage.setMinHeight(500);
+
+            hexController.setStage(hexStage);
+            hexController.setSectionData(section);
+
+            // Устанавливаем иконку (если есть)
+            if (stage != null) {
+                hexStage.getIcons().addAll(stage.getIcons());
+            }
+
+            hexStage.show();
+
+        } catch (Exception e) {
+            showError(localizationManager.getString("error.message", e.getMessage()));
         }
     }
 }

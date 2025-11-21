@@ -4,12 +4,9 @@ import lombok.RequiredArgsConstructor;
 import spectrum.jfx.hardware.ula.ClockListener;
 import spectrum.jfx.hardware.ula.InPortListener;
 import spectrum.jfx.hardware.ula.OutPortListener;
-import spectrum.jfx.hardware.ula.Ula;
 
 @RequiredArgsConstructor
-public class CassetteDeckImpl implements InPortListener, OutPortListener,
-        TapeSignal, CassetteDeck, ClockListener
-{
+public class CassetteDeckImpl implements InPortListener, OutPortListener, CassetteDeck, ClockListener {
 
     private final CassetteDeckEvent eventsReceiver;
     private final PilotToneSignal pilotToneSignal = new PilotToneSignal(2168, true);
@@ -31,11 +28,6 @@ public class CassetteDeckImpl implements InPortListener, OutPortListener,
     @Override
     public void outPort(int port, int value) {
 
-    }
-
-    @Override
-    public boolean earLevelAt(long tstates) {
-        return false;
     }
 
     @Override

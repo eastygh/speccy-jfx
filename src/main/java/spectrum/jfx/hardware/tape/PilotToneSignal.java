@@ -13,6 +13,7 @@ public class PilotToneSignal implements TapeSignal {
         this.initialLevel = initialLevel;
     }
 
+    @Override
     public void setMotor(boolean on, long currentTStates) {
         if (motorOn == on) return;
         motorOn = on;

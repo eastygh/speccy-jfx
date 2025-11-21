@@ -59,6 +59,10 @@ public class TapeFileParser {
                 TapeSection.SectionType sectionType;
                 String title = "";
 
+                // Создаем буфер для данных секции
+                byte[] sectionData = new byte[blockLength];
+                sectionData[0] = (byte) firstByte; // Первый байт уже прочитан
+
                 if (firstByte == 0x00) {
                     // Заголовочный блок
                     sectionType = TapeSection.SectionType.HEADER;
@@ -66,10 +70,12 @@ public class TapeFileParser {
                     if (blockLength >= 18) {
                         // Читаем тип программы
                         int programType = fis.read();
+                        sectionData[1] = (byte) programType;
 
                         // Читаем имя файла (10 байт)
                         byte[] nameBytes = new byte[10];
                         fis.read(nameBytes);
+                        System.arraycopy(nameBytes, 0, sectionData, 2, 10);
                         title = new String(nameBytes).trim().replaceAll("[\\x00-\\x1F]", "");
 
                         // Определяем более точный тип
@@ -80,16 +86,16 @@ public class TapeFileParser {
                             case 3: sectionType = TapeSection.SectionType.CODE; break;
                         }
 
-                        // Пропускаем оставшиеся байты блока
-                        fis.skip(blockLength - 12);
+                        // Читаем оставшиеся байты блока
+                        fis.read(sectionData, 12, blockLength - 12);
                     } else {
-                        fis.skip(blockLength - 1);
+                        fis.read(sectionData, 1, blockLength - 1);
                     }
                 } else {
                     // Блок данных
                     sectionType = TapeSection.SectionType.DATA;
                     title = "Data"; // Будет локализован в UI
-                    fis.skip(blockLength - 1);
+                    fis.read(sectionData, 1, blockLength - 1);
                 }
 
                 if (title.isEmpty()) {
@@ -97,6 +103,7 @@ public class TapeFileParser {
                 }
 
                 TapeSection section = new TapeSection(sectionIndex++, title, sectionType, blockLength);
+                section.setData(sectionData); // Сохраняем данные секции
                 tapeFile.getSections().add(section);
             }
         }
@@ -127,6 +134,7 @@ public class TapeFileParser {
                 TapeSection.SectionType sectionType = TapeSection.SectionType.UNKNOWN;
                 String title = "Block 0x" + String.format("%02X", blockId);
                 int blockSize = 0;
+                byte[] sectionData = null;
 
                 switch (blockId) {
                     case 0x10: // Standard Speed Data Block
@@ -134,7 +142,10 @@ public class TapeFileParser {
                         blockSize = fis.read() | (fis.read() << 8);
                         sectionType = TapeSection.SectionType.DATA;
                         title = "Standard Data"; // Будет локализован в UI
-                        fis.skip(blockSize);
+
+                        // Читаем данные блока
+                        sectionData = new byte[blockSize];
+                        fis.read(sectionData);
                         break;
 
                     case 0x11: // Turbo Speed Data Block
@@ -145,7 +156,10 @@ public class TapeFileParser {
                         blockSize = dataLen1 | (dataLen2 << 8) | (dataLen3 << 16);
                         sectionType = TapeSection.SectionType.TURBO_DATA;
                         title = "Turbo Data"; // Будет локализован в UI
-                        fis.skip(blockSize);
+
+                        // Читаем данные блока
+                        sectionData = new byte[blockSize];
+                        fis.read(sectionData);
                         break;
 
                     case 0x20: // Pause (silence)
@@ -153,6 +167,7 @@ public class TapeFileParser {
                         sectionType = TapeSection.SectionType.PAUSE;
                         title = "Pause (" + pauseLen + " ms)"; // Будет локализован в UI
                         blockSize = 0;
+                        sectionData = new byte[0]; // Пустые данные для паузы
                         break;
 
                     case 0x30: // Text description
@@ -161,6 +176,7 @@ public class TapeFileParser {
                         fis.read(textBytes);
                         title = "Description: " + new String(textBytes); // Будет локализован в UI
                         blockSize = textLen;
+                        sectionData = textBytes;
                         break;
 
                     default:
@@ -173,7 +189,8 @@ public class TapeFileParser {
                             int len = fis.read() | (fis.read() << 8) | (fis.read() << 16) | (fis.read() << 24);
                             if (len > 0 && len <= fis.available()) {
                                 blockSize = len;
-                                fis.skip(len);
+                                sectionData = new byte[len];
+                                fis.read(sectionData);
                             } else {
                                 // Если длина некорректная, выходим
                                 break;
@@ -184,6 +201,7 @@ public class TapeFileParser {
                 }
 
                 TapeSection section = new TapeSection(sectionIndex++, title, sectionType, blockSize);
+                section.setData(sectionData); // Сохраняем данные секции
                 // Паузы нельзя воспроизводить отдельно
                 section.setPlayable(sectionType != TapeSection.SectionType.PAUSE);
                 tapeFile.getSections().add(section);
