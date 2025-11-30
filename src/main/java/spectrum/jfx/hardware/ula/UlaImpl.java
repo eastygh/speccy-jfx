@@ -1,7 +1,6 @@
 package spectrum.jfx.hardware.ula;
 
 import lombok.Getter;
-import lombok.Setter;
 import spectrum.jfx.hardware.memory.Memory;
 
 import java.util.HashMap;

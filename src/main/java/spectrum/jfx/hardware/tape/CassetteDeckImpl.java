@@ -4,7 +4,6 @@ import spectrum.jfx.hardware.ula.ClockListener;
 import spectrum.jfx.hardware.ula.InPortListener;
 import spectrum.jfx.hardware.ula.OutPortListener;
 import spectrum.jfx.model.TapeFile;
-import spectrum.jfx.model.TapeSection;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

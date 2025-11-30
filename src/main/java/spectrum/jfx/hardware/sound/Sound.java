@@ -13,7 +13,7 @@ import java.util.concurrent.BlockingQueue;
 
 /**
  * Эмуляция звуковой системы ZX Spectrum
- *
+ * <p>
  * ZX Spectrum имеет простую звуковую систему - только один динамик (beeper),
  * управляемый битом 4 порта 0xFE. Состояние динамика может быть:
  * 0 - выключен (низкий уровень)
@@ -26,7 +26,7 @@ public class Sound {
     private static final int SAMPLE_RATE = 44100;     // 44.1 kHz
     private static final int BUFFER_SIZE = 1024;      // Размер буфера
     private static final AudioFormat AUDIO_FORMAT = new AudioFormat(
-        SAMPLE_RATE, 16, 1, true, false
+            SAMPLE_RATE, 16, 1, true, false
     );
 
     // Состояние звуковой системы
@@ -73,8 +73,8 @@ public class Sound {
             audioLine.start();
 
             logger.info("Audio line initialized: {} Hz, {} bit, {} channel",
-                AUDIO_FORMAT.getSampleRate(), AUDIO_FORMAT.getSampleSizeInBits(),
-                AUDIO_FORMAT.getChannels());
+                    AUDIO_FORMAT.getSampleRate(), AUDIO_FORMAT.getSampleSizeInBits(),
+                    AUDIO_FORMAT.getChannels());
 
         } catch (LineUnavailableException e) {
             logger.warn("Audio line unavailable, sound will be disabled: {}", e.getMessage());
@@ -138,6 +138,7 @@ public class Sound {
 
     /**
      * Обновляет звуковую систему
+     *
      * @param cycles количество тактов процессора
      */
     public void update(int cycles) {
@@ -178,6 +179,7 @@ public class Sound {
 
     /**
      * Устанавливает состояние динамика
+     *
      * @param state true - включен, false - выключен
      */
     public void setBeeperState(boolean state) {
@@ -196,6 +198,7 @@ public class Sound {
 
     /**
      * Устанавливает громкость звука
+     *
      * @param volume громкость от 0.0 до 1.0
      */
     public void setVolume(float volume) {
@@ -232,8 +235,9 @@ public class Sound {
 
     /**
      * Создает короткий звуковой сигнал (beep)
+     *
      * @param frequency частота в Герцах
-     * @param duration продолжительность в миллисекундах
+     * @param duration  продолжительность в миллисекундах
      */
     public void playBeep(int frequency, int duration) {
         if (!soundEnabled) {
@@ -273,7 +277,7 @@ public class Sound {
 
         // Временно создаем отдельную линию для beep
         SourceDataLine beepLine = (SourceDataLine) AudioSystem.getLine(
-            new DataLine.Info(SourceDataLine.class, AUDIO_FORMAT));
+                new DataLine.Info(SourceDataLine.class, AUDIO_FORMAT));
         beepLine.open(AUDIO_FORMAT);
         beepLine.start();
         beepLine.write(buffer, 0, buffer.length);
@@ -322,12 +326,12 @@ public class Sound {
      */
     public String getStatusInfo() {
         return String.format(
-            "Sound: %s, Volume: %.1f%%, Beeper: %s, Buffer: %d/%d",
-            soundEnabled ? "ON" : "OFF",
-            volume * 100,
-            beeperState ? "ON" : "OFF",
-            audioBuffer.size(),
-            audioBuffer.remainingCapacity() + audioBuffer.size()
+                "Sound: %s, Volume: %.1f%%, Beeper: %s, Buffer: %d/%d",
+                soundEnabled ? "ON" : "OFF",
+                volume * 100,
+                beeperState ? "ON" : "OFF",
+                audioBuffer.size(),
+                audioBuffer.remainingCapacity() + audioBuffer.size()
         );
     }
 

@@ -4,8 +4,11 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import lombok.Setter;
 import spectrum.jfx.model.TapeSection;
@@ -17,10 +20,14 @@ import java.util.ResourceBundle;
 
 public class HexEditorController implements Initializable, LocalizationChangeListener {
 
-    @FXML private Label titleLabel;
-    @FXML private Label infoLabel;
-    @FXML private VBox hexDataContainer;
-    @FXML private Button closeButton;
+    @FXML
+    private Label titleLabel;
+    @FXML
+    private Label infoLabel;
+    @FXML
+    private VBox hexDataContainer;
+    @FXML
+    private Button closeButton;
 
     @Setter
     private Stage stage;
@@ -54,11 +61,11 @@ public class HexEditorController implements Initializable, LocalizationChangeLis
         String localizedTitle = localizeTitle(tapeSection.getTitle(), tapeSection.getType());
         String typeDisplayName = localizationManager.getString(tapeSection.getType().getLocalizationKey());
         titleLabel.setText(localizationManager.getString("hex.editor.title",
-            tapeSection.getIndex(), localizedTitle));
+                tapeSection.getIndex(), localizedTitle));
 
         // Обновляем информацию
         infoLabel.setText(localizationManager.getString("hex.editor.info",
-            typeDisplayName, tapeSection.getLength()));
+                typeDisplayName, tapeSection.getLength()));
 
         // Генерируем HEX представление
         generateHexDisplay();

@@ -4,7 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.ui.settings.AppSettings;
 
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Slf4j
@@ -24,9 +27,17 @@ public class LocalizationManager {
             this.locale = locale;
         }
 
-        public String getCode() { return code; }
-        public String getDisplayName() { return displayName; }
-        public Locale getLocale() { return locale; }
+        public String getCode() {
+            return code;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public Locale getLocale() {
+            return locale;
+        }
 
         public static Language fromCode(String code) {
             for (Language lang : values()) {

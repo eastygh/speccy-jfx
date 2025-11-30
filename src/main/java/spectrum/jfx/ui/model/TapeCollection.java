@@ -51,7 +51,7 @@ public class TapeCollection {
 
     public boolean containsFile(String filePath) {
         return files.stream()
-            .anyMatch(file -> file.getFilePath().equals(filePath));
+                .anyMatch(file -> file.getFilePath().equals(filePath));
     }
 
     @JsonIgnore
@@ -62,15 +62,15 @@ public class TapeCollection {
     @JsonIgnore
     public long getTotalSize() {
         return files.stream()
-            .mapToLong(TapeFile::getFileSize)
-            .sum();
+                .mapToLong(TapeFile::getFileSize)
+                .sum();
     }
 
     @JsonIgnore
     public int getTotalSections() {
         return files.stream()
-            .mapToInt(file -> file.getSections().size())
-            .sum();
+                .mapToInt(file -> file.getSections().size())
+                .sum();
     }
 
     private void updateLastModified() {

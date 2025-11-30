@@ -6,11 +6,11 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-import spectrum.jfx.ui.controller.MainController;
-import spectrum.jfx.ui.theme.ThemeManager;
-import spectrum.jfx.ui.settings.AppSettings;
-import spectrum.jfx.ui.localization.LocalizationManager;
 import spectrum.jfx.hardware.SpectrumEmulator;
+import spectrum.jfx.ui.controller.MainController;
+import spectrum.jfx.ui.localization.LocalizationManager;
+import spectrum.jfx.ui.settings.AppSettings;
+import spectrum.jfx.ui.theme.ThemeManager;
 
 import java.io.IOException;
 import java.util.logging.Logger;

@@ -5,17 +5,17 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
 import spectrum.jfx.hardware.SpectrumEmulator;
-import spectrum.jfx.ui.theme.ThemeManager;
-import spectrum.jfx.ui.settings.AppSettings;
 import spectrum.jfx.ui.localization.LocalizationManager;
 import spectrum.jfx.ui.localization.LocalizationManager.LocalizationChangeListener;
+import spectrum.jfx.ui.settings.AppSettings;
+import spectrum.jfx.ui.theme.ThemeManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -124,7 +124,7 @@ public class MainController implements LocalizationChangeListener {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(localizationManager.getString("filechooser.rom.title", "Select ROM file"));
         fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter(localizationManager.getString("filechooser.rom", "ROM files"), "*.rom", "*.bin")
+                new FileChooser.ExtensionFilter(localizationManager.getString("filechooser.rom", "ROM files"), "*.rom", "*.bin")
         );
 
         // Устанавливаем последний использованный путь
@@ -151,7 +151,7 @@ public class MainController implements LocalizationChangeListener {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(localizationManager.getString("filechooser.snapshot.title"));
         fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter(localizationManager.getString("filechooser.snapshot"), "*.z80", "*.sna", "*.szx")
+                new FileChooser.ExtensionFilter(localizationManager.getString("filechooser.snapshot"), "*.z80", "*.sna", "*.szx")
         );
 
         // Устанавливаем последний использованный путь
@@ -178,7 +178,7 @@ public class MainController implements LocalizationChangeListener {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(localizationManager.getString("filechooser.snapshot.save"));
         fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("Z80 snapshot", "*.z80")
+                new FileChooser.ExtensionFilter("Z80 snapshot", "*.z80")
         );
 
         Stage stage = (Stage) menuBar.getScene().getWindow();

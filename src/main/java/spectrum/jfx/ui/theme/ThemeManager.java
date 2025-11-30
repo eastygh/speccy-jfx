@@ -4,7 +4,6 @@ import javafx.scene.Scene;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
