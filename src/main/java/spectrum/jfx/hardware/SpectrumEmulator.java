@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.input.Keyboard;
+import spectrum.jfx.hardware.machine.Emulator;
 import spectrum.jfx.hardware.machine.HardwareProvider;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.memory.MemoryImpl;
@@ -18,7 +19,7 @@ import spectrum.jfx.z80core.NotifyOps;
 import spectrum.jfx.z80core.Z80;
 
 @Getter
-public class SpectrumEmulator implements NotifyOps, HardwareProvider {
+public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     private static final Logger logger = LoggerFactory.getLogger(SpectrumEmulator.class);
 
@@ -31,8 +32,8 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider {
     CassetteDeckImpl cassetteDeck;
 
     // Состояние эмуляции
-    private boolean running;
-    private boolean paused;
+    private volatile boolean running;
+    private volatile boolean paused;
 
     // Настройки тактовой частоты
     private static final long CPU_FREQUENCY_HZ = 3500000; // 3.5 MHz для ZX Spectrum 48K
@@ -132,6 +133,16 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider {
         logger.info(paused ? "Emulation paused" : "Emulation resumed");
     }
 
+    @Override
+    public void pause() {
+        paused = true;
+    }
+
+    @Override
+    public void resume() {
+        paused = false;
+    }
+
     /**
      * Главный цикл эмуляции
      */
@@ -191,6 +202,16 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider {
         // Рендеринг кадра
         video.render();
         ula.requestInterrupt();
+    }
+
+    @Override
+    public void reset() {
+
+    }
+
+    @Override
+    public Emulator getEmulator() {
+        return this;
     }
 
 }

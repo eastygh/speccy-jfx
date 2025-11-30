@@ -80,18 +80,10 @@ public class TapeFileParser {
 
                         // Определяем более точный тип
                         switch (programType) {
-                            case 0:
-                                sectionType = TapeSection.SectionType.PROGRAM;
-                                break;
-                            case 1:
-                                sectionType = TapeSection.SectionType.ARRAY;
-                                break;
-                            case 2:
-                                sectionType = TapeSection.SectionType.ARRAY;
-                                break;
-                            case 3:
-                                sectionType = TapeSection.SectionType.CODE;
-                                break;
+                            case 0 -> sectionType = TapeSection.SectionType.PROGRAM;
+                            case 1, 2 -> sectionType = TapeSection.SectionType.ARRAY;
+                            case 3 -> sectionType = TapeSection.SectionType.CODE;
+                            default -> sectionType = TapeSection.SectionType.UNKNOWN;
                         }
 
                         // Читаем оставшиеся байты блока

@@ -19,6 +19,9 @@
             <Button text="%btn.stop" fx:id="stopButton" onAction="#onStop" styleClass="stop-button">
                 <tooltip><Tooltip text="%tooltip.stop"/></tooltip>
             </Button>
+            <Button text="%btn.fastLoad" fx:id="fastLoad" onAction="#onFastLoad">
+                <tooltip><Tooltip text="%tooltip.fastLoad"/></tooltip>
+            </Button>
             <Separator/>
             <Button text="%btn.addFile" fx:id="addFileButton" onAction="#onAddFile">
                 <tooltip><Tooltip text="%tooltip.addFile"/></tooltip>

@@ -49,6 +49,8 @@
 
             <!-- Toolbar -->
             <ToolBar fx:id="toolBar">
+                <Button text="%btn.tapeLibrary" fx:id="tapeLibraryButton" onAction="#onTapeLibraryOpen"/>
+                <Separator/>
                 <Button text="%btn.openRom" fx:id="openRomButton" onAction="#onOpenRom"/>
                 <Separator/>
                 <Button text="%btn.pause" fx:id="pauseButton" onAction="#onPause"/>

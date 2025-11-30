@@ -1,6 +1,7 @@
 package spectrum.jfx.ui.controller;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -71,6 +72,8 @@ public class MainController implements LocalizationChangeListener {
     private MenuItem aboutMenuItem;
 
     // Toolbar buttons
+    @FXML
+    private Button tapeLibraryButton;
     @FXML
     private Button openRomButton;
     @FXML
@@ -416,6 +419,10 @@ public class MainController implements LocalizationChangeListener {
             pauseMenuItem.setText(localizationManager.getString("menu.emulation.pause"));
             pauseButton.setText(localizationManager.getString("btn.pause"));
         }
+    }
+
+    public void onTapeLibraryOpen(ActionEvent actionEvent) {
+        onTapeLibrary();
     }
 
 }

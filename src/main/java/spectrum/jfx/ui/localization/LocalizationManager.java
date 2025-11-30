@@ -15,7 +15,7 @@ public class LocalizationManager {
 
     public enum Language {
         ENGLISH("en", "English", Locale.ENGLISH),
-        RUSSIAN("ru", "Русский", new Locale("ru", "RU"));
+        RUSSIAN("ru", "Русский", new Locale("ru","RU"));
 
         private final String code;
         private final String displayName;

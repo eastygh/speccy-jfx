@@ -3,6 +3,7 @@ package spectrum.jfx.ui.controller;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -13,6 +14,7 @@ import javafx.stage.Stage;
 import lombok.Setter;
 import spectrum.jfx.hardware.tape.CassetteDeck;
 import spectrum.jfx.hardware.tape.CassetteDeckEvent;
+import spectrum.jfx.hardware.tape.FastTapLoader;
 import spectrum.jfx.machine.Machine;
 import spectrum.jfx.model.TapeFile;
 import spectrum.jfx.model.TapeSection;
@@ -39,6 +41,8 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
     private Button pauseButton;
     @FXML
     private Button stopButton;
+    @FXML
+    private Button fastLoad;
     @FXML
     private Button addFileButton;
     @FXML
@@ -601,4 +605,25 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
 
     }
 
+    public void onFastLoad(ActionEvent actionEvent) {
+        if (currentFile == null) {
+            showError(localizationManager.getString("tape.noFileSelected"));
+            return;
+        }
+        Machine.withHardwareProvider(
+                provider -> {
+                    provider.getEmulator().pause();
+                    FastTapLoader fastLoader = new FastTapLoader(currentFile, provider.getMemory());
+                    fastLoader.load();
+                    provider.getEmulator().resume();
+                }
+        );
+
+//        fastLoader.setOnSuccess(() -> {
+//            Platform.runLater(() -> {
+//                statusLabel.setText(localizationManager.getString("tape.loaded"));
+//                updatePlaybackControls(true);
+//            });
+//        })
+    }
 }
