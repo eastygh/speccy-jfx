@@ -1,7 +1,7 @@
 package spectrum.jfx.ui.util;
 
-import spectrum.jfx.ui.model.TapeFile;
-import spectrum.jfx.ui.model.TapeSection;
+import spectrum.jfx.model.TapeFile;
+import spectrum.jfx.model.TapeSection;
 
 import java.io.File;
 import java.io.FileInputStream;

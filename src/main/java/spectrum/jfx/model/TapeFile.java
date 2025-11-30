@@ -1,4 +1,4 @@
-package spectrum.jfx.ui.model;
+package spectrum.jfx.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
@@ -29,6 +29,13 @@ public class TapeFile {
         this.filePath = filePath;
         this.fileName = extractFileName(filePath);
         this.type = determineType(filePath);
+    }
+
+    public TapeSection getFirstPlayableSection() {
+        return sections.stream()
+                .filter(TapeSection::isPlayable)
+                .findFirst()
+                .orElse(null);
     }
 
     private String extractFileName(String path) {

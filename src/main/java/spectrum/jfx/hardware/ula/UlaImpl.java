@@ -14,9 +14,8 @@ public class UlaImpl implements Ula {
     private final Memory memory;
 
     private boolean interruptRequested = false;
-    @Setter
     @Getter
-    private boolean ulaAddTStates = true;
+    private final boolean ulaAddTStates = true;
     private final Map<Integer, Set<InPortListener>> inPortListeners = new HashMap<>();
     private final Map<Integer, Set<OutPortListener>> outPortListeners = new HashMap<>();
     private final ZXClock clock;
@@ -95,9 +94,6 @@ public class UlaImpl implements Ula {
 
     @Override
     public int inPort(int port) {
-        if (ulaAddTStates) {
-            clock.incrementTStates(4); // 4 clocks for read byte from bus
-        }
         int value = 0;
         if (inPortListeners.containsKey(port & 0xff)) {
             for (InPortListener listener : inPortListeners.get(port & 0xff)) {
@@ -105,19 +101,22 @@ public class UlaImpl implements Ula {
                 value = value | portValue;
             }
         }
+        if (ulaAddTStates) {
+            clock.incrementTStates(4); // 4 clocks for read byte from bus
+        }
         return value & 0xff;
     }
 
     @Override
     public void outPort(int port, int value) {
-        if (ulaAddTStates) {
-            clock.incrementTStates(4); // 4 clocks for write byte to bus
-        }
         port &= 0xff;
         if (outPortListeners.containsKey((port))) {
             for (OutPortListener listener : outPortListeners.get(port)) {
                 listener.outPort(port, value);
             }
+        }
+        if (ulaAddTStates) {
+            clock.incrementTStates(4); // 4 clocks for write byte to bus
         }
     }
 

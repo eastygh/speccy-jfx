@@ -279,9 +279,9 @@ public class Keyboard implements InPortListener {
     }
 
     @Override
-    public byte inPort(int port) {
+    public int inPort(int port) {
         int lineMask = (port & 0xFF00) >> 8;
-        return (byte) readKeyboard(lineMask);
+        return readKeyboard(lineMask) & 0xFF;
     }
 
 }

@@ -3,6 +3,7 @@ package spectrum.jfx.ui.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+import spectrum.jfx.model.TapeFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

@@ -1,8 +1,7 @@
 package spectrum.jfx.hardware.memory;
 
 import lombok.Getter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -14,15 +13,14 @@ import java.lang.invoke.VarHandle;
  * 0x4000-0x7FFF: Screen RAM (16K)
  * 0x8000-0xFFFF: User RAM (32K)
  */
+@Slf4j
 public class MemoryImpl implements Memory {
 
-    private static final Logger logger = LoggerFactory.getLogger(MemoryImpl.class);
-
     // Размеры областей памяти
-    private static final int ROM_SIZE = 16384;     // 16K ROM
-    private static final int RAM_SIZE = 49152;     // 48K RAM (16K screen + 32K user)
-    private static final int PORTS_SIZE = 65536;      // 256 портов ввода-вывода
-    private static final int TOTAL_MEMORY = 65536; // 64K total
+    public static final int ROM_SIZE = 16384;     // 16K ROM
+    public static final int RAM_SIZE = 49152;     // 48K RAM (16K screen + 32K user)
+    public static final int PORTS_SIZE = 65536;      // 256 портов ввода-вывода
+    public static final int TOTAL_MEMORY = 65536; // 64K total
 
     // Адреса границ областей памяти
     private static final int ROM_START = 0x0000;
@@ -53,7 +51,7 @@ public class MemoryImpl implements Memory {
     private boolean romWriteProtected = true;
 
     public MemoryImpl() {
-        logger.info("Initializing ZX Spectrum memory");
+        log.info("Initializing ZX Spectrum memory");
 
         rom = new byte[ROM_SIZE];
         ram = new byte[RAM_SIZE];
@@ -62,14 +60,14 @@ public class MemoryImpl implements Memory {
         // Инициализация памяти нулями
         clearMemory();
 
-        logger.info("Memory initialized: ROM={}K, RAM={}K, Ports={}K", ROM_SIZE / 1024, RAM_SIZE / 1024, PORTS_SIZE / 1024);
+        log.info("Memory initialized: ROM={}K, RAM={}K, Ports={}K", ROM_SIZE / 1024, RAM_SIZE / 1024, PORTS_SIZE / 1024);
     }
 
     /**
      * Очищает всю память
      */
     public void clearMemory() {
-        logger.debug("Clearing memory");
+        log.debug("Clearing memory");
 
         // Очистка ROM (только если не защищена от записи)
         if (!romWriteProtected) {
@@ -88,7 +86,7 @@ public class MemoryImpl implements Memory {
             ports[i] = 0;
         }
 
-        logger.debug("Memory cleared");
+        log.debug("Memory cleared");
     }
 
     /**
@@ -100,23 +98,21 @@ public class MemoryImpl implements Memory {
         }
 
         if (romData.length != ROM_SIZE) {
-            throw new IllegalArgumentException(
-                    String.format("ROM size must be %d bytes, got %d", ROM_SIZE, romData.length)
-            );
+            log.warn("ROM data size mismatch. Expected: {}, Actual: {}", ROM_SIZE, romData.length);
         }
 
-        logger.info("Loading ROM data ({} bytes)", romData.length);
+        log.info("Loading ROM data ({} bytes)", romData.length);
 
         // Временно снимаем защиту от записи для загрузки ROM
         boolean wasProtected = romWriteProtected;
         romWriteProtected = false;
 
-        System.arraycopy(romData, 0, rom, 0, ROM_SIZE);
+        System.arraycopy(romData, 0, rom, 0, Math.min(romData.length, ROM_SIZE));
 
         // Восстанавливаем защиту
         romWriteProtected = wasProtected;
 
-        logger.info("ROM loaded successfully");
+        log.info("ROM loaded successfully");
     }
 
     @Override
@@ -140,7 +136,7 @@ public class MemoryImpl implements Memory {
             return readByteVolatile(ram, ramAddress) & 0xFF;
         }
 
-        logger.warn("Invalid memory read at address: 0x{}", Integer.toHexString(address).toUpperCase());
+        log.warn("Invalid memory read at address: 0x{}", Integer.toHexString(address).toUpperCase());
         return 0xFF; // Возвращаем значение по умолчанию
     }
 
@@ -160,7 +156,7 @@ public class MemoryImpl implements Memory {
         if (address <= ROM_END) {
             // Попытка записи в ROM
             if (romWriteProtected) {
-                logger.debug("Attempted write to protected ROM at 0x{}",
+                log.debug("Attempted write to protected ROM at 0x{}",
                         Integer.toHexString(address).toUpperCase());
                 return; // Игнорируем запись в защищенную ROM
             } else {
@@ -173,9 +169,10 @@ public class MemoryImpl implements Memory {
             writeByteVolatile(ram, ramAddress, (byte) value);
             //ram[ramAddress] = (byte) value;
         } else {
-            logger.warn("Invalid memory write at address: 0x{}",
+            log.warn("Invalid memory write at address: 0x{}",
                     Integer.toHexString(address).toUpperCase());
         }
+
     }
 
     /**
@@ -252,7 +249,7 @@ public class MemoryImpl implements Memory {
      * Дамп памяти для отладки
      */
     public void dumpMemory(int startAddress, int length) {
-        logger.debug("Memory dump from 0x{} (length: {})",
+        log.debug("Memory dump from 0x{} (length: {})",
                 Integer.toHexString(startAddress).toUpperCase(), length);
 
         StringBuilder sb = new StringBuilder();
@@ -280,13 +277,13 @@ public class MemoryImpl implements Memory {
                 sb.append(c);
             }
 
-            logger.debug(sb.toString());
+            log.debug(sb.toString());
         }
     }
 
     public void setRomWriteProtected(boolean writeProtected) {
         this.romWriteProtected = writeProtected;
-        logger.debug("ROM write protection: {}", writeProtected ? "enabled" : "disabled");
+        log.debug("ROM write protection: {}", writeProtected ? "enabled" : "disabled");
     }
 
     public int getRomSize() {
@@ -300,7 +297,6 @@ public class MemoryImpl implements Memory {
     public int getTotalMemorySize() {
         return TOTAL_MEMORY;
     }
-
 
     private void writeByteVolatile(byte[] array, int index, byte value) {
         BYTE_ARRAY_HANDLE.setVolatile(array, index, value);

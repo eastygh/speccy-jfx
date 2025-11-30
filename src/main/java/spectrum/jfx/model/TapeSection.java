@@ -1,4 +1,4 @@
-package spectrum.jfx.ui.model;
+package spectrum.jfx.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
@@ -41,17 +41,16 @@ public class TapeSection {
         UNKNOWN;
 
         public String getLocalizationKey() {
-            switch (this) {
-                case HEADER: return "section.type.header";
-                case DATA: return "section.type.data";
-                case PROGRAM: return "section.type.program";
-                case CODE: return "section.type.code";
-                case ARRAY: return "section.type.array";
-                case PAUSE: return "section.type.pause";
-                case TURBO_DATA: return "section.type.turboData";
-                case UNKNOWN: return "section.type.unknown";
-                default: return "section.type.unknown";
-            }
+            return switch (this) {
+                case HEADER -> "section.type.header";
+                case DATA -> "section.type.data";
+                case PROGRAM -> "section.type.program";
+                case CODE -> "section.type.code";
+                case ARRAY -> "section.type.array";
+                case PAUSE -> "section.type.pause";
+                case TURBO_DATA -> "section.type.turboData";
+                default -> "section.type.unknown";
+            };
         }
 
         public String getDisplayName() {

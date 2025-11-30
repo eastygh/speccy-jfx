@@ -6,6 +6,8 @@ public interface TapeSignal {
 
     void setMotor(boolean on, long currentTStates);
 
+    void setSectionIndex(int index);
+
     default boolean isStarted() {
         return false;
     }

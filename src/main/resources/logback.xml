@@ -39,7 +39,7 @@
     <logger name="spectrum.jfx.hardware.sound" level="INFO" />
 
     <!-- Логирование клавиатуры -->
-    <logger name="spectrum.jfx.hardware.input" level="DEBUG" />
+    <logger name="spectrum.jfx" level="DEBUG" />
 
     <!-- Root logger -->
     <root level="INFO">

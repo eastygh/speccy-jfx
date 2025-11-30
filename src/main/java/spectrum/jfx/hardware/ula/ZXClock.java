@@ -13,7 +13,7 @@ public class ZXClock {
 
     public void incrementTStates(int amount) {
         tStates += amount;
-        clockListeners.forEach(listener -> listener.ticks((int) tStates, amount));
+        clockListeners.forEach(listener -> listener.ticks(tStates, amount));
     }
 
     public void addClockListener(ClockListener listener) {

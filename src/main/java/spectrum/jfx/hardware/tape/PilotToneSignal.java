@@ -20,6 +20,11 @@ public class PilotToneSignal implements TapeSignal {
         if (on) startTStates = currentTStates; // перезапуск «фазы»
     }
 
+    @Override
+    public void setSectionIndex(int index) {
+        // ignore
+    }
+
     public void seekToTState(long tstates) {
         startTStates = tstates;
     }
@@ -31,7 +36,7 @@ public class PilotToneSignal implements TapeSignal {
         if (dt <= 0) return initialLevel;
         long pulsesPassed = dt / pulseTStates;
         boolean toggled = (pulsesPassed & 1L) != 0L;
-        return toggled ? !initialLevel : initialLevel;
+        return toggled != initialLevel;
     }
 
 }

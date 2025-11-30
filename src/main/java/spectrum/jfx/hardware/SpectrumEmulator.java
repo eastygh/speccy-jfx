@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.input.Keyboard;
+import spectrum.jfx.hardware.machine.HardwareProvider;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.memory.MemoryImpl;
 import spectrum.jfx.hardware.sound.Sound;
@@ -12,11 +13,12 @@ import spectrum.jfx.hardware.tape.CassetteDeckImpl;
 import spectrum.jfx.hardware.ula.*;
 import spectrum.jfx.hardware.video.ScanlineVideoImpl;
 import spectrum.jfx.hardware.video.Video;
+import spectrum.jfx.machine.Machine;
 import spectrum.jfx.z80core.NotifyOps;
 import spectrum.jfx.z80core.Z80;
 
 @Getter
-public class SpectrumEmulator implements NotifyOps {
+public class SpectrumEmulator implements NotifyOps, HardwareProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(SpectrumEmulator.class);
 
@@ -51,7 +53,7 @@ public class SpectrumEmulator implements NotifyOps {
         this.ula.addPortListener(0xfe, keyboard); // keyboard
         this.ula.addPortListener(0xfe, (OutPortListener) video); // Border color
 
-        this.cassetteDeck = new CassetteDeckImpl(null);
+        this.cassetteDeck = new CassetteDeckImpl();
         this.ula.addPortListener(0xfe, (InPortListener) cassetteDeck); // cassette deck IN
         this.ula.addPortListener(0xfe, (OutPortListener) cassetteDeck); // cassette deck OUT
         if (video instanceof ClockListener videoClock) {
@@ -61,6 +63,8 @@ public class SpectrumEmulator implements NotifyOps {
             this.ula.addClockListener(cassetteDeckClock);
         }
         cpu = new Z80(ula, this);
+
+        Machine.setHardwareProvider(this);
         //cpu = new Z80CPU(memory);
     }
 

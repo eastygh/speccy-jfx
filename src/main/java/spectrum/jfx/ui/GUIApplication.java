@@ -13,21 +13,24 @@ import spectrum.jfx.ui.localization.LocalizationManager;
 import spectrum.jfx.hardware.SpectrumEmulator;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import static spectrum.jfx.hardware.util.EmulatorUtils.loadFile;
 import static spectrum.jfx.hardware.video.ZoomLevel.X2;
 
 public class GUIApplication extends Application {
 
+    private static final Logger logger = Logger.getLogger(GUIApplication.class.getName());
+
     @Override
     public void start(Stage stage) throws IOException {
 
-        // Загружаем сохраненные настройки
+        // Load saved settings
         AppSettings settings = AppSettings.getInstance();
         LocalizationManager localizationManager = LocalizationManager.getInstance();
 
         FXMLLoader fxmlLoader = new FXMLLoader(GUIApplication.class.getResource("/main-view.fxml"));
-        // Устанавливаем resource bundle для загрузчика FXML
+        // Set resource bundle for FXML loader
         fxmlLoader.setResources(java.util.ResourceBundle.getBundle("messages", localizationManager.getCurrentLanguage().getLocale()));
         BorderPane root = fxmlLoader.load();
 
@@ -35,29 +38,29 @@ public class GUIApplication extends Application {
         emulator.init();
         emulator.getVideo().setZoomLevel(X2);
 
-        // Получаем контроллер и передаем ему ссылку на эмулятор
+        // Get controller and pass emulator reference to it
         MainController controller = fxmlLoader.getController();
         controller.setEmulator(emulator);
 
-        // Рассчитываем размер окна с учетом всех UI элементов
-        // Canvas включает в себя полный размер: экран + две рамки с каждой стороны
+        // Calculate window size considering all UI elements
+        // Canvas includes full size: screen + two borders on each side
         double videoWidth = (emulator.getVideo().getScaledScreenWidth() + 2 * emulator.getVideo().getScaledBorderSize());
         double videoHeight = (emulator.getVideo().getScaledScreenHeight() + 2 * emulator.getVideo().getScaledBorderSize());
 
-        // Используем сохраненные размеры окна или рассчитанные по умолчанию
+        // Use saved window dimensions or calculated defaults
         double width = settings.isWindowMaximized() ? settings.getWindowWidth() : videoWidth + 40.0;
         double height = settings.isWindowMaximized() ? settings.getWindowHeight() : videoHeight + 40.0 + 100.0;
 
-        // Отладочный вывод
-        System.out.println("Video canvas size: " + videoWidth + "x" + videoHeight);
-        System.out.println("Window size: " + width + "x" + height);
+        // Debug output
+        logger.info("Video canvas size: " + videoWidth + "x" + videoHeight);
+        logger.info("Window size: " + width + "x" + height);
 
         Scene scene = new Scene(root, width, height);
 
-        // Применяем сохраненную тему
+        // Apply saved theme
         ThemeManager.applyTheme(scene, settings.getTheme());
 
-        // Устанавливаем соответствующую радиокнопку темы
+        // Set corresponding theme radio button
         switch (settings.getTheme()) {
             case LIGHT:
                 controller.getThemeLightMenuItem().setSelected(true);
@@ -70,25 +73,25 @@ public class GUIApplication extends Application {
                 break;
         }
 
-        // Передаем ссылку на сцену в контроллер для переключения тем
+        // Pass scene reference to controller for theme switching
         controller.setScene(scene);
 
         stage.setTitle(localizationManager.getString("app.title"));
         stage.setScene(scene);
 
-        // Устанавливаем минимальный размер окна
+        // Set minimum window size
         stage.setMinWidth(videoWidth + 40.0);
         stage.setMinHeight(videoHeight + 40.0 + 100.0);
 
-        // Разрешаем изменение размера окна
+        // Allow window resizing
         stage.setResizable(true);
 
-        // Восстанавливаем состояние окна
+        // Restore window state
         if (settings.isWindowMaximized()) {
             stage.setMaximized(true);
         }
 
-        // Сохраняем размер окна при изменении
+        // Save window size when changed
         stage.widthProperty().addListener((obs, oldWidth, newWidth) -> {
             if (!stage.isMaximized()) {
                 settings.saveWindowSize(newWidth.doubleValue(), stage.getHeight(), false);
@@ -101,32 +104,30 @@ public class GUIApplication extends Application {
             }
         });
 
-        // Сохраняем состояние максимизации
+        // Save maximization state
         stage.maximizedProperty().addListener((obs, wasMaximized, isMaximized) -> {
             settings.saveWindowSize(stage.getWidth(), stage.getHeight(), isMaximized);
         });
 
         stage.show();
 
-        // Настраиваем videoContainer для получения событий клавиатуры
+        // Configure videoContainer for keyboard events
         controller.getVideoContainer().setFocusTraversable(true);
         controller.getVideoContainer().setOnKeyPressed(event -> {
             emulator.getKeyboard().keyPressed(event.getCode());
-            event.consume(); // Предотвращаем дальнейшую обработку события
+            event.consume(); // Prevent further event processing
         });
         controller.getVideoContainer().setOnKeyReleased(event -> {
             emulator.getKeyboard().keyReleased(event.getCode());
-            event.consume(); // Предотвращаем дальнейшую обработку события
+            event.consume(); // Prevent further event processing
         });
 
-        // Возвращаем фокус на videoContainer при клике мыши
-        controller.getVideoContainer().setOnMouseClicked(event -> {
-            controller.getVideoContainer().requestFocus();
-        });
+        // Return focus to videoContainer on mouse click
+        controller.getVideoContainer().setOnMouseClicked(event -> controller.getVideoContainer().requestFocus());
 
         controller.getVideoContainer().getChildren().add((Node) emulator.getVideo().getCanvas());
 
-        // Устанавливаем фокус на videoContainer после добавления canvas
+        // Set focus on videoContainer after adding canvas
         controller.getVideoContainer().requestFocus();
 
         byte[] rom = loadFile("/roms/48.rom");

@@ -2,6 +2,6 @@ package spectrum.jfx.hardware.ula;
 
 public interface InPortListener {
 
-    byte inPort(int port);
+    int inPort(int port);
 
 }
