@@ -107,10 +107,10 @@ public class AppSettings {
             // Сохраняем настройки
             File settingsFile = new File(SETTINGS_FILE);
             mapper.writeValue(settingsFile, this);
-            log.info("Настройки сохранены в: " + SETTINGS_FILE);
+            log.info("Настройки сохранены в: {}", SETTINGS_FILE);
 
         } catch (IOException e) {
-            log.error("Ошибка при сохранении настроек: " + e.getMessage());
+            log.error("Ошибка при сохранении настроек: {}", e.getMessage());
         }
     }
 
