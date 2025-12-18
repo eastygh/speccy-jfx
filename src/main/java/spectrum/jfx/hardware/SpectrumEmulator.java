@@ -48,11 +48,14 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         //this.video = new SimpleVideoImpl(memory);
         this.video = new ScanlineVideoImpl(memory);
         this.keyboard = new Keyboard();
-        //this.sound = new Sound();
         this.keyboard.resetKeyboard();
         this.ula = new UlaImpl(memory);
         this.ula.addPortListener(0xfe, keyboard); // keyboard
         this.ula.addPortListener(0xfe, (OutPortListener) video); // Border color
+
+        this.sound = new Sound(); // Sound
+        this.ula.addPortListener(0xfe, sound); // Sound
+        this.ula.addClockListener(sound);
 
         this.cassetteDeck = new CassetteDeckImpl();
         this.ula.addPortListener(0xfe, (InPortListener) cassetteDeck); // cassette deck IN

@@ -1,7 +1,10 @@
 package spectrum.jfx.hardware.sound;
 
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import spectrum.jfx.hardware.ula.ClockListener;
+import spectrum.jfx.hardware.ula.OutPortListener;
 
 import javax.sound.sampled.*;
 import java.io.ByteArrayInputStream;
@@ -19,7 +22,7 @@ import java.util.concurrent.BlockingQueue;
  * 0 - выключен (низкий уровень)
  * 1 - включен (высокий уровень)
  */
-public class Sound {
+public class Sound implements OutPortListener, ClockListener {
     private static final Logger logger = LoggerFactory.getLogger(Sound.class);
 
     // Параметры аудио
@@ -32,6 +35,11 @@ public class Sound {
     // Состояние звуковой системы
     private boolean beeperState = false;
     private boolean soundEnabled = true;
+    /**
+     * -- GETTER --
+     * Получает текущую громкость
+     */
+    @Getter
     private float volume = 0.5f;
 
     // Аудио компоненты
@@ -42,11 +50,12 @@ public class Sound {
 
     // Состояние для генерации сэмплов
     private long totalCycles = 0;
-    private int lastBeeperChange = 0;
+    private long lastBeeperChange = 0;
 
     // Константы для расчетов
     private static final long CPU_FREQUENCY = 3500000;  // 3.5 MHz
     private static final double CYCLES_PER_SAMPLE = (double) CPU_FREQUENCY / SAMPLE_RATE;
+    private volatile long tStates = 0;
 
     public Sound() {
         logger.info("Initializing ZX Spectrum sound system");
@@ -136,6 +145,23 @@ public class Sound {
         logger.debug("Audio thread stopped");
     }
 
+    @Override
+    public void outPort(int port, int value) {
+        if ((port & 0xFF) != 0xFE) {
+            return;
+        }
+        boolean newBeeperState = (value & 0x10) != 0;
+        if (newBeeperState != beeperState) {
+            beeperState = newBeeperState;
+            lastBeeperChange = tStates;
+        }
+    }
+
+    @Override
+    public void ticks(long tStates, int delta) {
+        this.tStates = tStates;
+    }
+
     /**
      * Обновляет звуковую систему
      *
@@ -178,25 +204,6 @@ public class Sound {
     }
 
     /**
-     * Устанавливает состояние динамика
-     *
-     * @param state true - включен, false - выключен
-     */
-    public void setBeeperState(boolean state) {
-        if (this.beeperState != state) {
-            this.beeperState = state;
-            logger.debug("Beeper state changed to: {}", state);
-        }
-    }
-
-    /**
-     * Получает текущее состояние динамика
-     */
-    public boolean getBeeperState() {
-        return beeperState;
-    }
-
-    /**
      * Устанавливает громкость звука
      *
      * @param volume громкость от 0.0 до 1.0
@@ -204,13 +211,6 @@ public class Sound {
     public void setVolume(float volume) {
         this.volume = Math.max(0.0f, Math.min(1.0f, volume));
         logger.debug("Volume set to: {}", this.volume);
-    }
-
-    /**
-     * Получает текущую громкость
-     */
-    public float getVolume() {
-        return volume;
     }
 
     /**
@@ -224,13 +224,6 @@ public class Sound {
         }
 
         logger.info("Sound {}", enabled ? "enabled" : "disabled");
-    }
-
-    /**
-     * Проверяет, включен ли звук
-     */
-    public boolean isSoundEnabled() {
-        return soundEnabled;
     }
 
     /**
