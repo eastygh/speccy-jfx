@@ -10,6 +10,7 @@ import spectrum.jfx.hardware.machine.HardwareProvider;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.memory.MemoryImpl;
 import spectrum.jfx.hardware.sound.Sound;
+import spectrum.jfx.hardware.sound.SoundImpl;
 import spectrum.jfx.hardware.tape.CassetteDeckImpl;
 import spectrum.jfx.hardware.ula.*;
 import spectrum.jfx.hardware.video.ScanlineVideoImpl;
@@ -53,7 +54,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         this.ula.addPortListener(0xfe, keyboard); // keyboard
         this.ula.addPortListener(0xfe, (OutPortListener) video); // Border color
 
-        this.sound = new Sound(); // Sound
+        this.sound = new SoundImpl(); // Sound
         this.ula.addPortListener(0xfe, sound); // Sound
         this.ula.addClockListener(sound);
 
@@ -103,6 +104,9 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
         // Сброс процессора
         cpu.reset();
+
+        // Start sound emulation
+        sound.start();
 
         // Запуск главного цикла эмуляции
         startEmulationLoop();
