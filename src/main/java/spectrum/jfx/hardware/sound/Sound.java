@@ -13,4 +13,6 @@ public interface Sound extends OutPortListener, ClockListener {
 
     void stop();
 
+    void pushBackTape(boolean state);
+
 }

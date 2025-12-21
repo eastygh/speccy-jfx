@@ -1,5 +1,6 @@
 package spectrum.jfx.hardware.tape;
 
+import spectrum.jfx.hardware.sound.Sound;
 import spectrum.jfx.model.TapeFile;
 
 public interface CassetteDeck {
@@ -11,5 +12,7 @@ public interface CassetteDeck {
     void setSectionIndex(int index);
 
     void addCassetteDeckEventListener(CassetteDeckEvent listener);
+
+    void setSound(Sound sound);
 
 }

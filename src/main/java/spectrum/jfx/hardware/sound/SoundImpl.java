@@ -77,10 +77,12 @@ public class SoundImpl implements Sound {
         }
         boolean newBeeperState = (value & 0x10) != 0;
         //boolean newBeeperState = ((value >> 3) & 1) != 0 || ((value >> 4) & 1) != 0;
-        if (newBeeperState != beeperState) {
-            generateSamples();
-            beeperState = newBeeperState;
-        }
+        handleState(newBeeperState);
+    }
+
+    @Override
+    public void pushBackTape(boolean state) {
+        handleState(state);
     }
 
     @Override
@@ -92,6 +94,13 @@ public class SoundImpl implements Sound {
     @Override
     public void addressOnBus(int address, int tstates) {
         // ignore
+    }
+
+    protected void handleState(boolean newBeeperState) {
+        if (newBeeperState != beeperState) {
+            generateSamples();
+            beeperState = newBeeperState;
+        }
     }
 
     protected void generateSamples() {

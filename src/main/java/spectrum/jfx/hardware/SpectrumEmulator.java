@@ -71,6 +71,8 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         if (cassetteDeck instanceof ClockListener cassetteDeckClock) {
             this.ula.addClockListener(cassetteDeckClock);
         }
+        // For pushback tape sound
+        cassetteDeck.setSound(sound);
 
         this.kempston = new KempstonImpl(new GamePadGLFWImpl());
         this.ula.addPortListener(0x1F, kempston);

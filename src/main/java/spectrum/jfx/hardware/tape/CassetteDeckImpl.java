@@ -1,5 +1,7 @@
 package spectrum.jfx.hardware.tape;
 
+import lombok.Setter;
+import spectrum.jfx.hardware.sound.Sound;
 import spectrum.jfx.hardware.ula.ClockListener;
 import spectrum.jfx.hardware.ula.InPortListener;
 import spectrum.jfx.hardware.ula.OutPortListener;
@@ -15,6 +17,10 @@ public class CassetteDeckImpl
     private final List<CassetteDeckEvent> eventsReceivers = new CopyOnWriteArrayList<>();
     private final PilotToneSignal pilotToneSignal = new PilotToneSignal(2168, true);
     private final SilentToneSignal silentToneSignal = new SilentToneSignal();
+
+    @Setter
+    private Sound sound;
+    private boolean pushBack = false;
 
     private AtomicReference<TapeSignal> tapeFilePlayback;
 
@@ -37,6 +43,9 @@ public class CassetteDeckImpl
     @Override
     public int inPort(int port) {
         boolean ear = withTapeFile().earLevelAt(tStates);
+        if (pushBack && sound != null) {
+            sound.pushBackTape(ear);
+        }
         int value = ear ? 0b0100_0000 : 0b0000_0000;
         return value & 0xff;
     }
@@ -54,6 +63,7 @@ public class CassetteDeckImpl
     @Override
     public void setMotor(boolean on) {
         withTapeFile().setMotor(on, tStates);
+        pushBack = on;
     }
 
     @Override
@@ -62,6 +72,7 @@ public class CassetteDeckImpl
             TapeSignal previous = tapeFilePlayback.get();
             if (previous != null) {
                 previous.setMotor(false, tStates);
+                pushBack = false;
             }
             tapeFilePlayback.set(new TapFilePlayback(true, tape, this));
         }
