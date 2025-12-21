@@ -15,6 +15,8 @@ module spectrum.jfx {
     requires com.fasterxml.jackson.datatype.jsr310;
     requires java.logging;
 
+    requires org.lwjgl.glfw;
+
     opens spectrum.jfx to javafx.fxml;
     exports spectrum.jfx;
 

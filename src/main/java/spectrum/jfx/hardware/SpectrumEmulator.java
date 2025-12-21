@@ -4,6 +4,9 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spectrum.jfx.hardware.cpu.CPU;
+import spectrum.jfx.hardware.input.GamePadGLFWImpl;
+import spectrum.jfx.hardware.input.Kempston;
+import spectrum.jfx.hardware.input.KempstonImpl;
 import spectrum.jfx.hardware.input.Keyboard;
 import spectrum.jfx.hardware.machine.Emulator;
 import spectrum.jfx.hardware.machine.HardwareProvider;
@@ -31,6 +34,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     Sound sound;
     Ula ula;
     CassetteDeckImpl cassetteDeck;
+    Kempston kempston;
 
     // Состояние эмуляции
     private volatile boolean running;
@@ -67,6 +71,11 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         if (cassetteDeck instanceof ClockListener cassetteDeckClock) {
             this.ula.addClockListener(cassetteDeckClock);
         }
+
+        this.kempston = new KempstonImpl(new GamePadGLFWImpl());
+        this.ula.addPortListener(0x1F, kempston);
+        this.kempston.init();
+
         cpu = new Z80(ula, this);
 
         Machine.setHardwareProvider(this);
