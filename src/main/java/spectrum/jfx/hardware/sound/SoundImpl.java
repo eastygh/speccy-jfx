@@ -3,12 +3,11 @@ package spectrum.jfx.hardware.sound;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import spectrum.jfx.helper.AudioBuffer;
 
 import javax.sound.sampled.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 @Slf4j
 public class SoundImpl implements Sound {
@@ -31,7 +30,7 @@ public class SoundImpl implements Sound {
 
     private volatile boolean beeperState = false;
     private volatile double tactAccumulator = 0;
-    private final BlockingQueue<Short> audioBuffer = new ArrayBlockingQueue<>(BUFFER_SIZE * 2);
+    private final AudioBuffer audioBuffer = new AudioBuffer(BUFFER_SIZE * 2);
 
     private SourceDataLine audioLine;
 
@@ -126,7 +125,7 @@ public class SoundImpl implements Sound {
                 byteBuffer.clear();
 
                 for (int i = 0; i < BUFFER_SIZE; i++) {
-                    Short sample = audioBuffer.take(); // Блокирующий вызов
+                    short sample = getNextSample();
                     byteBuffer.putShort(sample);
                 }
 
@@ -143,6 +142,10 @@ public class SoundImpl implements Sound {
             }
         }
         log.debug("Audio thread stopped");
+    }
+
+    private short getNextSample() throws InterruptedException {
+        return audioBuffer.take();
     }
 
     protected static short generateSample(boolean state, double volume) {

@@ -147,6 +147,7 @@ public class TapFilePlayback implements TapeSignal {
         if (playBackSectionIndex >= tape.getSections().size()) {
             playBackSectionIndex = 0;
             motorOn = false;
+            listener.onTapeFinished(true);
         }
         reset(currentTStates);
         preparePlayBackSection();

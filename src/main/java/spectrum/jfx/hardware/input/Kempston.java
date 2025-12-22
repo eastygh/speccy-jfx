@@ -6,4 +6,6 @@ public interface Kempston extends InPortListener {
 
     void init();
 
+    GamePad getGamePad();
+
 }

@@ -2,6 +2,7 @@ package spectrum.jfx.hardware.input;
 
 import lombok.extern.slf4j.Slf4j;
 import org.lwjgl.glfw.GLFWGamepadState;
+import org.lwjgl.glfw.GLFWJoystickCallback;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -24,6 +25,7 @@ public class GamePadGLFWImpl implements GamePad {
         }
         gamepadIndex = getGamepadIndex();
         log.info("Gamepad index: {}", gamepadIndex);
+        initializeListeners();
     }
 
     @Override
@@ -33,12 +35,15 @@ public class GamePadGLFWImpl implements GamePad {
 
     @Override
     public void reset() {
-
+        resetButtons();
     }
 
     @Override
     public void poll() {
-
+        if (gamepadIndex == -1) {
+            reset();
+            return;
+        }
         GLFWGamepadState state = GLFWGamepadState.create();
 
         boolean ok = glfwGetGamepadState(gamepadIndex, state);
@@ -83,6 +88,14 @@ public class GamePadGLFWImpl implements GamePad {
         return fire;
     }
 
+    private void resetButtons() {
+        fire = false;
+        left = false;
+        right = false;
+        up = false;
+        down = false;
+    }
+
     private int getGamepadIndex() {
         int joystick = -1;
 
@@ -96,6 +109,33 @@ public class GamePadGLFWImpl implements GamePad {
             log.error("No gamepad found");
         }
         return joystick;
+    }
+
+    private void initializeListeners() {
+        GLFWJoystickCallback prev = glfwSetJoystickCallback((jid, event) -> {
+            if (event == GLFW_CONNECTED) {
+                gamePadConnected(jid);
+            } else if (event == GLFW_DISCONNECTED) {
+                gamePadDisconnected(jid);
+            }
+        });
+        if (prev != null) {
+            prev.free();
+        }
+    }
+
+    private void gamePadConnected(int jid) {
+        log.info("Connected gamepad: {} {}", jid, glfwGetJoystickName(jid));
+        if (gamepadIndex == -1) {
+            gamepadIndex = jid;
+        }
+    }
+
+    private void gamePadDisconnected(int jid) {
+        log.info("Disconnected gamepad: {}", jid);
+        if (gamepadIndex == jid) {
+            gamepadIndex = -1;
+        }
     }
 
 }

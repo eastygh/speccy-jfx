@@ -1,10 +1,12 @@
 package spectrum.jfx.hardware.input;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class KempstonImpl implements Kempston {
 
+    @Getter
     GamePad gamePad;
 
     public KempstonImpl(GamePad gamePad) {
@@ -20,8 +22,17 @@ public class KempstonImpl implements Kempston {
         gamePad.init();
     }
 
+    /**
+     * Listens port 0x1F Kempston Joystick
+     *
+     * @param port port from event sender
+     * @return kempston state
+     */
     @Override
     public int inPort(int port) {
+        if (port != 0x1F) {
+            return 0;
+        }
         gamePad.poll();
         return translateState();
     }

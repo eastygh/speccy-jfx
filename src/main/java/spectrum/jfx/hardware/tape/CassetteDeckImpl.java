@@ -93,4 +93,10 @@ public class CassetteDeckImpl
         eventsReceivers.forEach(listener -> listener.onTapeSectionChanged(index, tape));
     }
 
+    @Override
+    public void onTapeFinished(boolean success) {
+        setMotor(false);
+        eventsReceivers.forEach(listener -> listener.onTapeFinished(success));
+    }
+
 }

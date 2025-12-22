@@ -6,4 +6,6 @@ public interface TapFilePlaybackEvent {
 
     void onSectionChanged(int index, TapeFile tape);
 
+    void onTapeFinished(boolean success);
+
 }

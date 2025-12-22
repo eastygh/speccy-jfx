@@ -1,5 +1,6 @@
 package spectrum.jfx.hardware.machine;
 
+import spectrum.jfx.hardware.input.Kempston;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.tape.CassetteDeck;
 
@@ -10,5 +11,7 @@ public interface HardwareProvider {
     Memory getMemory();
 
     Emulator getEmulator();
+
+    Kempston getKempston();
 
 }

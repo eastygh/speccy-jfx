@@ -12,7 +12,7 @@ public interface CassetteDeckEvent {
 
     void onTapeMotorChanged(boolean on);
 
-    void onTapeEndReached();
+    void onTapeFinished(boolean success);
 
     void onTapeError(String message);
 

@@ -596,8 +596,10 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
     }
 
     @Override
-    public void onTapeEndReached() {
-
+    public void onTapeFinished(boolean success) {
+        Platform.runLater(() -> {
+            updatePlaybackControls(false);
+        });
     }
 
     @Override
