@@ -3,6 +3,7 @@ package spectrum.jfx.hardware.input;
 import javafx.scene.input.KeyCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import spectrum.jfx.hardware.machine.Device;
 import spectrum.jfx.hardware.ula.InPortListener;
 import spectrum.jfx.helper.VolatileBoolMatrix;
 
@@ -26,7 +27,7 @@ import java.util.Set;
  * Bit 6: ENTER, L, K, J, H
  * Bit 7: SPACE, SYMBOL, M, N, B
  */
-public class Keyboard implements InPortListener {
+public class Keyboard implements InPortListener, Device {
 
     private static final Logger logger = LoggerFactory.getLogger(Keyboard.class);
 
@@ -118,6 +119,7 @@ public class Keyboard implements InPortListener {
         keyMapping.put(KeyCode.BACK_SPACE, Set.of(new KeyPosition(0, 0), new KeyPosition(4, 0))); // CAPS SHIFT + 0 (DELETE)
 
         keyMapping.put(KeyCode.QUOTE, Set.of(new KeyPosition(7, 1), new KeyPosition(5, 0)));  // SYMBOL SHIFT + P (QUOTE)
+        keyMapping.put(KeyCode.COMMA, Set.of(new KeyPosition(7, 1), new KeyPosition(7, 3)));  // SYMBOL SHIFT + N (COMMA)
 
         logger.debug("Key mapping initialized with {} keys", keyMapping.size());
     }
@@ -132,6 +134,26 @@ public class Keyboard implements InPortListener {
             }
         }
         logger.debug("Keyboard state reset");
+    }
+
+    @Override
+    public void init() {
+        resetKeyboard();
+    }
+
+    @Override
+    public void reset() {
+        resetKeyboard();
+    }
+
+    @Override
+    public void open() {
+        // ignore
+    }
+
+    @Override
+    public void close() {
+        // ignore
     }
 
     /**

@@ -17,6 +17,7 @@ module spectrum.jfx {
 
     requires org.lwjgl.glfw;
     requires org.apache.commons.lang3;
+    requires z80core;
 
     opens spectrum.jfx to javafx.fxml;
     exports spectrum.jfx;

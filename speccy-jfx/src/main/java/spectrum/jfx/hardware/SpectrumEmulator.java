@@ -1,10 +1,13 @@
 package spectrum.jfx.hardware;
 
 import lombok.Getter;
+import machine.MachineTypes;
+import machine.SpectrumClock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spectrum.jfx.hardware.cpu.BreakPointListener;
 import spectrum.jfx.hardware.cpu.CPU;
+import spectrum.jfx.hardware.cpu.Z80WrapperImpl;
 import spectrum.jfx.hardware.input.GamePadGLFWImpl;
 import spectrum.jfx.hardware.input.Kempston;
 import spectrum.jfx.hardware.input.KempstonImpl;
@@ -13,15 +16,14 @@ import spectrum.jfx.hardware.machine.Emulator;
 import spectrum.jfx.hardware.machine.HardwareProvider;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.memory.MemoryImpl;
+import spectrum.jfx.hardware.sound.OneThreadAudioImpl;
 import spectrum.jfx.hardware.sound.Sound;
-import spectrum.jfx.hardware.sound.SoundImpl;
 import spectrum.jfx.hardware.tape.CassetteDeckImpl;
 import spectrum.jfx.hardware.ula.*;
 import spectrum.jfx.hardware.video.ScanlineVideoImpl;
 import spectrum.jfx.hardware.video.Video;
 import spectrum.jfx.machine.Machine;
-import spectrum.jfx.z80core.NotifyOps;
-import spectrum.jfx.z80core.Z80;
+import z80core.NotifyOps;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +33,9 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     private static final Logger logger = LoggerFactory.getLogger(SpectrumEmulator.class);
 
+    // ZXCore-lib clock support
+    SpectrumClock clock = SpectrumClock.INSTANCE;
+
     CPU cpu;
     Memory memory;
     Video<?> video;
@@ -39,6 +44,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     Ula ula;
     CassetteDeckImpl cassetteDeck;
     Kempston kempston;
+
 
     // Emulation management
     private volatile boolean running;
@@ -58,9 +64,12 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     }
 
-    public void init() {
+    public void init(MachineTypes machineType) {
+
+        SpectrumClock.INSTANCE.setSpectrumModel(machineType);
+
         this.memory = new MemoryImpl();
-        //this.video = new SimpleVideoImpl(memory);
+
         this.video = new ScanlineVideoImpl(memory);
         this.keyboard = new Keyboard();
         this.keyboard.resetKeyboard();
@@ -68,7 +77,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         this.ula.addPortListener(0xfe, keyboard); // keyboard
         this.ula.addPortListener(0xfe, (OutPortListener) video); // Border color
 
-        this.sound = new SoundImpl(); // Sound
+        this.sound = new OneThreadAudioImpl(MachineTypes.SPECTRUM48K, 44100); // Sound
         this.ula.addPortListener(0xfe, sound); // Sound
         this.ula.addClockListener(sound);
 
@@ -88,10 +97,10 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         this.ula.addPortListener(0x1F, kempston);
         this.kempston.init();
 
-        cpu = new Z80(ula, this);
+        cpu = new Z80WrapperImpl(ula, this);
 
         Machine.setHardwareProvider(this);
-        //cpu = new Z80CPU(memory);
+
     }
 
     @Override
@@ -131,7 +140,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         cpu.reset();
 
         // Start sound emulation
-        sound.start();
+        sound.open();
 
         // Запуск главного цикла эмуляции
         startEmulationLoop();
@@ -145,11 +154,12 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
             logger.warn("Emulator is not running");
             return;
         }
-
-        video.stop();
-        logger.info("Stopping emulation");
+        pause();
         running = false;
-        paused = false;
+        video.stop();
+        ula.reset();
+        sound.close();
+        logger.info("Stopping emulation");
     }
 
     /**
@@ -193,17 +203,19 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
                         executeFrame();
                         frameCounter++;
                         lastFrameTime = currentTime;
+                        clock.endFrame();
+                        sound.endFrame();
                     } else {
                         Thread.onSpinWait();
                     }
                 } else {
                     hold = true;
-//                    try {
-                        Thread.yield();
-//                    } catch (InterruptedException e) {
-//                        Thread.currentThread().interrupt();
-//                        break;
-//                    }
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
             }
 
@@ -241,9 +253,19 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     @Override
     public void reset() {
-        stop();
-        cpu.setRegPC(0);
-        start();
+        pause();
+        while (!isHold()) {
+            Thread.yield();
+        }
+        memory.reset();
+        sound.reset();
+        video.reset();
+        cpu.reset();
+        clock.reset();
+        ula.reset();
+        kempston.reset();
+        keyboard.reset();
+        resume();
     }
 
     @Override
@@ -273,4 +295,5 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     public long getFrames() {
         return frameCounter;
     }
+
 }

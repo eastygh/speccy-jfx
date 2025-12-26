@@ -6,6 +6,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
+import machine.MachineTypes;
 import spectrum.jfx.hardware.SpectrumEmulator;
 import spectrum.jfx.ui.controller.MainController;
 import spectrum.jfx.ui.localization.LocalizationManager;
@@ -17,6 +18,7 @@ import java.util.logging.Logger;
 
 import static spectrum.jfx.hardware.util.EmulatorUtils.loadFile;
 import static spectrum.jfx.hardware.video.ZoomLevel.X2;
+import static spectrum.jfx.hardware.video.ZoomLevel.X4;
 
 public class GUIApplication extends Application {
 
@@ -35,7 +37,7 @@ public class GUIApplication extends Application {
         BorderPane root = fxmlLoader.load();
 
         SpectrumEmulator emulator = new SpectrumEmulator();
-        emulator.init();
+        emulator.init(MachineTypes.SPECTRUM48K);
         emulator.getVideo().setZoomLevel(X2);
 
         // Get controller and pass emulator reference to it

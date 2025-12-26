@@ -1,6 +1,8 @@
 package spectrum.jfx.hardware.memory;
 
-public interface Memory {
+import spectrum.jfx.hardware.machine.Device;
+
+public interface Memory extends Device {
 
     int readWord(int address);
 

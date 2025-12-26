@@ -5,14 +5,16 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.helper.AudioBuffer;
 
-import javax.sound.sampled.*;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.SourceDataLine;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
+import static spectrum.jfx.hardware.sound.SoundUtils.initializeAudio;
 
 @Slf4j
 public class SoundImpl implements Sound {
 
-    public static final int SAMPLE_RATE = 44100;     // 44.1 kHz
     public static final int BUFFER_SIZE = 1024;
     public static final AudioFormat AUDIO_FORMAT = new AudioFormat(
             SAMPLE_RATE, 16, 1, true, false
@@ -28,6 +30,8 @@ public class SoundImpl implements Sound {
     @Getter
     private volatile double volume = 0.8;
 
+    private volatile boolean mute = false;
+
     private volatile boolean beeperState = false;
     private volatile double tactAccumulator = 0;
     private final AudioBuffer audioBuffer = new AudioBuffer(BUFFER_SIZE * 2);
@@ -41,15 +45,29 @@ public class SoundImpl implements Sound {
     }
 
     @Override
-    public void start() {
-        initializeAudio();
+    public void init() {
+
+    }
+
+    @Override
+    public void reset() {
+
+    }
+
+    @Override
+    public void open() {
+        enabled = true;
+        audioLine = initializeAudio(AUDIO_FORMAT, BUFFER_SIZE * 2);
+        if (audioLine == null) {
+            enabled = false;
+        }
         audioThread = new Thread(this::audioThreadCycle);
         audioThread.setDaemon(true);
         audioThread.start();
     }
 
     @Override
-    public void stop() {
+    public void close() {
         log.info("Stopping sound system");
 
         if (audioThread != null) {
@@ -62,6 +80,7 @@ public class SoundImpl implements Sound {
         }
 
         if (audioLine != null) {
+            audioLine.flush();
             audioLine.stop();
             audioLine.close();
         }
@@ -103,6 +122,11 @@ public class SoundImpl implements Sound {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
+    @Override
+    public void endFrame() {
+
+    }
+
     protected void handleState(boolean newBeeperState) {
         if (newBeeperState != beeperState) {
             generateSamples();
@@ -129,12 +153,18 @@ public class SoundImpl implements Sound {
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
         while (enabled) {
+
             try {
                 byteBuffer.clear();
 
                 for (int i = 0; i < BUFFER_SIZE; i++) {
                     short sample = getNextSample();
                     byteBuffer.putShort(sample);
+                }
+
+                if (mute) {
+                    Thread.yield();
+                    continue;
                 }
 
                 byteBuffer.rewind();
@@ -164,31 +194,9 @@ public class SoundImpl implements Sound {
         }
     }
 
-    private void initializeAudio() {
-        try {
-            DataLine.Info info = new DataLine.Info(SourceDataLine.class, AUDIO_FORMAT);
-
-            if (!AudioSystem.isLineSupported(info)) {
-                log.warn("Audio line not supported, sound will be disabled");
-                enabled = false;
-                return;
-            }
-
-            audioLine = (SourceDataLine) AudioSystem.getLine(info);
-            audioLine.open(AUDIO_FORMAT, BUFFER_SIZE * 2);
-            audioLine.start();
-
-            log.info("Audio line initialized: {} Hz, {} bit, {} channel",
-                    AUDIO_FORMAT.getSampleRate(), AUDIO_FORMAT.getSampleSizeInBits(),
-                    AUDIO_FORMAT.getChannels());
-
-        } catch (LineUnavailableException e) {
-            log.warn("Audio line unavailable, sound will be disabled: {}", e.getMessage());
-            enabled = false;
-        } catch (Exception e) {
-            log.warn("Failed to initialize audio, sound will be disabled: {}", e.getMessage());
-            enabled = false;
-        }
+    @Override
+    public void mute(boolean state) {
+        this.mute = state;
     }
 
 }

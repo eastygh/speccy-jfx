@@ -30,7 +30,7 @@ public class KempstonImpl implements Kempston {
      */
     @Override
     public int inPort(int port) {
-        if (port != 0x1F) {
+        if (port != 0x1F || gamePad == null) {
             return 0;
         }
         gamePad.poll();
@@ -46,6 +46,7 @@ public class KempstonImpl implements Kempston {
     bit 5–7    not used =0
      */
     private int translateState() {
+        if (gamePad == null) return 0;
         int result = 0;
         if (gamePad.right()) result |= 1;
         if (gamePad.left()) result |= 2;
@@ -55,4 +56,21 @@ public class KempstonImpl implements Kempston {
         return result;
     }
 
+    @Override
+    public void reset() {
+        GamePad gamePad = getGamePad();
+        if (gamePad != null) {
+            gamePad.reset();
+        }
+    }
+
+    @Override
+    public void open() {
+        // ignore
+    }
+
+    @Override
+    public void close() {
+        // ignore
+    }
 }

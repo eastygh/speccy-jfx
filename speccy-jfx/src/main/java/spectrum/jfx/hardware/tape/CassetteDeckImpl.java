@@ -21,8 +21,9 @@ public class CassetteDeckImpl
     @Setter
     private Sound sound;
     private boolean pushBack = false;
+    private boolean pushBackEnabled = true;
 
-    private AtomicReference<TapeSignal> tapeFilePlayback;
+    private final AtomicReference<TapeSignal> tapeFilePlayback;
 
     private volatile long tStates;
 
@@ -43,7 +44,7 @@ public class CassetteDeckImpl
     @Override
     public int inPort(int port) {
         boolean ear = withTapeFile().earLevelAt(tStates);
-        if (pushBack && sound != null) {
+        if (pushBack && sound != null && pushBackEnabled) {
             sound.pushBackTape(ear);
         }
         int value = ear ? 0b0100_0000 : 0b0000_0000;
@@ -100,6 +101,33 @@ public class CassetteDeckImpl
     public void onTapeFinished(boolean success) {
         setMotor(false);
         eventsReceivers.forEach(listener -> listener.onTapeFinished(success));
+    }
+
+    @Override
+    public void init() {
+        reset();
+    }
+
+    @Override
+    public void reset() {
+        setMotor(false);
+        tapeFilePlayback.set(silentToneSignal);
+        tStates = 0;
+    }
+
+    @Override
+    public void open() {
+        // ignored
+    }
+
+    @Override
+    public void close() {
+        // ignored
+    }
+
+    @Override
+    public void setSoundPushBack(boolean pushBack) {
+        this.pushBackEnabled = pushBack;
     }
 
 }

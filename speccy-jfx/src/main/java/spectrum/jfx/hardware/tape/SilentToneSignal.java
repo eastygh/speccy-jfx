@@ -4,7 +4,7 @@ import java.util.Random;
 
 public class SilentToneSignal implements TapeSignal {
 
-    private Random random = new Random();
+    private final Random random = new Random();
 
     private int nextTStateLevel = 2166;
     private long currentTStates = 0;

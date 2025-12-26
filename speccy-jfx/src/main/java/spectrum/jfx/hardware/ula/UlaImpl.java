@@ -1,6 +1,7 @@
 package spectrum.jfx.hardware.ula;
 
 import lombok.Getter;
+import machine.SpectrumClock;
 import spectrum.jfx.hardware.memory.Memory;
 
 import java.util.HashMap;
@@ -18,6 +19,8 @@ public class UlaImpl implements Ula {
     private final Map<Integer, Set<InPortListener>> inPortListeners = new HashMap<>();
     private final Map<Integer, Set<OutPortListener>> outPortListeners = new HashMap<>();
     private final ZXClock clock;
+    // Support zx-core project lib
+    private static final SpectrumClock spectrumClock = SpectrumClock.INSTANCE;
 
     public UlaImpl(Memory memory) {
         this.memory = memory;
@@ -165,6 +168,7 @@ public class UlaImpl implements Ula {
     @Override
     public void reset() {
         clock.reset();
+        spectrumClock.reset();
     }
 
 }

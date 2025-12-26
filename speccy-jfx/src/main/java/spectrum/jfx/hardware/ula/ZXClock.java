@@ -1,6 +1,7 @@
 package spectrum.jfx.hardware.ula;
 
 import lombok.Getter;
+import machine.SpectrumClock;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -10,10 +11,12 @@ public class ZXClock {
     @Getter
     private volatile long tStates = 0;
     private final Set<ClockListener> clockListeners = new HashSet<>();
+    private final SpectrumClock clock = SpectrumClock.INSTANCE;
 
     public void incrementTStates(int amount) {
         tStates += amount;
         clockListeners.forEach(listener -> listener.ticks(tStates, amount));
+        clock.addTstates(amount);
     }
 
     public void addClockListener(ClockListener listener) {
@@ -30,6 +33,7 @@ public class ZXClock {
 
     public void reset() {
         tStates = 0;
+        clock.setTstates(0);
     }
 
 }

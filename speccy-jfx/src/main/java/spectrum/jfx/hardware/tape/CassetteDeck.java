@@ -1,9 +1,10 @@
 package spectrum.jfx.hardware.tape;
 
+import spectrum.jfx.hardware.machine.Device;
 import spectrum.jfx.hardware.sound.Sound;
 import spectrum.jfx.model.TapeFile;
 
-public interface CassetteDeck {
+public interface CassetteDeck extends Device {
 
     void setMotor(boolean on);
 
@@ -14,5 +15,7 @@ public interface CassetteDeck {
     void addCassetteDeckEventListener(CassetteDeckEvent listener);
 
     void setSound(Sound sound);
+
+    void setSoundPushBack(boolean pushBack);
 
 }

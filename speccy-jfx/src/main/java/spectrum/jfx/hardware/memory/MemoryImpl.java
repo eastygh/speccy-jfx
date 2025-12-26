@@ -117,7 +117,7 @@ public class MemoryImpl implements Memory {
 
     @Override
     public void reset() {
-
+        clearMemory();
     }
 
     /**
@@ -158,7 +158,7 @@ public class MemoryImpl implements Memory {
             if (romWriteProtected) {
                 log.debug("Attempted write to protected ROM at 0x{}",
                         Integer.toHexString(address).toUpperCase());
-                return; // Игнорируем запись в защищенную ROM
+                // Игнорируем запись в защищенную ROM
             } else {
                 writeByteVolatile(rom, address, (byte) value);
                 //rom[address] = (byte) value;
@@ -197,6 +197,21 @@ public class MemoryImpl implements Memory {
     @Override
     public void flash(int address, byte[] data) {
         writeBlock(address, data);
+    }
+
+    @Override
+    public void init() {
+        clearMemory();
+    }
+
+    @Override
+    public void open() {
+        clearMemory();
+    }
+
+    @Override
+    public void close() {
+        clearMemory();
     }
 
     /**

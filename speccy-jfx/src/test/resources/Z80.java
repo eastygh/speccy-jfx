@@ -1,6 +1,6 @@
 package spectrum.jfx.z80port;
 
-import spectrum.jfx.z80core.MemIoOps;
+import z80core.MemIoOps;
 
 /**
  * Java port scaffold of the Z80 CPU core from c-code/*.cpp.

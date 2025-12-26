@@ -51,15 +51,15 @@ public class Z80Disassembler {
         }
 
         private String formatOutput() {
-            StringBuilder sb = new StringBuilder();
 
             // Форматируем байты (фиксированная ширина для выравнивания)
-            sb.append(String.format("%-12s", hexBytes));
 
-            // Добавляем мнемонику
-            sb.append(mnemonic);
+            String sb = String.format("%-12s", hexBytes) +
 
-            return sb.toString();
+                    // Добавляем мнемонику
+                    mnemonic;
+
+            return sb;
         }
 
         private String formatAddressedOutput(int address) {

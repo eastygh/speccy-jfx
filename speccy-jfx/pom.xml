@@ -11,8 +11,7 @@
     </parent>
 
     <artifactId>speccy-jfx</artifactId>
-    <packaging>pom</packaging>
-    <name>spectrum</name>
+    <name>speccy-jfx</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -22,6 +21,12 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>spectrum.jfx</groupId>
+            <artifactId>z80core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>

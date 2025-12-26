@@ -13,7 +13,7 @@ import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import spectrum.jfx.hardware.SpectrumEmulator;
+import spectrum.jfx.hardware.machine.Emulator;
 import spectrum.jfx.ui.localization.LocalizationManager;
 import spectrum.jfx.ui.localization.LocalizationManager.LocalizationChangeListener;
 import spectrum.jfx.ui.settings.AppSettings;
@@ -21,6 +21,7 @@ import spectrum.jfx.ui.theme.ThemeManager;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Getter
@@ -89,7 +90,7 @@ public class MainController implements LocalizationChangeListener {
     @FXML
     private Button settingsButton;
 
-    private SpectrumEmulator emulator;
+    private AtomicReference<Emulator> emulator = new AtomicReference<>();
     private Scene scene;
     private boolean isPaused = false;
     private LocalizationManager localizationManager;
@@ -144,7 +145,7 @@ public class MainController implements LocalizationChangeListener {
         Stage stage = (Stage) menuBar.getScene().getWindow();
         File file = fileChooser.showOpenDialog(stage);
 
-        if (file != null && emulator != null) {
+        if (file != null && getEmulator() != null) {
             settings.saveLastRomPath(file.getAbsolutePath());
             // TODO: Реализовать загрузку ROM файла
             System.out.println(localizationManager.getString("tape.loadingRom", "Loading ROM: {0}", file.getName()));
@@ -171,7 +172,7 @@ public class MainController implements LocalizationChangeListener {
         Stage stage = (Stage) menuBar.getScene().getWindow();
         File file = fileChooser.showOpenDialog(stage);
 
-        if (file != null && emulator != null) {
+        if (file != null && getEmulator() != null) {
             settings.saveLastSnapshotPath(file.getAbsolutePath());
             // TODO: Реализовать загрузку снэпшота
             System.out.println(localizationManager.getString("tape.loadingSnapshot", file.getName()));
@@ -189,7 +190,7 @@ public class MainController implements LocalizationChangeListener {
         Stage stage = (Stage) menuBar.getScene().getWindow();
         File file = fileChooser.showSaveDialog(stage);
 
-        if (file != null && emulator != null) {
+        if (file != null && getEmulator() != null) {
             // TODO: Реализовать сохранение снэпшота
             System.out.println(localizationManager.getString("tape.savingSnapshot", file.getName()));
         }
@@ -197,8 +198,8 @@ public class MainController implements LocalizationChangeListener {
 
     @FXML
     protected void onExit() {
-        if (emulator != null) {
-            emulator.stop();
+        if (getEmulator() != null) {
+            getEmulator().stop();
         }
         Platform.exit();
     }
@@ -225,8 +226,7 @@ public class MainController implements LocalizationChangeListener {
             controller.setStage(libraryStage);
 
             // Устанавливаем иконку (если есть)
-            if (scene != null && scene.getWindow() instanceof Stage) {
-                Stage mainStage = (Stage) scene.getWindow();
+            if (scene != null && scene.getWindow() instanceof Stage mainStage) {
                 libraryStage.getIcons().addAll(mainStage.getIcons());
             }
 
@@ -252,14 +252,14 @@ public class MainController implements LocalizationChangeListener {
     // Обработчики меню эмуляции
     @FXML
     protected void onPause() {
-        if (emulator != null) {
+        if (getEmulator() != null) {
             if (isPaused) {
-                emulator.resume();
+                getEmulator().resume();
                 pauseMenuItem.setText(localizationManager.getString("menu.emulation.pause"));
                 pauseButton.setText(localizationManager.getString("btn.pause"));
                 isPaused = false;
             } else {
-                emulator.pause();
+                getEmulator().pause();
                 pauseMenuItem.setText(localizationManager.getString("menu.emulation.resume"));
                 pauseButton.setText(localizationManager.getString("btn.resume"));
                 isPaused = true;
@@ -269,15 +269,15 @@ public class MainController implements LocalizationChangeListener {
 
     @FXML
     protected void onReset() {
-        if (emulator != null) {
-            emulator.reset();
+        if (getEmulator() != null) {
+            getEmulator().reset();
             log.info(localizationManager.getString("tape.resetEmulator"));
         }
     }
 
     @FXML
     protected void onFastLoad() {
-        if (emulator != null) {
+        if (getEmulator() != null) {
             // TODO: Реализовать быструю загрузку
             System.out.println("Быстрая загрузка включена");
         }
@@ -286,7 +286,7 @@ public class MainController implements LocalizationChangeListener {
     // Обработчики меню настроек
     @FXML
     protected void onZoom1() {
-        if (emulator != null) {
+        if (getEmulator() != null) {
             // TODO: Установить масштаб x1
             System.out.println("Масштаб установлен: x1");
         }
@@ -294,7 +294,7 @@ public class MainController implements LocalizationChangeListener {
 
     @FXML
     protected void onZoom2() {
-        if (emulator != null) {
+        if (getEmulator() != null) {
             // TODO: Установить масштаб x2
             System.out.println("Масштаб установлен: x2");
         }
@@ -302,7 +302,7 @@ public class MainController implements LocalizationChangeListener {
 
     @FXML
     protected void onZoom3() {
-        if (emulator != null) {
+        if (getEmulator() != null) {
             // TODO: Установить масштаб x3
             System.out.println("Масштаб установлен: x3");
         }
@@ -425,6 +425,14 @@ public class MainController implements LocalizationChangeListener {
 
     public void onTapeLibraryOpen(ActionEvent actionEvent) {
         onTapeLibrary();
+    }
+
+    public void setEmulator(Emulator emulator) {
+        this.emulator.set(emulator);
+    }
+
+    public Emulator getEmulator() {
+        return emulator.get();
     }
 
 }

@@ -41,11 +41,17 @@
                     <Tooltip text="%tooltip.clearAll"/>
                 </tooltip>
             </Button>
+            <Separator/>
+            <CheckBox text="%btn.tapeSound" fx:id="toggleTapeSound" onAction="#onToggleTapeSound">
+                <tooltip>
+                    <Tooltip text="%tooltip.tapeSoundToggle"/>
+                </tooltip>
+            </CheckBox>
+            <Separator/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label fx:id="statusLabel" text="%tape.ready"/>
         </ToolBar>
     </top>
-
     <!-- Main content -->
     <center>
         <SplitPane dividerPositions="0.4">

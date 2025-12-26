@@ -50,6 +50,8 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
     @FXML
     private Button clearAllButton;
     @FXML
+    public CheckBox toggleTapeSound;
+    @FXML
     private Label statusLabel;
 
     // File list (left panel)
@@ -622,4 +624,11 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
 //            });
 //        })
     }
+
+    public void onToggleTapeSound(ActionEvent actionEvent) {
+        Machine.withCassetteDeck((cassetteDeck, hardwareProvider) -> {
+            cassetteDeck.setSoundPushBack(toggleTapeSound.isSelected());
+        });
+    }
+
 }

@@ -8,8 +8,8 @@ import spectrum.jfx.hardware.memory.MemoryImpl;
 import spectrum.jfx.hardware.ula.OutPortListener;
 import spectrum.jfx.hardware.ula.Ula;
 import spectrum.jfx.hardware.ula.UlaImpl;
-import spectrum.jfx.z80core.NotifyOps;
-import spectrum.jfx.z80core.Z80;
+import z80core.NotifyOps;
+import z80core.Z80;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,7 +33,7 @@ class TStatesTest implements NotifyOps, OutPortListener {
         ((MemoryImpl) memory).setRomWriteProtected(false);
         ula = new UlaImpl(memory);
         ula.addPortListener(0xFE, this);
-        cpu = new Z80(ula, this);
+        cpu = new Z80WrapperImpl(ula, this);
     }
 
     @Test
@@ -66,7 +66,7 @@ class TStatesTest implements NotifyOps, OutPortListener {
         memory.loadROM(rom);
         memory.writeByte(0x0005, (byte) 0xC9);
 
-        Z80 z80core = (Z80) cpu;
+        Z80WrapperImpl z80core = (Z80WrapperImpl) cpu;
 
         z80core.setRegPC(0x100);
         z80core.setRegSP(0xF000);

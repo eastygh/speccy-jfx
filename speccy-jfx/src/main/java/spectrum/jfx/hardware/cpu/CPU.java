@@ -10,6 +10,15 @@ public interface CPU {
      */
     int executeInstruction();
 
+    /**
+     * Execute instructions until t-states limit is reached.
+     * Returns the number of t-states executed.
+     *
+     * @param tStatesLimit maximum number of t-states to execute
+     * @return number of t-states executed
+     */
+    int executeInstruction(int tStatesLimit);
+
     void reset();
 
     boolean isBreakpoint(int address);
