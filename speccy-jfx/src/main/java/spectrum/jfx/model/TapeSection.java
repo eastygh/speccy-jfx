@@ -1,5 +1,6 @@
 package spectrum.jfx.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.Getter;
@@ -14,10 +15,11 @@ public class TapeSection {
     private int length;
     private String description;
     private boolean isPlayable;
-    private byte[] data; // Данные секции для HEX редактора
+    @JsonIgnore
+    private byte[] data;
 
     public TapeSection() {
-        // Конструктор по умолчанию для Jackson
+
     }
 
     public TapeSection(int index, String title, SectionType type, int length) {
@@ -67,8 +69,20 @@ public class TapeSection {
 
     @Override
     public String toString() {
-        // Простое toString для сериализации - локализация должна происходить в UI
         String titleText = title != null ? title : "Untitled";
         return String.format("%02d. %s (%s) - %d bytes", index, titleText, type.name(), length);
     }
+
+    /**
+     * Lazy data load
+     *
+     * @return byteArray of section data
+     */
+    public synchronized byte[] getData() {
+        if (data == null) {
+
+        }
+        return data;
+    }
+
 }

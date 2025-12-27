@@ -22,4 +22,6 @@ public interface Emulator {
 
     boolean removeBreakPointListener(int address);
 
+    void addExternalTask(Runnable task);
+
 }

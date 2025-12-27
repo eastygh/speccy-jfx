@@ -40,7 +40,10 @@ public class AppSettings {
     private String lastRomPath = "";
     private String lastSnapshotPath = "";
 
-    // Коллекция кассет TAP/TZX
+    // CassetteDeck settings
+    private boolean emulateTapeSound = true;
+
+    // Collection TAP/TZX
     private TapeCollection tapeCollection = new TapeCollection();
 
     private static final String SETTINGS_DIR = System.getProperty("user.home") + "/.spectrum-emulator";
@@ -79,21 +82,21 @@ public class AppSettings {
 
         if (settingsFile.exists()) {
             try {
-                log.info("Загружаются настройки из: " + SETTINGS_FILE);
+                log.info("Loading settings from: {}", SETTINGS_FILE);
                 return mapper.readValue(settingsFile, AppSettings.class);
             } catch (IOException e) {
-                log.warn("Ошибка при загрузке настроек: " + e.getMessage());
-                log.info("Используются настройки по умолчанию");
+                log.warn("Ошибка при загрузке настроек: {}", e.getMessage());
+                log.info("Using default settings.");
             }
         } else {
-            log.info("Файл настроек не найден, используются настройки по умолчанию");
+            log.info("File not found: {}. Using default settings.", SETTINGS_FILE);
         }
 
         return new AppSettings();
     }
 
     /**
-     * Сохранить настройки в файл
+     * Save settings to file
      */
     public void saveSettings() {
         try {

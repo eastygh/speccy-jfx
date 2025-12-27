@@ -231,7 +231,7 @@ public class MainController implements LocalizationChangeListener {
             }
 
             libraryStage.show();
-            System.out.println(localizationManager.getString("tape.tapeLibraryOpened"));
+            log.info(localizationManager.getString("tape.tapeLibraryOpened"));
 
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);

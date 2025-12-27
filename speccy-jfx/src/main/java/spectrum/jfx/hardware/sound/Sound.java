@@ -8,6 +8,7 @@ public interface Sound extends OutPortListener, ClockListener, Device {
 
     // 44.1 kHz
     int SAMPLE_RATE = 44100;
+    short BEEPER_AMPLITUDE = 8000;
 
     double getVolume();
 

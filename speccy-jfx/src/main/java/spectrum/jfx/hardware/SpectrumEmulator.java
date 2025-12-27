@@ -26,7 +26,9 @@ import spectrum.jfx.machine.Machine;
 import z80core.NotifyOps;
 
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Getter
 public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
@@ -59,6 +61,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     private static final long FRAME_TIME_NS = 16666666; // ~60 FPS
 
     private final Map<Integer, BreakPointListener> breakPoints = new ConcurrentHashMap<>();
+    private final Queue<Runnable> contextsTasks = new ConcurrentLinkedQueue<>();
 
     public SpectrumEmulator() {
 
@@ -205,10 +208,12 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
                         lastFrameTime = currentTime;
                         clock.endFrame();
                         sound.endFrame();
+                        runExternalTasks();
                     } else {
                         Thread.onSpinWait();
                     }
                 } else {
+                    runExternalTasks();
                     hold = true;
                     try {
                         Thread.sleep(10);
@@ -224,6 +229,19 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
         emulationThread.setDaemon(true);
         emulationThread.start();
+    }
+
+    private void runExternalTasks() {
+        Runnable task = contextsTasks.poll();
+        if (task != null) {
+            long startTime = System.nanoTime();
+            task.run();
+            long endTime = System.nanoTime();
+            long elapsedTime = endTime - startTime;
+            if (elapsedTime > 1000000) {
+                logger.warn("Task took {} ms", elapsedTime / 1000000);
+            }
+        }
     }
 
     /**
@@ -294,6 +312,11 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     @Override
     public long getFrames() {
         return frameCounter;
+    }
+
+    @Override
+    public void addExternalTask(Runnable task) {
+        contextsTasks.add(task);
     }
 
 }

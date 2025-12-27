@@ -18,7 +18,6 @@ import java.util.logging.Logger;
 
 import static spectrum.jfx.hardware.util.EmulatorUtils.loadFile;
 import static spectrum.jfx.hardware.video.ZoomLevel.X2;
-import static spectrum.jfx.hardware.video.ZoomLevel.X4;
 
 public class GUIApplication extends Application {
 

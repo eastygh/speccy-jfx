@@ -215,7 +215,7 @@ public class MemoryImpl implements Memory {
     }
 
     /**
-     * Читает блок данных из памяти
+     * Read block of memory
      */
     public byte[] readBlock(int startAddress, int length) {
         byte[] block = new byte[length];

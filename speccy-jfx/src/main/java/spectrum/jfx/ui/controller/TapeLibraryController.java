@@ -23,7 +23,6 @@ import spectrum.jfx.ui.localization.LocalizationManager.LocalizationChangeListen
 import spectrum.jfx.ui.model.TapeCollection;
 import spectrum.jfx.ui.settings.AppSettings;
 import spectrum.jfx.ui.theme.ThemeManager;
-import spectrum.jfx.ui.util.TapeFileParser;
 
 import java.io.File;
 import java.net.URL;
@@ -31,6 +30,7 @@ import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 import static spectrum.jfx.hardware.tape.FastTapLoader.triggerLoadCommand;
+import static spectrum.jfx.ui.util.TapeFileParser.parseTapeFile;
 
 public class TapeLibraryController implements Initializable, LocalizationChangeListener, CassetteDeckEvent {
 
@@ -100,12 +100,14 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        AppSettings settings = AppSettings.getInstance();
+
         // Initialize LocalizationManager and register listener
         localizationManager = LocalizationManager.getInstance();
         localizationManager.addLanguageChangeListener(this);
 
         // Load collection from settings
-        tapeCollection = AppSettings.getInstance().getTapeCollection();
+        tapeCollection = settings.getTapeCollection();
         if (tapeCollection == null) {
             tapeCollection = new TapeCollection();
         }
@@ -195,7 +197,11 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
         // Обновляем информацию о коллекции
         updateCollectionInfo();
 
-        Machine.withHardwareProvider(provider -> provider.getCassetteDeck().addCassetteDeckEventListener(this));
+        Machine.withCassetteDeck((cd, hp) -> {
+            cd.addCassetteDeckEventListener(this);
+            cd.setSoundPushBack(settings.isEmulateTapeSound());
+            toggleTapeSound.setSelected(settings.isEmulateTapeSound());
+        });
 
     }
 
@@ -279,8 +285,11 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
                     ", section " + currentSection.getIndex());
             Machine.withCassetteDeck((cd, hv) -> {
                 if (cd != null) {
+                    // Create a new instance tapFile to get binary data
+                    TapeFile tapeFile = new TapeFile(currentFile.getFilePath());
+                    parseTapeFile(tapeFile);
                     triggerLoadCommand(hv.getMemory(), hv.getCPU());
-                    cd.insertTape(currentFile);
+                    cd.insertTape(tapeFile);
                     cd.setSectionIndex(currentSection.getIndex() - 1);
                     cd.setMotor(true);
                 }
@@ -342,7 +351,7 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
 
         // Parse file
         try {
-            TapeFileParser.parseTapeFile(tapeFile);
+            parseTapeFile(tapeFile);
 
             // add to tapes collection
             tapeCollection.addFile(tapeFile);
@@ -612,7 +621,9 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
         }
         Machine.withHardwareProvider(
                 provider -> {
-                    FastTapLoader fastLoader = new FastTapLoader(currentFile, provider);
+                    TapeFile tapeFile = new TapeFile(currentFile.getFilePath());
+                    parseTapeFile(tapeFile);
+                    FastTapLoader fastLoader = new FastTapLoader(tapeFile, provider);
                     fastLoader.load();
                 }
         );
@@ -627,6 +638,9 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
 
     public void onToggleTapeSound(ActionEvent actionEvent) {
         Machine.withCassetteDeck((cassetteDeck, hardwareProvider) -> {
+            AppSettings settings = AppSettings.getInstance();
+            settings.setEmulateTapeSound(toggleTapeSound.isSelected());
+            settings.saveSettings();
             cassetteDeck.setSoundPushBack(toggleTapeSound.isSelected());
         });
     }

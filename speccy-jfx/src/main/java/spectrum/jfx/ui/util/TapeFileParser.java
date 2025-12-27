@@ -1,18 +1,20 @@
 package spectrum.jfx.ui.util;
 
+import lombok.SneakyThrows;
 import spectrum.jfx.model.TapeFile;
 import spectrum.jfx.model.TapeSection;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public class TapeFileParser {
 
-    /**
-     * Парсит TAP или TZX файл и заполняет список секций
-     */
-    public static void parseTapeFile(TapeFile tapeFile) throws IOException {
+    @SneakyThrows
+    public static void parseTapeFile(TapeFile tapeFile) {
         File file = new File(tapeFile.getFilePath());
         if (!file.exists()) {
             throw new IOException("File not found: " + tapeFile.getFilePath());
@@ -32,10 +34,61 @@ public class TapeFileParser {
         }
     }
 
-    /**
-     * Парсит TAP файл
-     */
     private static void parseTapFile(TapeFile tapeFile, File file) throws IOException {
+        int sectionIndex = 1;
+        try (var bis = new BufferedInputStream(new FileInputStream(file))) {
+            while (bis.available() > 0) {
+                // Читаем 2 байта длины
+                byte[] lenBuf = bis.readNBytes(2);
+                if (lenBuf.length < 2) break;
+
+                int blockLength = (lenBuf[0] & 0xFF) | ((lenBuf[1] & 0xFF) << 8);
+
+                // Читаем ВЕСЬ блок сразу, включая Flag и Checksum
+                byte[] fullBlock = bis.readNBytes(blockLength);
+                if (fullBlock.length < blockLength) break;
+
+                int flag = fullBlock[0] & 0xFF;
+                String title;
+                TapeSection.SectionType type;
+
+                if (flag == 0x00 && blockLength >= 18) {
+                    int progType = fullBlock[1] & 0xFF;
+                    byte[] name = Arrays.copyOfRange(fullBlock, 2, 12);
+                    title = new String(name, StandardCharsets.US_ASCII).trim();
+                    type = switch (progType) {
+                        case 0 -> TapeSection.SectionType.PROGRAM;
+                        case 1, 2 -> TapeSection.SectionType.ARRAY;
+                        case 3 -> TapeSection.SectionType.CODE;
+                        default -> TapeSection.SectionType.UNKNOWN;
+                    };
+
+                } else {
+                    title = "Data block";
+                    type = TapeSection.SectionType.DATA;
+                }
+
+                // Проверка контрольной суммы (последний байт)
+                boolean checksumOk = verifyChecksum(fullBlock);
+                if (!checksumOk) {
+                    throw new IOException("Invalid checksum in block " + sectionIndex);
+                }
+                TapeSection section = new TapeSection(sectionIndex++, title, type, blockLength);
+                section.setData(Arrays.copyOfRange(fullBlock, 0, blockLength));
+                tapeFile.getSections().add(section);
+            }
+        }
+    }
+
+    private static boolean verifyChecksum(byte[] data) {
+        byte xor = 0;
+        for (int i = 0; i < data.length; i++) {
+            xor ^= data[i];
+        }
+        return xor == 0; // Результат XOR всех байт включая контрольный должен быть 0
+    }
+
+    private static void parseTapFileOld(TapeFile tapeFile, File file) throws IOException {
         try (FileInputStream fis = new FileInputStream(file)) {
             int sectionIndex = 1;
             byte[] lengthBytes = new byte[2];

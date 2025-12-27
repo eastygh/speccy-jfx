@@ -8,7 +8,6 @@ import javax.sound.sampled.SourceDataLine;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import static spectrum.jfx.hardware.sound.SoundImpl.generateSample;
 import static spectrum.jfx.hardware.sound.SoundUtils.initializeAudio;
 
 @Slf4j
@@ -21,6 +20,8 @@ public class OneThreadAudioImpl implements Sound {
     private final short[] beeperBuffer = new short[1024];
     private int beeperBufferIndex = 0;
     private double volume = 0.8;
+    private double lastSample = 0;
+    private double lastFiltered = 0;
     private boolean beeperState = false;
     private volatile boolean mute = false;
     private boolean enabled = true;
@@ -31,7 +32,7 @@ public class OneThreadAudioImpl implements Sound {
         if (rate == 0) {
             rate = SAMPLE_RATE;
         }
-        this.audioFormat = new AudioFormat(rate, 8, 1, true, false);
+        this.audioFormat = new AudioFormat(rate, 16, 1, true, false);
         this.cyclesPerSample = (double) machineType.clockFreq / rate;
     }
 
@@ -49,9 +50,11 @@ public class OneThreadAudioImpl implements Sound {
     public synchronized void open() {
         tactAccumulator = 0;
         enabled = true;
-        audioLine = initializeAudio(audioFormat, beeperBuffer.length);
+        audioLine = initializeAudio(audioFormat, beeperBuffer.length * 4);
         if (audioLine == null) {
             enabled = false;
+        } else {
+            audioLine.start();
         }
     }
 
@@ -89,15 +92,14 @@ public class OneThreadAudioImpl implements Sound {
             beeperBufferIndex = 0;
             return;
         }
-        byte[] playBuffer = new byte[beeperBuffer.length * 2]; // 16-bit samples
-        ByteBuffer byteBuffer = ByteBuffer.allocate(beeperBuffer.length * 2);
+        int bytesToWrite = beeperBufferIndex * 2;
+        byte[] playBuffer = new byte[bytesToWrite];
+        ByteBuffer byteBuffer = ByteBuffer.wrap(playBuffer);
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         for (int i = 0; i < beeperBufferIndex; i++) {
             byteBuffer.putShort(beeperBuffer[i]);
         }
-        byteBuffer.rewind();
-        byteBuffer.get(playBuffer);
-        audioLine.write(playBuffer, 0, beeperBufferIndex);
+        audioLine.write(playBuffer, 0, beeperBufferIndex * 2);
         beeperBufferIndex = 0;
     }
 
@@ -117,6 +119,34 @@ public class OneThreadAudioImpl implements Sound {
             writeSample(generateSample(beeperState, volume));
             tactAccumulator -= cyclesPerSample;
         }
+    }
+
+    protected short generateSample(boolean state, double volume) {
+        double rawSample = state ? BEEPER_AMPLITUDE : 0;
+        return applyFilters(rawSample, volume);
+    }
+
+    private short applyFilters(double rawInput, double volume) {
+        // 1. DC Blocker (Убираем постоянную составляющую)
+        // Алгоритм: y[n] = x[n] - x[n-1] + R * y[n-1]
+        // R обычно близко к 1.0 (например, 0.995)
+        double dcFiltered = rawInput - lastSample + (0.995 * lastFiltered);
+
+        lastSample = rawInput;
+        lastFiltered = dcFiltered;
+
+        // 2. Simple Low Pass Filter (Сглаживание углов)
+        // Имитирует инерцию динамика/цепи.
+        // Чем меньше alpha, тем сильнее сглаживание (звук глуше).
+        // Для спектрума 0.1 - 0.5 — хороший диапазон экспериментов.
+        // Но так как у нас уже есть DC Blocker, который делает сигнал знакопеременным,
+        // можно просто вернуть результат DC фильтра или слегка сгладить его.
+
+        // Вернем результат DC Blocker с учетом громкости
+        double finalSample = dcFiltered * volume;
+
+        // Клиппинг (защита от переполнения short)
+        return (short) Math.clamp(finalSample, -32767, 32767);
     }
 
     private synchronized void writeSample(short sample) {
