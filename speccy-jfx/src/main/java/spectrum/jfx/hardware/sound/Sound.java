@@ -14,12 +14,16 @@ public interface Sound extends OutPortListener, ClockListener, Device {
 
     void setVolume(double volume);
 
+    /**
+     * Triggered beeper state.
+     * example - for tape sound emulation
+     */
     void pushBackTape(boolean state);
 
     void mute(boolean state);
 
     /**
-     * Play the sound by external thread
+     * Play the sound by external thread.
      * for example - main loop
      */
     void play(int cycles);

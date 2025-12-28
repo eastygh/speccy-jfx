@@ -14,6 +14,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.machine.Emulator;
+import spectrum.jfx.machine.Machine;
 import spectrum.jfx.ui.localization.LocalizationManager;
 import spectrum.jfx.ui.localization.LocalizationManager.LocalizationChangeListener;
 import spectrum.jfx.ui.settings.AppSettings;
@@ -147,8 +148,8 @@ public class MainController implements LocalizationChangeListener {
 
         if (file != null && getEmulator() != null) {
             settings.saveLastRomPath(file.getAbsolutePath());
-            // TODO: Реализовать загрузку ROM файла
-            System.out.println(localizationManager.getString("tape.loadingRom", "Loading ROM: {0}", file.getName()));
+            Machine.withHardwareProvider(hp -> hp.getEmulator().loadRom(file.getAbsolutePath()));
+            log.info(localizationManager.getString("tape.loadingRom", "Loading ROM: {0}", file.getName()));
         }
     }
 

@@ -20,11 +20,13 @@ import spectrum.jfx.hardware.sound.OneThreadAudioImpl;
 import spectrum.jfx.hardware.sound.Sound;
 import spectrum.jfx.hardware.tape.CassetteDeckImpl;
 import spectrum.jfx.hardware.ula.*;
+import spectrum.jfx.hardware.util.EmulatorUtils;
 import spectrum.jfx.hardware.video.ScanlineVideoImpl;
 import spectrum.jfx.hardware.video.Video;
 import spectrum.jfx.machine.Machine;
 import z80core.NotifyOps;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,6 +53,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     // Emulation management
     private volatile boolean running;
     private volatile boolean paused;
+    private volatile boolean speedUpMode = false;
 
     // Emulation state
     private volatile boolean hold = false;
@@ -201,14 +204,8 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
                     hold = false;
                     long currentTime = System.nanoTime();
                     long deltaTime = currentTime - lastFrameTime;
-
-                    if (deltaTime >= FRAME_TIME_NS) {
+                    if (deltaTime >= FRAME_TIME_NS || speedUpMode) {
                         executeFrame();
-                        frameCounter++;
-                        lastFrameTime = currentTime;
-                        clock.endFrame();
-                        sound.endFrame();
-                        runExternalTasks();
                     } else {
                         Thread.onSpinWait();
                     }
@@ -231,6 +228,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         emulationThread.start();
     }
 
+
     private void runExternalTasks() {
         Runnable task = contextsTasks.poll();
         if (task != null) {
@@ -245,14 +243,14 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     }
 
     /**
-     * Выполняет эмуляцию одного кадра
+     * Emulates one frame of the Spectrum
      */
     private void executeFrame() {
         // Количество тактов процессора за кадр
         long cyclesPerFrame = CPU_FREQUENCY_HZ / 60;
 
         long executedCycles = 0;
-        while (executedCycles < cyclesPerFrame && running && !paused) {
+        while (executedCycles < cyclesPerFrame) {
 
             // Выполняем одну инструкцию процессора
             int cycles = cpu.executeInstruction();
@@ -267,6 +265,12 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         // Рендеринг кадра
         video.render();
         ula.requestInterrupt();
+        frameCounter++;
+        clock.endFrame();
+        if (!speedUpMode) {
+            sound.endFrame();
+        }
+        runExternalTasks();
     }
 
     @Override
@@ -283,6 +287,8 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         ula.reset();
         kempston.reset();
         keyboard.reset();
+        frameCounter = 0;
+        speedUpMode = false;
         resume();
     }
 
@@ -317,6 +323,24 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     @Override
     public void addExternalTask(Runnable task) {
         contextsTasks.add(task);
+    }
+
+    @Override
+    public void loadRom(String fullName) {
+        pause();
+        byte[] rom = null;
+        try {
+            rom = EmulatorUtils.loadFile(fullName);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
+        getMemory().loadROM(rom);
+        reset();
+    }
+
+    @Override
+    public void setSpeedUpMode(boolean speedUp) {
+        this.speedUpMode = speedUp;
     }
 
 }

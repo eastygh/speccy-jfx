@@ -24,4 +24,8 @@ public interface Emulator {
 
     void addExternalTask(Runnable task);
 
+    void loadRom(String fullName);
+
+    void setSpeedUpMode(boolean speedUp);
+
 }

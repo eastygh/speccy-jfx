@@ -19,6 +19,11 @@
                     <Tooltip text="%tooltip.stop"/>
                 </tooltip>
             </Button>
+            <Button text="%btn.flashLoad" fx:id="flashLoad" onAction="#onFlashLoad">
+                <tooltip>
+                    <Tooltip text="%tooltip.flashLoad"/>
+                </tooltip>
+            </Button>
             <Button text="%btn.fastLoad" fx:id="fastLoad" onAction="#onFastLoad">
                 <tooltip>
                     <Tooltip text="%tooltip.fastLoad"/>

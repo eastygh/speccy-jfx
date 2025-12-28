@@ -127,25 +127,15 @@ public class OneThreadAudioImpl implements Sound {
     }
 
     private short applyFilters(double rawInput, double volume) {
-        // 1. DC Blocker (Убираем постоянную составляющую)
-        // Алгоритм: y[n] = x[n] - x[n-1] + R * y[n-1]
-        // R обычно близко к 1.0 (например, 0.995)
+        // DC Blocker
         double dcFiltered = rawInput - lastSample + (0.995 * lastFiltered);
 
         lastSample = rawInput;
         lastFiltered = dcFiltered;
 
-        // 2. Simple Low Pass Filter (Сглаживание углов)
-        // Имитирует инерцию динамика/цепи.
-        // Чем меньше alpha, тем сильнее сглаживание (звук глуше).
-        // Для спектрума 0.1 - 0.5 — хороший диапазон экспериментов.
-        // Но так как у нас уже есть DC Blocker, который делает сигнал знакопеременным,
-        // можно просто вернуть результат DC фильтра или слегка сгладить его.
-
-        // Вернем результат DC Blocker с учетом громкости
         double finalSample = dcFiltered * volume;
 
-        // Клиппинг (защита от переполнения short)
+        // Clamping (overflow protect)
         return (short) Math.clamp(finalSample, -32767, 32767);
     }
 

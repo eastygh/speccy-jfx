@@ -15,7 +15,7 @@ import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 @Slf4j
 @RequiredArgsConstructor
-public class FastTapLoader {
+public class FlashTapLoader {
 
     public static final int LAST_KEY = 0x5C08;
     public static final int FLAGS = 0x5C3B;
@@ -67,7 +67,7 @@ public class FastTapLoader {
     }
 
     private int processLoadCommand(int address, int opcode) {
-        if (address != LOAD_PROC_ADDRESS) {
+        if (address != LOAD_PROC_ADDRESS || finished) {
             return opcode;
         }
         if (currentSectionIndex >= tapeFile.getSections().size()) {

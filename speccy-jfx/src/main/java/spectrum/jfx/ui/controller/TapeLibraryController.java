@@ -14,7 +14,7 @@ import javafx.stage.Stage;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import spectrum.jfx.hardware.tape.CassetteDeckEvent;
-import spectrum.jfx.hardware.tape.FastTapLoader;
+import spectrum.jfx.hardware.tape.FlashTapLoader;
 import spectrum.jfx.machine.Machine;
 import spectrum.jfx.model.TapeFile;
 import spectrum.jfx.model.TapeSection;
@@ -29,7 +29,7 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
-import static spectrum.jfx.hardware.tape.FastTapLoader.triggerLoadCommand;
+import static spectrum.jfx.hardware.tape.FlashTapLoader.triggerLoadCommand;
 import static spectrum.jfx.ui.util.TapeFileParser.parseTapeFile;
 
 public class TapeLibraryController implements Initializable, LocalizationChangeListener, CassetteDeckEvent {
@@ -41,6 +41,8 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
     private Button playButton;
     @FXML
     private Button stopButton;
+    @FXML
+    private Button flashLoad;
     @FXML
     private Button fastLoad;
     @FXML
@@ -257,6 +259,9 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
         playButton.setDisable(playing);
         stopButton.setDisable(!playing);
 
+        fastLoad.setDisable(playing);
+        flashLoad.setDisable(playing);
+
         playbackStatusLabel.setText(playing ? localizationManager.getString("playback.playing") : localizationManager.getString("playback.stopped"));
         playbackProgressBar.setVisible(playing);
     }
@@ -301,6 +306,7 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
 
     @FXML
     private void onStop() {
+        setSpeedUpMode(false);
         updatePlaybackControls(false);
         currentFileLabel.setText("");
         currentSectionLabel.setText("");
@@ -604,9 +610,8 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
 
     @Override
     public void onTapeFinished(boolean success) {
-        Platform.runLater(() -> {
-            updatePlaybackControls(false);
-        });
+        setSpeedUpMode(false);
+        Platform.runLater(() -> updatePlaybackControls(false));
     }
 
     @Override
@@ -614,7 +619,7 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
 
     }
 
-    public void onFastLoad(ActionEvent actionEvent) {
+    public void onFlashLoad(ActionEvent actionEvent) {
         if (currentFile == null) {
             showError(localizationManager.getString("tape.noFileSelected"));
             return;
@@ -623,7 +628,7 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
                 provider -> {
                     TapeFile tapeFile = new TapeFile(currentFile.getFilePath());
                     parseTapeFile(tapeFile);
-                    FastTapLoader fastLoader = new FastTapLoader(tapeFile, provider);
+                    FlashTapLoader fastLoader = new FlashTapLoader(tapeFile, provider);
                     fastLoader.load();
                 }
         );
@@ -645,4 +650,15 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
         });
     }
 
+    public void onFastLoad(ActionEvent actionEvent) {
+        setSpeedUpMode(true);
+        onPlay();
+    }
+
+
+    private void setSpeedUpMode(boolean speedUpMode) {
+        Machine.withHardwareProvider(
+                hardwareProvider -> hardwareProvider.getEmulator().setSpeedUpMode(speedUpMode)
+        );
+    }
 }
