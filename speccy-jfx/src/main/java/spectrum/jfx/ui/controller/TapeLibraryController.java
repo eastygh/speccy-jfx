@@ -173,21 +173,23 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
             }
         });
 
-        // Обработчики выбора
+        //
         fileListView.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldFile, newFile) -> onFileSelected(newFile));
 
         sectionListView.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldSection, newSection) -> onSectionSelected(newSection));
 
-        // Обработчик двойного клика для открытия HEX редактора
+        // Open hex editor on double click
         sectionListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 TapeSection selectedSection = sectionListView.getSelectionModel().getSelectedItem();
-
-                if (selectedSection != null && selectedSection.getData() != null) {
-                    openHexEditor(selectedSection);
-                } else if (selectedSection != null) {
+                TapeFile tapFile = new TapeFile(currentFile.getFilePath());
+                parseTapeFile(tapFile);
+                TapeSection viewSection = tapFile.getSections().get(selectedSection.getIndex() - 1);
+                if (viewSection != null && viewSection.getData() != null) {
+                    openHexEditor(viewSection);
+                } else if (viewSection != null) {
                     showWarning(localizationManager.getString("warning.sectionNoData"));
                 }
             }

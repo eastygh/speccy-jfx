@@ -199,10 +199,27 @@ public class MainController implements LocalizationChangeListener {
 
     @FXML
     protected void onExit() {
-        if (getEmulator() != null) {
-            getEmulator().stop();
+        confirmAndExit();
+    }
+
+    public void confirmAndExit() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(localizationManager.getString("confirm.exit.title"));
+        alert.setHeaderText(localizationManager.getString("confirm.exit.header"));
+        alert.setContentText(localizationManager.getString("confirm.exit.content"));
+
+        // Применяем тему к диалогу
+        alert.getDialogPane().getScene().getStylesheets().clear();
+        if (scene != null) {
+            alert.getDialogPane().getScene().getStylesheets().addAll(scene.getStylesheets());
         }
-        Platform.exit();
+
+        if (alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
+            if (getEmulator() != null) {
+                getEmulator().stop();
+            }
+            Platform.exit();
+        }
     }
 
     @FXML

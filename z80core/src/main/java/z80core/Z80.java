@@ -255,7 +255,7 @@ import java.util.BitSet;
 @Slf4j
 public class Z80 {
 
-    protected final SpectrumClock clock;
+    private final SpectrumClock clock;
     protected MemIoOps MemIoImpl;
     protected NotifyOps NotifyImpl;
     // Se está ejecutando una instrucción DDxx, EDxx o FDxx 
@@ -264,27 +264,27 @@ public class Z80 {
     // Subsistema de notificaciones
     protected boolean execDone = false;
     // Posiciones de los flags
-    protected static final int CARRY_MASK = 0x01;
-    protected static final int ADDSUB_MASK = 0x02;
-    protected static final int PARITY_MASK = 0x04;
-    protected static final int OVERFLOW_MASK = 0x04; // alias de PARITY_MASK
-    protected static final int BIT3_MASK = 0x08;
-    protected static final int HALFCARRY_MASK = 0x10;
-    protected static final int BIT5_MASK = 0x20;
-    protected static final int ZERO_MASK = 0x40;
-    protected static final int SIGN_MASK = 0x80;
+    private static final int CARRY_MASK = 0x01;
+    private static final int ADDSUB_MASK = 0x02;
+    private static final int PARITY_MASK = 0x04;
+    private static final int OVERFLOW_MASK = 0x04; // alias de PARITY_MASK
+    private static final int BIT3_MASK = 0x08;
+    private static final int HALFCARRY_MASK = 0x10;
+    private static final int BIT5_MASK = 0x20;
+    private static final int ZERO_MASK = 0x40;
+    private static final int SIGN_MASK = 0x80;
     // Máscaras de conveniencia
-    protected static final int FLAG_53_MASK = BIT5_MASK | BIT3_MASK;
-    protected static final int FLAG_SZ_MASK = SIGN_MASK | ZERO_MASK;
-    protected static final int FLAG_SZHN_MASK = FLAG_SZ_MASK | HALFCARRY_MASK | ADDSUB_MASK;
-    protected static final int FLAG_SZP_MASK = FLAG_SZ_MASK | PARITY_MASK;
-    protected static final int FLAG_SZHP_MASK = FLAG_SZP_MASK | HALFCARRY_MASK;
+    private static final int FLAG_53_MASK = BIT5_MASK | BIT3_MASK;
+    private static final int FLAG_SZ_MASK = SIGN_MASK | ZERO_MASK;
+    private static final int FLAG_SZHN_MASK = FLAG_SZ_MASK | HALFCARRY_MASK | ADDSUB_MASK;
+    private static final int FLAG_SZP_MASK = FLAG_SZ_MASK | PARITY_MASK;
+    private static final int FLAG_SZHP_MASK = FLAG_SZP_MASK | HALFCARRY_MASK;
     // Acumulador y resto de registros de 8 bits
-    protected int regA, regB, regC, regD, regE, regH, regL;
+    private int regA, regB, regC, regD, regE, regH, regL;
     // Flags sIGN, zERO, 5, hALFCARRY, 3, pARITY y ADDSUB (n)
-    protected int sz5h3pnFlags;
+    private int sz5h3pnFlags;
     // El flag Carry es el único que se trata aparte
-    protected boolean carryFlag;
+    private boolean carryFlag;
     /* Flags para indicar la modificación del registro F en la instrucción actual
      * y en la anterior.
      * Son necesarios para emular el comportamiento de los bits 3 y 5 del
@@ -297,28 +297,28 @@ public class Z80 {
      */
     protected boolean flagQ, lastFlagQ;
     // Acumulador alternativo y flags -- 8 bits
-    protected int regAx;
-    protected int regFx;
+    private int regAx;
+    private int regFx;
     // Registros alternativos
-    protected int regBx, regCx, regDx, regEx, regHx, regLx;
+    private int regBx, regCx, regDx, regEx, regHx, regLx;
     // Registros de propósito específico
     // *PC -- Program Counter -- 16 bits*
     protected int regPC;
     // *IX -- Registro de índice -- 16 bits*
-    protected int regIX;
+    private int regIX;
     // *IY -- Registro de índice -- 16 bits*
-    protected int regIY;
+    private int regIY;
     // *SP -- Stack Pointer -- 16 bits*
-    protected int regSP;
+    private int regSP;
     // *I -- Vector de interrupción -- 8 bits*
-    protected int regI;
+    private int regI;
     // *R -- Refresco de memoria -- 7 bits*
     protected int regR;
     // *R7 -- Refresco de memoria -- 1 bit* (bit superior de R)
-    protected boolean regRbit7;
+    private boolean regRbit7;
     //Flip-flops de interrupción
     protected boolean ffIFF1 = false;
-    protected boolean ffIFF2 = false;
+    private boolean ffIFF2 = false;
     // EI solo habilita las interrupciones DESPUES de ejecutar la
     // siguiente instrucción (excepto si la siguiente instrucción es un EI...)
     protected boolean pendingEI = false;
@@ -327,15 +327,15 @@ public class Z80 {
     // Si está activa la línea INT
     // En el 48 y los +2a/+3 la línea INT se activa durante 32 ciclos de reloj
     // En el 128 y +2, se activa 36 ciclos de reloj
-    protected boolean activeINT = false;
+    private boolean activeINT = false;
     // Modos de interrupción
     public enum IntMode { IM0, IM1, IM2 };
     // Modo de interrupción
-    protected IntMode modeINT = IntMode.IM0;
+    private IntMode modeINT = IntMode.IM0;
     // halted == true cuando la CPU está ejecutando un HALT (28/03/2010)
     protected boolean halted = false;
     // pinReset == true, se ha producido un reset a través de la patilla
-    protected boolean pinReset = false;
+    private boolean pinReset = false;
     /*
      * Registro interno que usa la CPU de la siguiente forma
      *
@@ -356,7 +356,7 @@ public class Z80 {
      *                registro en TODAS las otras instrucciones.
      *                Shit yourself, little parrot.
      */
-    protected int memptr;
+    private int memptr;
 
     /* Algunos flags se precalculan para un tratamiento más rápido
      * Concretamente, SIGN, ZERO, los bits 3, 5, PARITY y ADDSUB:
@@ -369,10 +369,10 @@ public class Z80 {
      * decreto. Si lo ponen a 1 por el mismo método basta con hacer un OR con
      * la máscara correspondiente.
      */
-    protected static final int sz53n_addTable[] = new int[256];
-    protected static final int sz53pn_addTable[] = new int[256];
-    protected static final int sz53n_subTable[] = new int[256];
-    protected static final int sz53pn_subTable[] = new int[256];
+    private static final int sz53n_addTable[] = new int[256];
+    private static final int sz53pn_addTable[] = new int[256];
+    private static final int sz53n_subTable[] = new int[256];
+    private static final int sz53pn_subTable[] = new int[256];
 
     static {
         boolean evenBits;
@@ -581,7 +581,7 @@ public class Z80 {
         regC = word & 0xff;
     }
 
-    protected void incRegBC() {
+    private void incRegBC() {
         if (++regC < 0x100) {
             return;
         }
@@ -595,7 +595,7 @@ public class Z80 {
         regB = 0;
     }
 
-    protected void decRegBC() {
+    private void decRegBC() {
         if (--regC >= 0) {
             return;
         }
@@ -627,7 +627,7 @@ public class Z80 {
         regE = word & 0xff;
     }
 
-    protected void incRegDE() {
+    private void incRegDE() {
         if (++regE < 0x100) {
             return;
         }
@@ -641,7 +641,7 @@ public class Z80 {
         regD = 0;
     }
 
-    protected void decRegDE() {
+    private void decRegDE() {
         if (--regE >= 0) {
             return;
         }
@@ -677,7 +677,7 @@ public class Z80 {
      * puedan aprovechar el camino más corto aunque tengan un poco más de
      * código (al menos en bytecodes lo tienen)
      */
-    protected void incRegHL() {
+    private void incRegHL() {
         if (++regL < 0x100) {
             return;
         }
@@ -691,7 +691,7 @@ public class Z80 {
         regH = 0;
     }
 
-    protected void decRegHL() {
+    private void decRegHL() {
         if (--regL >= 0) {
             return;
         }
@@ -1075,7 +1075,7 @@ public class Z80 {
 
     // Rota a la izquierda el valor del argumento
     // El bit 0 y el flag C toman el valor del bit 7 antes de la operación
-    protected int rlc(int oper8) {
+    private int rlc(int oper8) {
         carryFlag = (oper8 > 0x7f);
         oper8 = (oper8 << 1) & 0xfe;
         if (carryFlag) {
@@ -1089,7 +1089,7 @@ public class Z80 {
     // Rota a la izquierda el valor del argumento
     // El bit 7 va al carry flag
     // El bit 0 toma el valor del flag C antes de la operación
-    protected int rl(int oper8) {
+    private int rl(int oper8) {
         boolean carry = carryFlag;
         carryFlag = (oper8 > 0x7f);
         oper8 = (oper8 << 1) & 0xfe;
@@ -1104,7 +1104,7 @@ public class Z80 {
     // Rota a la izquierda el valor del argumento
     // El bit 7 va al carry flag
     // El bit 0 toma el valor 0
-    protected int sla(int oper8) {
+    private int sla(int oper8) {
         carryFlag = (oper8 > 0x7f);
         oper8 = (oper8 << 1) & 0xfe;
         sz5h3pnFlags = sz53pn_addTable[oper8];
@@ -1116,7 +1116,7 @@ public class Z80 {
     // El bit 7 va al carry flag
     // El bit 0 toma el valor 1
     // Instrucción indocumentada
-    protected int sll(int oper8) {
+    private int sll(int oper8) {
         carryFlag = (oper8 > 0x7f);
         oper8 = ((oper8 << 1) | CARRY_MASK) & 0xff;
         sz5h3pnFlags = sz53pn_addTable[oper8];
@@ -1126,7 +1126,7 @@ public class Z80 {
 
     // Rota a la derecha el valor del argumento
     // El bit 7 y el flag C toman el valor del bit 0 antes de la operación
-    protected int rrc(int oper8) {
+    private int rrc(int oper8) {
         carryFlag = (oper8 & CARRY_MASK) != 0;
         oper8 >>>= 1;
         if (carryFlag) {
@@ -1140,7 +1140,7 @@ public class Z80 {
     // Rota a la derecha el valor del argumento
     // El bit 0 va al carry flag
     // El bit 7 toma el valor del flag C antes de la operación
-    protected int rr(int oper8) {
+    private int rr(int oper8) {
         boolean carry = carryFlag;
         carryFlag = (oper8 & CARRY_MASK) != 0;
         oper8 >>>= 1;
@@ -1158,7 +1158,7 @@ public class Z80 {
     // Los 4 bits bajos que había en A se copian a los bits 7,6,5 y 4 de (HL).
     // Los 4 bits altos que había en (HL) se copian a los 4 bits bajos de (HL)
     // Los 4 bits superiores de A no se tocan. ¡p'habernos matao!
-    protected void rrd() {
+    private void rrd() {
         int aux = (regA & 0x0f) << 4;
         memptr = getRegHL();
         int memHL = MemIoImpl.peek8(memptr);
@@ -1176,7 +1176,7 @@ public class Z80 {
     // Los 4 bits altos que había en (HL) se copian a los 4 bits bajos de A
     // Los bits 3,2,1 y 0 de A se copian a los bits 3,2,1 y 0 de (HL).
     // Los 4 bits superiores de A no se tocan. ¡p'habernos matao!
-    protected void rld() {
+    private void rld() {
         int aux = regA & 0x0f;
         memptr = getRegHL();
         int memHL = MemIoImpl.peek8(memptr);
@@ -1191,7 +1191,7 @@ public class Z80 {
     // Rota a la derecha 1 bit el valor del argumento
     // El bit 0 pasa al carry.
     // El bit 7 conserva el valor que tenga
-    protected int sra(int oper8) {
+    private int sra(int oper8) {
         int sign = oper8 & SIGN_MASK;
         carryFlag = (oper8 & CARRY_MASK) != 0;
         oper8 = (oper8 >> 1) | sign;
@@ -1203,7 +1203,7 @@ public class Z80 {
     // Rota a la derecha 1 bit el valor del argumento
     // El bit 0 pasa al carry.
     // El bit 7 toma el valor 0
-    protected int srl(int oper8) {
+    private int srl(int oper8) {
         carryFlag = (oper8 & CARRY_MASK) != 0;
         oper8 >>>= 1;
         sz5h3pnFlags = sz53pn_addTable[oper8];
@@ -1232,7 +1232,7 @@ public class Z80 {
      * V_FLAG = RESULT==0x7F
      */
     // Incrementa un valor de 8 bits modificando los flags oportunos
-    protected int inc8(int oper8) {
+    private int inc8(int oper8) {
         oper8 = (oper8 + 1) & 0xff;
 
         sz5h3pnFlags = sz53n_addTable[oper8];
@@ -1250,7 +1250,7 @@ public class Z80 {
     }
 
     // Decrementa un valor de 8 bits modificando los flags oportunos
-    protected int dec8(int oper8) {
+    private int dec8(int oper8) {
         oper8 = (oper8 - 1) & 0xff;
 
         sz5h3pnFlags = sz53n_subTable[oper8];
@@ -1268,7 +1268,7 @@ public class Z80 {
     }
 
     // Suma de 8 bits afectando a los flags
-    protected void add(int oper8) {
+    private void add(int oper8) {
         int res = regA + oper8;
 
         carryFlag = res > 0xff;
@@ -1291,7 +1291,7 @@ public class Z80 {
     }
 
     // Suma con acarreo de 8 bits
-    protected void adc(int oper8) {
+    private void adc(int oper8) {
         int res = regA + oper8;
 
         if (carryFlag) {
@@ -1315,7 +1315,7 @@ public class Z80 {
     }
 
     // Suma dos operandos de 16 bits sin carry afectando a los flags
-    protected int add16(int reg16, int oper16) {
+    private int add16(int reg16, int oper16) {
         oper16 += reg16;
 
         carryFlag = oper16 > 0xffff;
@@ -1332,7 +1332,7 @@ public class Z80 {
     }
 
     // Suma con acarreo de 16 bits
-    protected void adc16(int reg16) {
+    private void adc16(int reg16) {
         int regHL = getRegHL();
         memptr = regHL + 1;
 
@@ -1362,7 +1362,7 @@ public class Z80 {
     }
 
     // Resta de 8 bits
-    protected void sub(int oper8) {
+    private void sub(int oper8) {
         int res = regA - oper8;
 
         carryFlag = res < 0;
@@ -1385,7 +1385,7 @@ public class Z80 {
     }
 
     // Resta con acarreo de 8 bits
-    protected void sbc(int oper8) {
+    private void sbc(int oper8) {
         int res = regA - oper8;
 
         if (carryFlag) {
@@ -1409,7 +1409,7 @@ public class Z80 {
     }
 
     // Resta con acarreo de 16 bits
-    protected void sbc16(int reg16) {
+    private void sbc16(int reg16) {
         int regHL = getRegHL();
         memptr = regHL + 1;
 
@@ -1438,7 +1438,7 @@ public class Z80 {
     }
 
     // Operación AND lógica
-    protected void and(int oper8) {
+    private void and(int oper8) {
         regA &= oper8;
         carryFlag = false;
         sz5h3pnFlags = sz53pn_addTable[regA] | HALFCARRY_MASK;
@@ -1454,7 +1454,7 @@ public class Z80 {
     }
 
     // Operación OR lógica
-    protected void or(int oper8) {
+    private void or(int oper8) {
         regA = (regA | oper8) & 0xff;
         carryFlag = false;
         sz5h3pnFlags = sz53pn_addTable[regA];
@@ -1487,7 +1487,7 @@ public class Z80 {
     }
 
     // DAA
-    protected void daa() {
+    private void daa() {
         int suma = 0;
         boolean carry = carryFlag;
 
@@ -1517,14 +1517,14 @@ public class Z80 {
     }
 
     // POP
-    protected int pop() {
+    private int pop() {
         int word = MemIoImpl.peek16(regSP);
         regSP = (regSP + 2) & 0xffff;
         return word;
     }
 
     // PUSH
-    protected void push(int word) {
+    private void push(int word) {
         regSP = (regSP - 1) & 0xffff;
         MemIoImpl.poke8(regSP, word >>> 8);
         regSP = (regSP - 1) & 0xffff;
@@ -1532,7 +1532,7 @@ public class Z80 {
     }
 
     // LDI
-    protected void ldi() {
+    private void ldi() {
         int work8 = MemIoImpl.peek8(getRegHL());
         int regDE = getRegDE();
         MemIoImpl.poke8(regDE, work8);
@@ -1555,7 +1555,7 @@ public class Z80 {
     }
 
     // LDD
-    protected void ldd() {
+    private void ldd() {
         int work8 = MemIoImpl.peek8(getRegHL());
         int regDE = getRegDE();
         MemIoImpl.poke8(regDE, work8);
@@ -1578,7 +1578,7 @@ public class Z80 {
     }
 
     // CPI
-    protected void cpi() {
+    private void cpi() {
         int regHL = getRegHL();
         int memHL = MemIoImpl.peek8(regHL);
         boolean carry = carryFlag; // lo guardo porque cp lo toca
@@ -1603,7 +1603,7 @@ public class Z80 {
     }
 
     // CPD
-    protected void cpd() {
+    private void cpd() {
         int regHL = getRegHL();
         int memHL = MemIoImpl.peek8(regHL);
         boolean carry = carryFlag; // lo guardo porque cp lo toca
@@ -1628,7 +1628,7 @@ public class Z80 {
     }
 
     // INI
-    protected void ini() {
+    private void ini() {
         memptr = getRegBC();
         MemIoImpl.addressOnBus(getPairIR(), 1);
         int work8 = MemIoImpl.inPort(memptr);
@@ -1661,7 +1661,7 @@ public class Z80 {
     }
 
     // IND
-    protected void ind() {
+    private void ind() {
         memptr = getRegBC();
         MemIoImpl.addressOnBus(getPairIR(), 1);
         int work8 = MemIoImpl.inPort(memptr);
@@ -1694,7 +1694,7 @@ public class Z80 {
     }
 
     // OUTI
-    protected void outi() {
+    private void outi() {
 
         MemIoImpl.addressOnBus(getPairIR(), 1);
 
@@ -1727,7 +1727,7 @@ public class Z80 {
     }
 
     // OUTD
-    protected void outd() {
+    private void outd() {
 
         MemIoImpl.addressOnBus(getPairIR(), 1);
 
@@ -1771,7 +1771,7 @@ public class Z80 {
      * 04/12/08 Confirmado el comentario anterior:
      *          http://scratchpad.wikia.com/wiki/Z80
      */
-    protected void bit(int mask, int reg) {
+    private void bit(int mask, int reg) {
         boolean zeroFlag = (mask & reg) == 0;
 
         sz5h3pnFlags = (sz53n_addTable[reg] & ~FLAG_SZP_MASK) | HALFCARRY_MASK;
@@ -3237,7 +3237,7 @@ public class Z80 {
     }
 
     //Subconjunto de instrucciones 0xCB
-    protected void decodeCB() {
+    private void decodeCB() {
         int opCode = MemIoImpl.fetchOpcode(regPC);
         regPC = (regPC + 1) & 0xffff;
         regR++;
@@ -4392,7 +4392,7 @@ public class Z80 {
      * Naturalmente, en una serie repetida de DDFD no hay que comprobar las
      * interrupciones entre cada prefijo.
      */
-    protected int decodeDDFD(int opCode, int regIXY) {
+    private int decodeDDFD(int opCode, int regIXY) {
         switch (opCode) {
             case 0x09: {     /* ADD IX,BC */
                 MemIoImpl.addressOnBus(getPairIR(), 7);
@@ -4882,7 +4882,7 @@ public class Z80 {
     }
 
     // Subconjunto de instrucciones 0xDD/0xFD 0xCB
-    protected void decodeDDFDCB(int opCode, int address) {
+    private void decodeDDFDCB(int opCode, int address) {
 
         switch (opCode) {
             case 0x00: /* RLC (IX+d),B */
@@ -5364,7 +5364,7 @@ public class Z80 {
     // Detrás de 0xED tiene que venir un código válido de instrucción
     // si no es así, se trata como un NOP, incluso con los prefijos
     // 0xDD, 0xED y 0xFD.
-    protected void decodeED(int opCode) {
+    private void decodeED(int opCode) {
         switch (opCode) {
             case 0x40: {     /* IN B,(C) */
                 memptr = getRegBC();
@@ -5755,7 +5755,7 @@ public class Z80 {
         }
     }
 
-    protected void copyToRegister(int opCode, int value)
+    private void copyToRegister(int opCode, int value)
     {
         switch(opCode & 0x07)
         {
@@ -5784,7 +5784,7 @@ public class Z80 {
         }
     }
 
-    protected void adjustINxROUTxRFlags()
+    private void adjustINxROUTxRFlags()
     {
         sz5h3pnFlags &= ~FLAG_53_MASK;
         sz5h3pnFlags |= (regPC >>> 8) & FLAG_53_MASK;

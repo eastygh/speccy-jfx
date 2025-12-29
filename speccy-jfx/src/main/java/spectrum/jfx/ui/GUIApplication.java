@@ -110,6 +110,12 @@ public class GUIApplication extends Application {
             settings.saveWindowSize(stage.getWidth(), stage.getHeight(), isMaximized);
         });
 
+        // Handle window close request
+        stage.setOnCloseRequest(event -> {
+            controller.confirmAndExit();
+            event.consume(); // Always consume to prevent default closing, confirmAndExit will call Platform.exit() if needed
+        });
+
         stage.show();
 
         // Configure videoContainer for keyboard events
