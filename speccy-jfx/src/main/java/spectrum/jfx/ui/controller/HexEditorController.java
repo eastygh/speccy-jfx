@@ -1,6 +1,7 @@
 package spectrum.jfx.ui.controller;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -11,14 +12,19 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import spectrum.jfx.debug.SpectrumBasicParser;
 import spectrum.jfx.model.TapeSection;
 import spectrum.jfx.ui.localization.LocalizationManager;
 import spectrum.jfx.ui.localization.LocalizationManager.LocalizationChangeListener;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
+@Slf4j
 public class HexEditorController implements Initializable, LocalizationChangeListener {
+
 
     @FXML
     private Label titleLabel;
@@ -28,6 +34,8 @@ public class HexEditorController implements Initializable, LocalizationChangeLis
     private VBox hexDataContainer;
     @FXML
     private Button closeButton;
+    @FXML
+    public Button basicView;
 
     @Setter
     private Stage stage;
@@ -219,4 +227,17 @@ public class HexEditorController implements Initializable, LocalizationChangeLis
     public void onLanguageChanged(LocalizationManager.Language newLanguage) {
         Platform.runLater(this::updateDisplay);
     }
+
+    public void onBasicView(ActionEvent actionEvent) {
+        byte[] data = new byte[tapeSection.getLength() - 2];
+        System.arraycopy(tapeSection.getData(), 1, data, 0, tapeSection.getLength() - 2);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < data.length; i++) {
+            sb.append(String.format("%02X ", data[i])).append(",");
+        }
+        log.info("BASIC data: {}", sb);
+        List<String> basicProgram = SpectrumBasicParser.parse(data);
+        log.info("BASIC program: {}", basicProgram);
+    }
+
 }

@@ -9,4 +9,9 @@ public interface Device {
     void open();
 
     void close();
+
+    default void setSpeedUpMode(boolean speedUpMode) {
+
+    }
+
 }

@@ -1,7 +1,10 @@
 package spectrum.jfx.hardware.ula;
 
 import lombok.Getter;
+import machine.MachineTypes;
 import machine.SpectrumClock;
+import org.apache.commons.lang3.NotImplementedException;
+import spectrum.jfx.hardware.machine.MachineSettings;
 import spectrum.jfx.hardware.memory.Memory;
 
 import java.util.HashMap;
@@ -13,17 +16,27 @@ public class UlaImpl implements Ula {
 
     private final Memory memory;
 
-    private boolean interruptRequested = false;
+    private volatile boolean interruptRequested = false;
     @Getter
     private final boolean ulaAddTStates = true;
     private final Map<Integer, Set<InPortListener>> inPortListeners = new HashMap<>();
     private final Map<Integer, Set<OutPortListener>> outPortListeners = new HashMap<>();
     private final ZXClock clock;
+    private final MachineSettings machineSettings;
     // Support zx-core project lib
     private static final SpectrumClock spectrumClock = SpectrumClock.INSTANCE;
 
-    public UlaImpl(Memory memory) {
+    private final byte[] contentionTable;
+
+    public UlaImpl(Memory memory, MachineSettings machineSettings) {
         this.memory = memory;
+        this.machineSettings = machineSettings;
+        this.contentionTable = new byte[machineSettings.getMachineType().tstatesFrame];
+        if (machineSettings.getMachineType() == MachineTypes.SPECTRUM48K) {
+            buildContentionTable48(machineSettings.getMachineType());
+        } else {
+            throw new NotImplementedException("Not implemented machine " + machineSettings.getMachineType());
+        }
         this.clock = new ZXClock();
     }
 
@@ -61,6 +74,9 @@ public class UlaImpl implements Ula {
         // 3 clocks to fetch opcode from RAM and 1 execution clock
         if (ulaAddTStates) {
             clock.incrementTStates(4);
+            if (memory.isScreenAddress(address)) {
+                clock.incrementTStates(getContentionDelay(clock.getTStates()));
+            }
         }
         return memory.readByte(address) & 0xff;
     }
@@ -69,6 +85,9 @@ public class UlaImpl implements Ula {
     public int peek8(int address) {
         if (ulaAddTStates) {
             clock.incrementTStates(3); // 3 clocks for read byte from RAM
+            if (memory.isScreenAddress(address)) {
+                clock.incrementTStates(getContentionDelay(clock.getTStates()));
+            }
         }
         return memory.readByte(address) & 0xff;
     }
@@ -77,8 +96,11 @@ public class UlaImpl implements Ula {
     public void poke8(int address, int value) {
         if (ulaAddTStates) {
             clock.incrementTStates(3);  // 3 clocks for write byte to RAM
+            if (memory.isScreenAddress(address)) {
+                clock.incrementTStates(getContentionDelay(clock.getTStates()));
+            }
         }
-        memory.writeByte(address, (byte) value);
+        memory.writeByte(address, value);
     }
 
     @Override
@@ -169,6 +191,39 @@ public class UlaImpl implements Ula {
     public void reset() {
         clock.reset();
         spectrumClock.reset();
+    }
+
+
+    private void buildContentionTable48(MachineTypes machineType) {
+
+        for (int i = 0; i < machineType.tstatesFrame; i++) {
+            contentionTable[i] = 0;
+        }
+
+        int currentT = machineType.firstScrByte;
+        for (int line = 0; line < 192; line++) {
+
+            for (int t = 0; t < 128; t += 8) {
+                setDelay(currentT + t, 6);
+                setDelay(currentT + t + 1, 5);
+                setDelay(currentT + t + 2, 4);
+                setDelay(currentT + t + 3, 3);
+                setDelay(currentT + t + 4, 2);
+                setDelay(currentT + t + 5, 1);
+
+            }
+            currentT += machineType.tstatesLine;
+        }
+    }
+
+    private void setDelay(int tState, int delay) {
+        if (tState < contentionTable.length) {
+            contentionTable[tState] = (byte) delay;
+        }
+    }
+
+    private int getContentionDelay(long currentTState) {
+        return contentionTable[Math.toIntExact(currentTState % machineSettings.getMachineType().tstatesFrame)];
     }
 
 }

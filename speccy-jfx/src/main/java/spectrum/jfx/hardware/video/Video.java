@@ -1,9 +1,11 @@
 package spectrum.jfx.hardware.video;
 
+import spectrum.jfx.hardware.machine.Device;
+
 import static spectrum.jfx.hardware.video.SpectrumVideo.TOTAL_HEIGHT;
 import static spectrum.jfx.hardware.video.SpectrumVideo.TOTAL_WIDTH;
 
-public interface Video<T> {
+public interface Video<T> extends Device {
 
     // Разрешение экрана ZX Spectrum (оригинальное)
     int SCREEN_WIDTH = 256;

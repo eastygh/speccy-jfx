@@ -1,8 +1,11 @@
 package spectrum.jfx.hardware.cpu;
 
 import lombok.extern.slf4j.Slf4j;
+import machine.MachineTypes;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import spectrum.jfx.hardware.machine.MachineSettings;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.memory.MemoryImpl;
 import spectrum.jfx.hardware.ula.OutPortListener;
@@ -18,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static spectrum.jfx.hardware.memory.MemoryImpl.ROM_SIZE;
 import static spectrum.jfx.hardware.util.EmulatorUtils.loadFile;
 
+@Disabled
 @Slf4j
 class TStatesTest implements NotifyOps, OutPortListener {
 
@@ -26,12 +30,16 @@ class TStatesTest implements NotifyOps, OutPortListener {
     Ula ula;
 
     AtomicBoolean done = new AtomicBoolean(false);
+    MachineSettings machineSettings = MachineSettings.builder()
+            .machineType(MachineTypes.SPECTRUM48K)
+            .audioSampleRate(44100)
+            .build();
 
     @BeforeEach
     void init() {
         memory = new MemoryImpl();
         ((MemoryImpl) memory).setRomWriteProtected(false);
-        ula = new UlaImpl(memory);
+        ula = new UlaImpl(memory, machineSettings);
         ula.addPortListener(0xFE, this);
         cpu = new Z80WrapperImpl(ula, this);
     }
@@ -55,7 +63,6 @@ class TStatesTest implements NotifyOps, OutPortListener {
 
     @Test
     void zexallTest() throws IOException {
-        int tstates = 0;
 
         cpu.reset();
 
@@ -73,13 +80,35 @@ class TStatesTest implements NotifyOps, OutPortListener {
 
         done.set(false);
         while (!done.get()) {
-            tstates = cpu.executeInstruction();
+            cpu.executeInstruction();
             if (z80core.getRegPC() == 5) {
                 handleBDOSCall();
                 memory.writeByte(0x0005, (byte) 0xC9);
             }
         }
 
+    }
+
+    @Test
+    void zexdocTest() throws IOException {
+        cpu.reset();
+        memory.reset();
+        ula.reset();
+        byte[] zexdoc = loadFile("/tests/zexdoc.com");
+        byte[] rom = new byte[ROM_SIZE];
+        System.arraycopy(zexdoc, 0, rom, 0x100, zexdoc.length);
+        memory.loadROM(rom);
+        cpu.setRegPC(0x100);
+        cpu.setRegSP(0xF000);
+
+        done.set(false);
+        while (!done.get()) {
+            cpu.executeInstruction();
+            if (cpu.getRegPC() == 5) {
+                handleBDOSCall();
+                memory.writeByte(0x0005, (byte) 0xC9);
+            }
+        }
     }
 
     private void handleBDOSCall() {

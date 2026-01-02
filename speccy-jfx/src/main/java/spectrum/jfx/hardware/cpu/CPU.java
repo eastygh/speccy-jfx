@@ -56,4 +56,6 @@ public interface CPU {
 
     boolean isCarryFlag();
 
+    int getRegPC();
+
 }

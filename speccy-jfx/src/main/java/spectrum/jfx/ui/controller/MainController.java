@@ -225,9 +225,9 @@ public class MainController implements LocalizationChangeListener {
     @FXML
     protected void onTapeLibrary() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/tape-library-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/controller/tape-library-view.fxml"));
             // Set the resource bundle for the FXML loader
-            loader.setResources(java.util.ResourceBundle.getBundle("messages", localizationManager.getCurrentLanguage().getLocale()));
+            loader.setResources(java.util.ResourceBundle.getBundle("i18n/messages", localizationManager.getCurrentLanguage().getLocale()));
             BorderPane root = loader.load();
 
             TapeLibraryController controller = loader.getController();

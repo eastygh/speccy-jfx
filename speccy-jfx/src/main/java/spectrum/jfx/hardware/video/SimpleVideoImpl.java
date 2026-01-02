@@ -338,4 +338,19 @@ public class SimpleVideoImpl implements Video<Canvas>, OutPortListener {
         setZoomLevel(levels[prevIndex]);
     }
 
+    @Override
+    public void init() {
+        reset();
+    }
+
+    @Override
+    public void open() {
+        reset();
+    }
+
+    @Override
+    public void close() {
+        reset();
+    }
+
 }

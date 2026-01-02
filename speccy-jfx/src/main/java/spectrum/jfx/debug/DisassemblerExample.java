@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.debug;
+package spectrum.jfx.debug;
 
 
 import spectrum.jfx.hardware.memory.Memory;
@@ -7,8 +7,7 @@ import spectrum.jfx.hardware.memory.MemoryImpl;
 import java.util.List;
 
 /**
- * Пример использования дизассемблера Z80
- * Демонстрирует базовые возможности дизассемблера
+ *
  */
 public class DisassemblerExample {
 

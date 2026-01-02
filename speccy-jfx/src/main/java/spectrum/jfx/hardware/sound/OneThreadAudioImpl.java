@@ -1,7 +1,7 @@
 package spectrum.jfx.hardware.sound;
 
 import lombok.extern.slf4j.Slf4j;
-import machine.MachineTypes;
+import spectrum.jfx.hardware.machine.MachineSettings;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.SourceDataLine;
@@ -28,12 +28,10 @@ public class OneThreadAudioImpl implements Sound {
 
     private SourceDataLine audioLine;
 
-    public OneThreadAudioImpl(MachineTypes machineType, int rate) {
-        if (rate == 0) {
-            rate = SAMPLE_RATE;
-        }
+    public OneThreadAudioImpl(MachineSettings machineSettings) {
+        int rate = machineSettings.getAudioSampleRate();
         this.audioFormat = new AudioFormat(rate, 16, 1, true, false);
-        this.cyclesPerSample = (double) machineType.clockFreq / rate;
+        this.cyclesPerSample = (double) machineSettings.getMachineType().clockFreq / rate;
     }
 
     @Override

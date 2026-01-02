@@ -121,17 +121,17 @@ public class FlashTapLoader {
 
     @SneakyThrows
     public static void triggerLoadCommand(Memory memory, CPU cpu) {
-        memory.writeByte(LAST_KEY, (byte) 0xEF); // LOAD keyword
-        memory.writeByte(FLAGS, (byte) (memory.readByte(FLAGS) | 0x20)); // flag that a key was pressed
+        memory.writeByte(LAST_KEY, 0xEF); // LOAD keyword
+        memory.writeByte(FLAGS, memory.readByte(FLAGS) | 0x20); // flag that a key was pressed
         Thread.sleep(30);
-        memory.writeByte(LAST_KEY, (byte) 0x22); // "
-        memory.writeByte(FLAGS, (byte) (memory.readByte(FLAGS) | 0x20));
+        memory.writeByte(LAST_KEY, 0x22); // "
+        memory.writeByte(FLAGS, memory.readByte(FLAGS) | 0x20);
         Thread.sleep(30);
-        memory.writeByte(LAST_KEY, (byte) 0x22); // "
-        memory.writeByte(FLAGS, (byte) (memory.readByte(FLAGS) | 0x20));
+        memory.writeByte(LAST_KEY, 0x22); // "
+        memory.writeByte(FLAGS, memory.readByte(FLAGS) | 0x20);
         Thread.sleep(30);
-        memory.writeByte(LAST_KEY, (byte) 0x0D); // ENTER
-        memory.writeByte(FLAGS, (byte) (memory.readByte(FLAGS) | 0x20));
+        memory.writeByte(LAST_KEY, 0x0D); // ENTER
+        memory.writeByte(FLAGS, memory.readByte(FLAGS) | 0x20);
         Thread.sleep(30);
     }
 

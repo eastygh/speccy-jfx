@@ -6,7 +6,6 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-import machine.MachineTypes;
 import spectrum.jfx.hardware.SpectrumEmulator;
 import spectrum.jfx.ui.controller.MainController;
 import spectrum.jfx.ui.localization.LocalizationManager;
@@ -30,13 +29,13 @@ public class GUIApplication extends Application {
         AppSettings settings = AppSettings.getInstance();
         LocalizationManager localizationManager = LocalizationManager.getInstance();
 
-        FXMLLoader fxmlLoader = new FXMLLoader(GUIApplication.class.getResource("/main-view.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(GUIApplication.class.getResource("/gui/controller/main-view.fxml"));
         // Set resource bundle for FXML loader
-        fxmlLoader.setResources(java.util.ResourceBundle.getBundle("messages", localizationManager.getCurrentLanguage().getLocale()));
+        fxmlLoader.setResources(java.util.ResourceBundle.getBundle("i18n/messages", localizationManager.getCurrentLanguage().getLocale()));
         BorderPane root = fxmlLoader.load();
 
         SpectrumEmulator emulator = new SpectrumEmulator();
-        emulator.init(MachineTypes.SPECTRUM48K);
+        emulator.init();
         emulator.getVideo().setZoomLevel(X2);
 
         // Get controller and pass emulator reference to it

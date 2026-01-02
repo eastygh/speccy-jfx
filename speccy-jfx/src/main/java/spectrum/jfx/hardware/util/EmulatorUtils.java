@@ -13,62 +13,62 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * Утилитарные методы для эмулятора ZX Spectrum
+ * Utility methods for the ZX Spectrum emulator
  */
 public class EmulatorUtils {
     private static final Logger logger = LoggerFactory.getLogger(EmulatorUtils.class);
 
     /**
-     * Преобразует байт в беззнаковое целое
+     * Converts a byte to an unsigned integer
      */
     public static int toUnsigned(byte value) {
         return value & 0xFF;
     }
 
     /**
-     * Преобразует два байта в 16-битное слово (little-endian)
+     * Converts two bytes to a 16-bit word (little-endian)
      */
     public static int bytesToWord(int low, int high) {
         return (high << 8) | low;
     }
 
     /**
-     * Извлекает младший байт из 16-битного слова
+     * Extracts the low byte from a 16-bit word
      */
     public static int lowByte(int word) {
         return word & 0xFF;
     }
 
     /**
-     * Извлекает старший байт из 16-битного слова
+     * Extracts the high byte from a 16-bit word
      */
     public static int highByte(int word) {
         return (word >> 8) & 0xFF;
     }
 
     /**
-     * Проверяет четность числа (для флага P/V)
+     * Checks the parity of a number (for the P/V flag)
      */
     public static boolean isEven(int value) {
         return Integer.bitCount(value & 0xFF) % 2 == 0;
     }
 
     /**
-     * Форматирует байт как шестнадцатеричную строку
+     * Formats a byte as a hexadecimal string
      */
     public static String formatByte(int value) {
         return String.format("0x%02X", value & 0xFF);
     }
 
     /**
-     * Форматирует слово как шестнадцатеричную строку
+     * Formats a word as a hexadecimal string
      */
     public static String formatWord(int value) {
         return String.format("0x%04X", value & 0xFFFF);
     }
 
     /**
-     * Загружает файл в массив байтов
+     * Loads a file into a byte array
      */
     public static byte[] loadFile(String filename) throws IOException {
         Path path = Paths.get(filename);
@@ -76,7 +76,7 @@ public class EmulatorUtils {
         if (Files.exists(path)) {
             data = Files.readAllBytes(path);
         } else {
-            // Попытка загрузки из ресурсов
+            // Attempt to load from resources
             data = loadBinaryFileFromResources(filename);
         }
         logger.info("Loaded file: {} ({} bytes)", filename, data.length);
@@ -107,7 +107,7 @@ public class EmulatorUtils {
     }
 
     /**
-     * Сохраняет массив байтов в файл
+     * Saves a byte array to a file
      */
     public static void saveFile(String filename, byte[] data) throws IOException {
         Path path = Paths.get(filename);
@@ -119,7 +119,7 @@ public class EmulatorUtils {
     }
 
     /**
-     * Загружает ROM файл ZX Spectrum
+     * Loads a ZX Spectrum ROM file
      */
     public static byte[] loadROM(String filename) throws IOException {
         byte[] rom = loadFile(filename);
@@ -133,7 +133,7 @@ public class EmulatorUtils {
     }
 
     /**
-     * Форматирует размер памяти в удобочитаемый вид
+     * Formats memory size into a human-readable format
      */
     public static String formatMemorySize(long bytes) {
         if (bytes < 1024) {
@@ -148,7 +148,7 @@ public class EmulatorUtils {
     }
 
     /**
-     * Проверяет доступность файла для чтения
+     * Checks if a file is readable
      */
     public static boolean isFileReadable(String filename) {
         try {
@@ -160,14 +160,14 @@ public class EmulatorUtils {
     }
 
     /**
-     * Проверяет, является ли строка допустимым именем файла
+     * Checks if a string is a valid filename
      */
     public static boolean isValidFilename(String filename) {
         if (filename == null || filename.trim().isEmpty()) {
             return false;
         }
 
-        // Запрещенные символы в именах файлов
+        // Forbidden characters in filenames
         String forbidden = "<>:\"/\\|?*";
         for (char c : forbidden.toCharArray()) {
             if (filename.indexOf(c) >= 0) {
@@ -179,7 +179,7 @@ public class EmulatorUtils {
     }
 
     /**
-     * Получает расширение файла
+     * Gets the file extension
      */
     public static String getFileExtension(String filename) {
         if (filename == null || filename.isEmpty()) {
@@ -195,7 +195,7 @@ public class EmulatorUtils {
     }
 
     /**
-     * Приватный конструктор для утилитарного класса
+     * Private constructor for a utility class
      */
     private EmulatorUtils() {
         // Utility class should not be instantiated

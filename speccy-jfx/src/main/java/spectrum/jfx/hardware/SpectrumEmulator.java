@@ -12,8 +12,10 @@ import spectrum.jfx.hardware.input.GamePadGLFWImpl;
 import spectrum.jfx.hardware.input.Kempston;
 import spectrum.jfx.hardware.input.KempstonImpl;
 import spectrum.jfx.hardware.input.Keyboard;
+import spectrum.jfx.hardware.machine.Device;
 import spectrum.jfx.hardware.machine.Emulator;
 import spectrum.jfx.hardware.machine.HardwareProvider;
+import spectrum.jfx.hardware.machine.MachineSettings;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.memory.MemoryImpl;
 import spectrum.jfx.hardware.sound.OneThreadAudioImpl;
@@ -59,31 +61,36 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     private volatile boolean hold = false;
     private volatile long frameCounter = 0;
 
-    // Настройки тактовой частоты
-    private static final long CPU_FREQUENCY_HZ = 3500000; // 3.5 MHz для ZX Spectrum 48K
     private static final long FRAME_TIME_NS = 16666666; // ~60 FPS
 
     private final Map<Integer, BreakPointListener> breakPoints = new ConcurrentHashMap<>();
     private final Queue<Runnable> contextsTasks = new ConcurrentLinkedQueue<>();
 
-    public SpectrumEmulator() {
+    private final MachineSettings machineSettings;
 
+
+    public SpectrumEmulator() {
+        machineSettings = MachineSettings
+                .builder()
+                .machineType(MachineTypes.SPECTRUM48K)
+                .audioSampleRate(48000)
+                .build();
     }
 
-    public void init(MachineTypes machineType) {
+    public void init() {
 
-        SpectrumClock.INSTANCE.setSpectrumModel(machineType);
+        SpectrumClock.INSTANCE.setSpectrumModel(machineSettings.getMachineType());
 
         this.memory = new MemoryImpl();
 
         this.video = new ScanlineVideoImpl(memory);
         this.keyboard = new Keyboard();
         this.keyboard.resetKeyboard();
-        this.ula = new UlaImpl(memory);
+        this.ula = new UlaImpl(memory, machineSettings);
         this.ula.addPortListener(0xfe, keyboard); // keyboard
         this.ula.addPortListener(0xfe, (OutPortListener) video); // Border color
 
-        this.sound = new OneThreadAudioImpl(MachineTypes.SPECTRUM48K, 44100); // Sound
+        this.sound = new OneThreadAudioImpl(machineSettings); // Sound
         this.ula.addPortListener(0xfe, sound); // Sound
         this.ula.addClockListener(sound);
 
@@ -246,30 +253,25 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
      * Emulates one frame of the Spectrum
      */
     private void executeFrame() {
-        // Количество тактов процессора за кадр
-        long cyclesPerFrame = CPU_FREQUENCY_HZ / 60;
 
         long executedCycles = 0;
-        while (executedCycles < cyclesPerFrame) {
+        while (executedCycles < machineSettings.getMachineType().tstatesFrame) {
 
-            // Выполняем одну инструкцию процессора
             int cycles = cpu.executeInstruction();
             executedCycles += cycles;
 
-            // Обновляем видеосистему
             video.update(cycles);
 
-            // Обновляем звуковую систему
             sound.play(cycles);
         }
-        // Рендеринг кадра
+        // Render frame by hardware
         video.render();
         ula.requestInterrupt();
-        frameCounter++;
         clock.endFrame();
         if (!speedUpMode) {
             sound.endFrame();
         }
+        frameCounter++;
         runExternalTasks();
     }
 
@@ -341,6 +343,9 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     @Override
     public void setSpeedUpMode(boolean speedUp) {
         this.speedUpMode = speedUp;
+        if (video instanceof Device device) {
+            device.setSpeedUpMode(speedUp);
+        }
     }
 
 }

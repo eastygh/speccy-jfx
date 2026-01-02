@@ -27,10 +27,9 @@ public class ScanlineVideoImpl implements Video<Canvas>, OutPortListener, ClockL
     private final GraphicsContext gc;
     private ZoomLevel currentZoom = ZoomLevel.X2;
 
-    private WritableImage screenImage;
-    private PixelBuffer<IntBuffer> pixelBuffer;
-    private IntBuffer buffer;
-    private int[] scaledPixels;
+    private final WritableImage screenImage;
+    private final PixelBuffer<IntBuffer> pixelBuffer;
+    private final int[] scaledPixels;
 
     private final AtomicReference<AddressOnBusEvent> addressOnBus = new AtomicReference<>();
 
@@ -42,11 +41,10 @@ public class ScanlineVideoImpl implements Video<Canvas>, OutPortListener, ClockL
     private volatile int currentX = 0;
     private volatile int currentY = 0;
     private volatile boolean dirtyScreen = false;
+    private volatile boolean speedUpMode = false;
 
 
     private final int[] pixels = new int[TOTAL_HEIGHT * TOTAL_WIDTH];
-
-    Thread renderThread;
 
     public ScanlineVideoImpl(Memory memory) {
         this.memory = memory;
@@ -58,7 +56,7 @@ public class ScanlineVideoImpl implements Video<Canvas>, OutPortListener, ClockL
         this.gc = canvas.getGraphicsContext2D();
 
         scaledPixels = new int[scaledWidth * scaledHeight];
-        buffer = IntBuffer.wrap(scaledPixels);
+        IntBuffer buffer = IntBuffer.wrap(scaledPixels);
 
         pixelBuffer = new PixelBuffer<>(scaledWidth, scaledHeight, buffer,
                 PixelFormat.getIntArgbPreInstance());
@@ -264,26 +262,12 @@ public class ScanlineVideoImpl implements Video<Canvas>, OutPortListener, ClockL
 
     @Override
     public void start() {
-        renderThread = new Thread(this::renderThread);
-        renderThread.setDaemon(true);
-        renderThread.start();
+
     }
 
     @Override
     public void stop() {
-        renderThread.interrupt();
-    }
 
-    private void renderThread() {
-        while (true) {
-            render();
-            try {
-                Thread.sleep(1000 / 60); // 60 FPS
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
     }
 
     @Data
@@ -291,6 +275,26 @@ public class ScanlineVideoImpl implements Video<Canvas>, OutPortListener, ClockL
     public static class AddressOnBusEvent {
         public final int address;
         public final int tstates;
+    }
+
+    @Override
+    public void init() {
+        reset();
+    }
+
+    @Override
+    public void open() {
+        reset();
+    }
+
+    @Override
+    public void close() {
+        reset();
+    }
+
+    @Override
+    public void setSpeedUpMode(boolean speedUpMode) {
+        this.speedUpMode = speedUpMode;
     }
 
 }

@@ -20,4 +20,6 @@ public interface Memory extends Device {
 
     void reset();
 
+    boolean isScreenAddress(int address);
+
 }

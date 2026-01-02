@@ -111,11 +111,11 @@ public class LocalizationManager {
 
     private void loadResourceBundle() {
         try {
-            resourceBundle = ResourceBundle.getBundle("messages", currentLanguage.getLocale());
+            resourceBundle = ResourceBundle.getBundle("i18n/messages", currentLanguage.getLocale());
             log.info("Loaded resource bundle for locale: {}", currentLanguage.getLocale());
         } catch (MissingResourceException e) {
             log.warn("Could not load resource bundle for {}, using default", currentLanguage);
-            resourceBundle = ResourceBundle.getBundle("messages");
+            resourceBundle = ResourceBundle.getBundle("i18n/messages");
         }
     }
 

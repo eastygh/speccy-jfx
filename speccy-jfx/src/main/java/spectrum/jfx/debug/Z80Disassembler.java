@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.debug;
+package spectrum.jfx.debug;
 
 
 import spectrum.jfx.hardware.memory.Memory;
@@ -7,13 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Дизассемблер для процессора Z80
- * Поддерживает все инструкции Z80, включая недокументированные
+ *
  */
 public class Z80Disassembler {
 
     /**
-     * Результат дизассемблирования инструкции
+     *
      */
     public static class DisassemblyResult {
         private final String mnemonic;
@@ -56,7 +55,7 @@ public class Z80Disassembler {
 
             String sb = String.format("%-12s", hexBytes) +
 
-                    // Добавляем мнемонику
+                    // mnemonic add
                     mnemonic;
 
             return sb;

@@ -544,10 +544,10 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
      */
     private void openHexEditor(TapeSection section) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/hex-editor-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/controller/hex-editor-view.fxml"));
 
             // Set the resource bundle for the FXML loader
-            loader.setResources(java.util.ResourceBundle.getBundle("messages", localizationManager.getCurrentLanguage().getLocale()));
+            loader.setResources(java.util.ResourceBundle.getBundle("i18n/messages", localizationManager.getCurrentLanguage().getLocale()));
 
             // Загружаем корневой элемент (BorderPane)
             Object root = loader.load();

@@ -6,37 +6,32 @@ import z80core.Z80;
 
 public class Z80WrapperImpl extends Z80 implements CPU {
 
-    private final MemIoOps delegateMemory;
-    private final NotifyOps delegateNotify;
-
     public Z80WrapperImpl(MemIoOps memory, NotifyOps notify) {
         super(memory, notify);
-        this.delegateMemory = memory;
-        this.delegateNotify = notify;
     }
 
     @Override
     public int executeInstruction(int tStatesLimit) {
-        long startCycles = delegateMemory.gettStates();
+        long startCycles = MemIoImpl.gettStates();
         execute(tStatesLimit);
-        return (int) (delegateMemory.gettStates() - startCycles);
+        return (int) (MemIoImpl.gettStates() - startCycles);
     }
 
     @Override
     public int executeInstruction() {
-        long startCycles = delegateMemory.gettStates();
+        long startCycles = MemIoImpl.gettStates();
         execute();
-        return (int) (delegateMemory.gettStates() - startCycles);
+        return (int) (MemIoImpl.gettStates() - startCycles);
     }
 
-    public void execute() {
+    protected void execute() {
 
         if (prefixOpcode == 0) {
-            int opCode = delegateMemory.fetchOpcode(regPC);
+            int opCode = MemIoImpl.fetchOpcode(regPC);
             regR++;
 
             if (breakpointAt.get(regPC)) {
-                opCode = delegateNotify.breakpoint(regPC, opCode);
+                opCode = NotifyImpl.breakpoint(regPC, opCode);
             }
 
             if (!halted) {
