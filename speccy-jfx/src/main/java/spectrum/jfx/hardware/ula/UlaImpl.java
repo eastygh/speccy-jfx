@@ -1,5 +1,7 @@
 package spectrum.jfx.hardware.ula;
 
+import com.codingrodent.microprocessor.IBaseDevice;
+import com.codingrodent.microprocessor.IMemory;
 import lombok.Getter;
 import machine.MachineTypes;
 import machine.SpectrumClock;
@@ -12,13 +14,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class UlaImpl implements Ula {
+public class UlaImpl implements Ula, IMemory, IBaseDevice {
 
     private final Memory memory;
 
     private volatile boolean interruptRequested = false;
     @Getter
-    private final boolean ulaAddTStates = true;
+    private final boolean ulaAddTStates;
     private final Map<Integer, Set<InPortListener>> inPortListeners = new HashMap<>();
     private final Map<Integer, Set<OutPortListener>> outPortListeners = new HashMap<>();
     private final ZXClock clock;
@@ -30,6 +32,7 @@ public class UlaImpl implements Ula {
 
     public UlaImpl(Memory memory, MachineSettings machineSettings) {
         this.memory = memory;
+        this.ulaAddTStates = machineSettings.isUlaAddTStates();
         this.machineSettings = machineSettings;
         this.contentionTable = new byte[machineSettings.getMachineType().tstatesFrame];
         if (machineSettings.getMachineType() == MachineTypes.SPECTRUM48K) {
@@ -119,28 +122,30 @@ public class UlaImpl implements Ula {
     @Override
     public int inPort(int port) {
         int value = 0;
+        if (ulaAddTStates) {
+            clock.incrementTStates(4); // 4 clocks for read byte from bus
+        }
         if (inPortListeners.containsKey(port & 0xff)) {
             for (InPortListener listener : inPortListeners.get(port & 0xff)) {
                 int portValue = listener.inPort(port) & 0xff;
                 value = value | portValue;
             }
         }
-        if (ulaAddTStates) {
-            clock.incrementTStates(4); // 4 clocks for read byte from bus
-        }
         return value & 0xff;
     }
 
     @Override
     public void outPort(int port, int value) {
-        port &= 0xff;
-        if (outPortListeners.containsKey((port))) {
-            for (OutPortListener listener : outPortListeners.get(port)) {
-                listener.outPort(port, value);
-            }
-        }
+        value &= 0xff;
+        port &= 0xffff;
         if (ulaAddTStates) {
             clock.incrementTStates(4); // 4 clocks for write byte to bus
+        }
+        int lowPort = port & 0xff;
+        if (outPortListeners.containsKey(lowPort)) {
+            for (OutPortListener listener : outPortListeners.get(lowPort)) {
+                listener.outPort(port, value);
+            }
         }
     }
 
@@ -178,7 +183,7 @@ public class UlaImpl implements Ula {
         clock.incrementTStates(tStates);
     }
 
-    public void requestInterrupt() {
+    public synchronized void requestInterrupt() {
         interruptRequested = true;
     }
 
@@ -192,7 +197,6 @@ public class UlaImpl implements Ula {
         clock.reset();
         spectrumClock.reset();
     }
-
 
     private void buildContentionTable48(MachineTypes machineType) {
 
@@ -226,4 +230,36 @@ public class UlaImpl implements Ula {
         return contentionTable[Math.toIntExact(currentTState % machineSettings.getMachineType().tstatesFrame)];
     }
 
+    /***************************************
+     * Z80Core Mem/IO adapter
+     ***************************************/
+    @Override
+    public int IORead(int address) {
+        return inPort(address);
+    }
+
+    @Override
+    public void IOWrite(int address, int data) {
+        outPort(address, data);
+    }
+
+    @Override
+    public int readByte(int address) {
+        return memory.readByte(address);
+    }
+
+    @Override
+    public int readWord(int address) {
+        return memory.readWord(address);
+    }
+
+    @Override
+    public void writeByte(int address, int data) {
+        memory.writeByte(address, data);
+    }
+
+    @Override
+    public void writeWord(int address, int data) {
+        memory.writeWord(address, data);
+    }
 }

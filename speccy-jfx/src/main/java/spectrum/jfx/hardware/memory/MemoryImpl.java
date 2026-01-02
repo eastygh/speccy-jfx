@@ -2,9 +2,6 @@ package spectrum.jfx.hardware.memory;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import spectrum.jfx.hardware.cpu.CPU;
-import spectrum.jfx.hardware.cpu.Z80WrapperImpl;
-import spectrum.jfx.machine.Machine;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -142,18 +139,6 @@ public class MemoryImpl implements Memory {
 
         if (address <= ROM_END && romWriteProtected) {
             log.warn("Attempted write to protected ROM at 0x{}", Integer.toHexString(address).toUpperCase());
-            // ROM protected, do nothing
-            Machine.withHardwareProvider(
-                    hardwareProvider -> {
-                        CPU cpu = hardwareProvider.getCPU();
-                        Z80WrapperImpl cpuImpl = (Z80WrapperImpl) cpu;
-                        log.error("CRITICAL: Write to 0x0000! PC: 0x{}, SP: 0x{}, AF: 0x{}, HL: 0x{}",
-                                Integer.toHexString(cpuImpl.getRegPC()),
-                                Integer.toHexString(cpuImpl.getRegSP()),
-                                Integer.toHexString(cpuImpl.getRegA() << 8 | cpuImpl.getFlags()),
-                                Integer.toHexString(cpuImpl.getRegH() << 8 | cpuImpl.getRegL()));
-                    }
-            );
             return;
         }
         // RAM

@@ -136,6 +136,12 @@
             <version>2.15.2</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.codingrodent.microprocessor</groupId>
+            <artifactId>Z80Processor</artifactId>
+            <version>4.2.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

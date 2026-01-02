@@ -1,12 +1,12 @@
 package spectrum.jfx.hardware;
 
 import lombok.Getter;
-import machine.MachineTypes;
 import machine.SpectrumClock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spectrum.jfx.hardware.cpu.BreakPointListener;
 import spectrum.jfx.hardware.cpu.CPU;
+import spectrum.jfx.hardware.cpu.Z80CoreAdapter;
 import spectrum.jfx.hardware.cpu.Z80WrapperImpl;
 import spectrum.jfx.hardware.input.GamePadGLFWImpl;
 import spectrum.jfx.hardware.input.Kempston;
@@ -70,11 +70,9 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
 
     public SpectrumEmulator() {
-        machineSettings = MachineSettings
-                .builder()
-                .machineType(MachineTypes.SPECTRUM48K)
-                .audioSampleRate(48000)
-                .build();
+        machineSettings = MachineSettings.ofDefault();
+//        machineSettings.setCpuClass(Z80CoreAdapter.class);
+//        machineSettings.setUlaAddTStates(false);
     }
 
     public void init() {
@@ -110,7 +108,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         this.ula.addPortListener(0x1F, kempston);
         this.kempston.init();
 
-        cpu = new Z80WrapperImpl(ula, this);
+        cpu = createZ80Core(machineSettings);
 
         Machine.setHardwareProvider(this);
 
@@ -201,7 +199,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     /**
      * Main emulation loop
      */
-    private void startEmulationLoop() {
+    private synchronized void startEmulationLoop() {
         Thread emulationThread = new Thread(() -> {
             logger.info("Starting emulation thread");
             long lastFrameTime = System.nanoTime();
@@ -252,12 +250,15 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     /**
      * Emulates one frame of the Spectrum
      */
-    private void executeFrame() {
+    private synchronized void executeFrame() {
 
         long executedCycles = 0;
         while (executedCycles < machineSettings.getMachineType().tstatesFrame) {
 
             int cycles = cpu.executeInstruction();
+            if (!machineSettings.isUlaAddTStates()) {
+                ula.addTStates(cycles);
+            }
             executedCycles += cycles;
 
             video.update(cycles);
@@ -328,7 +329,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     }
 
     @Override
-    public void loadRom(String fullName) {
+    public synchronized void loadRom(String fullName) {
         pause();
         byte[] rom = null;
         try {
@@ -341,10 +342,21 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     }
 
     @Override
-    public void setSpeedUpMode(boolean speedUp) {
+    public synchronized void setSpeedUpMode(boolean speedUp) {
         this.speedUpMode = speedUp;
         if (video instanceof Device device) {
             device.setSpeedUpMode(speedUp);
+        }
+    }
+
+    private CPU createZ80Core(MachineSettings machineSettings) {
+        if (machineSettings.getCpuClass() == Z80WrapperImpl.class) {
+            return new Z80WrapperImpl(ula, this);
+        }
+        if (machineSettings.getCpuClass() == Z80CoreAdapter.class && ula instanceof UlaImpl ulaImpl) {
+            return new Z80CoreAdapter(ulaImpl, ulaImpl);
+        } else {
+            throw new IllegalArgumentException("Unsupported CPU class: " + machineSettings.getCpuClass());
         }
     }
 

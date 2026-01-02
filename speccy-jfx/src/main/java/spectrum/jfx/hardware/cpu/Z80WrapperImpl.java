@@ -1,9 +1,11 @@
 package spectrum.jfx.hardware.cpu;
 
+import lombok.extern.slf4j.Slf4j;
 import z80core.MemIoOps;
 import z80core.NotifyOps;
 import z80core.Z80;
 
+@Slf4j
 public class Z80WrapperImpl extends Z80 implements CPU {
 
     public Z80WrapperImpl(MemIoOps memory, NotifyOps notify) {
