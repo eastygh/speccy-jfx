@@ -1,6 +1,9 @@
 package spectrum.jfx.hardware.ula;
 
-public interface Ula extends z80core.MemIoOps {
+import com.codingrodent.microprocessor.IBaseDevice;
+import com.codingrodent.microprocessor.IMemory;
+
+public interface Ula extends z80core.MemIoOps, IMemory, IBaseDevice {
 
     void addPortListener(int port, InPortListener listener);
 

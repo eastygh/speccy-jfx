@@ -12,6 +12,7 @@
 
     <modules>
         <module>z80core</module>
+        <module>z80processor</module>
         <module>speccy-jfx</module>
     </modules>
 

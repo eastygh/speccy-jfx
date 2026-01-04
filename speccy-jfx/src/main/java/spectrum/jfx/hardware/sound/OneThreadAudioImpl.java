@@ -45,7 +45,7 @@ public class OneThreadAudioImpl implements Sound {
     }
 
     @Override
-    public synchronized void open() {
+    public void open() {
         tactAccumulator = 0;
         enabled = true;
         audioLine = initializeAudio(audioFormat, beeperBuffer.length * 4);
@@ -85,7 +85,7 @@ public class OneThreadAudioImpl implements Sound {
     }
 
     @Override
-    public synchronized void endFrame() {
+    public void endFrame() {
         if (!enabled || mute) {
             beeperBufferIndex = 0;
             return;
@@ -137,7 +137,7 @@ public class OneThreadAudioImpl implements Sound {
         return (short) Math.clamp(finalSample, -32767, 32767);
     }
 
-    private synchronized void writeSample(short sample) {
+    private void writeSample(short sample) {
         if (beeperBufferIndex >= beeperBuffer.length) {
             log.error("Beeper buffer overflow.");
         }

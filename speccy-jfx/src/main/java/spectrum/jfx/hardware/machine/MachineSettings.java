@@ -4,8 +4,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import machine.MachineTypes;
-import spectrum.jfx.hardware.cpu.CPU;
-import spectrum.jfx.hardware.cpu.Z80WrapperImpl;
 
 @Data
 @Builder
@@ -16,16 +14,23 @@ public class MachineSettings {
     private MachineTypes machineType;
     private int audioSampleRate;
 
-    private Class<? extends CPU> cpuClass;
+    private CpuImplementation cpuImplementation;
 
-    public static MachineSettings ofDefault() {
+    public static MachineSettings ofDefault(CpuImplementation cpuImplementation) {
+        if (cpuImplementation == null) {
+            cpuImplementation = CpuImplementation.SANCHES;
+        }
         return MachineSettings.
                 builder()
                 .machineType(MachineTypes.SPECTRUM48K)
                 .audioSampleRate(44100)
-                .ulaAddTStates(true)
-                .cpuClass(Z80WrapperImpl.class)
+                .ulaAddTStates(cpuImplementation.isUlaAddTStates())
+                .cpuImplementation(cpuImplementation)
                 .build();
+    }
+
+    public static MachineSettings ofDefault() {
+        return ofDefault(null);
     }
 
 }

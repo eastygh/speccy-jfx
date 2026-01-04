@@ -9,6 +9,8 @@ import javafx.scene.image.WritableImage;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
+import machine.MachineTypes;
+import spectrum.jfx.hardware.machine.MachineSettings;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.ula.ClockListener;
 import spectrum.jfx.hardware.ula.OutPortListener;
@@ -22,6 +24,8 @@ import static spectrum.jfx.hardware.video.SpectrumVideo.*;
 public class ScanlineVideoImpl implements Video<Canvas>, OutPortListener, ClockListener {
 
     private final Memory memory;
+    private final MachineSettings machineSettings;
+    private final MachineTypes machineType;
     @Getter
     private final Canvas canvas;
     private final GraphicsContext gc;
@@ -46,8 +50,10 @@ public class ScanlineVideoImpl implements Video<Canvas>, OutPortListener, ClockL
 
     private final int[] pixels = new int[TOTAL_HEIGHT * TOTAL_WIDTH];
 
-    public ScanlineVideoImpl(Memory memory) {
+    public ScanlineVideoImpl(Memory memory, MachineSettings machineSettings) {
         this.memory = memory;
+        this.machineSettings = machineSettings;
+        this.machineType = machineSettings.getMachineType();
 
         int scaledWidth = TOTAL_WIDTH * currentZoom.getScale();
         int scaledHeight = TOTAL_HEIGHT * currentZoom.getScale();
@@ -124,12 +130,12 @@ public class ScanlineVideoImpl implements Video<Canvas>, OutPortListener, ClockL
             drawPixel(currentX, currentY);
             currentX++;
 
-            if (currentLineTState >= ULATiming.TSTATES_PER_LINE) {
-                currentLineTState -= ULATiming.TSTATES_PER_LINE;
+            if (currentLineTState >= machineType.tstatesLine) {
+                currentLineTState -= machineType.tstatesLine;
                 currentY++;
                 currentX = 0;
             }
-            if (currentTState >= ULATiming.TSTATES_PER_FRAME) {
+            if (currentTState >= machineType.tstatesFrame) {
                 if (dirtyScreen) {
                     drawSnapshot();
                 }

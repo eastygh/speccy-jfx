@@ -213,23 +213,6 @@ public class Keyboard implements InPortListener, Device {
     }
 
     /**
-     * Имитирует нажатие клавиши на определенное время
-     */
-    public void simulateKeyPress(KeyCode keyCode, long durationMs) {
-        keyPressed(keyCode);
-
-        // Создаем отдельный поток для отпускания клавиши
-        new Thread(() -> {
-            try {
-                Thread.sleep(durationMs);
-                keyReleased(keyCode);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }).start();
-    }
-
-    /**
      * Получает текстовое представление нажатых клавиш (для отладки)
      */
     public String getPressedKeysString() {

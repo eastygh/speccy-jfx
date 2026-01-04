@@ -1,7 +1,5 @@
 package spectrum.jfx.hardware.ula;
 
-import com.codingrodent.microprocessor.IBaseDevice;
-import com.codingrodent.microprocessor.IMemory;
 import lombok.Getter;
 import machine.MachineTypes;
 import machine.SpectrumClock;
@@ -14,11 +12,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class UlaImpl implements Ula, IMemory, IBaseDevice {
+public class UlaImpl implements Ula {
 
     private final Memory memory;
 
     private volatile boolean interruptRequested = false;
+    private volatile boolean interruptPending = false;
+    private volatile long interruptPendingLength = 0;
     @Getter
     private final boolean ulaAddTStates;
     private final Map<Integer, Set<InPortListener>> inPortListeners = new HashMap<>();
@@ -29,6 +29,7 @@ public class UlaImpl implements Ula, IMemory, IBaseDevice {
     private static final SpectrumClock spectrumClock = SpectrumClock.INSTANCE;
 
     private final byte[] contentionTable;
+
 
     public UlaImpl(Memory memory, MachineSettings machineSettings) {
         this.memory = memory;
@@ -172,9 +173,16 @@ public class UlaImpl implements Ula, IMemory, IBaseDevice {
     public boolean isActiveINT() {
         if (interruptRequested) {
             interruptRequested = false;
+            interruptPending = true;
+            interruptPendingLength = clock.getTStates();
             return true;
         }
-        return false;
+        if (interruptPending &&
+                clock.getTStates() - interruptPendingLength > machineSettings.getMachineType().lengthINT
+        ) {
+            interruptPending = false;
+        }
+        return interruptPending;
     }
 
     @Override
@@ -183,7 +191,7 @@ public class UlaImpl implements Ula, IMemory, IBaseDevice {
         clock.incrementTStates(tStates);
     }
 
-    public synchronized void requestInterrupt() {
+    public void requestInterrupt() {
         interruptRequested = true;
     }
 

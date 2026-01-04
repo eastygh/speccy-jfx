@@ -26,6 +26,11 @@
             <artifactId>z80core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>spectrum.jfx</groupId>
+            <artifactId>z80processor</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -134,12 +139,6 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>2.15.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.codingrodent.microprocessor</groupId>
-            <artifactId>Z80Processor</artifactId>
-            <version>4.2.0</version>
         </dependency>
 
     </dependencies>

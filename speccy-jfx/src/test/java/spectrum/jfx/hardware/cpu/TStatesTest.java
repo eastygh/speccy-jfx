@@ -41,7 +41,7 @@ class TStatesTest implements NotifyOps, OutPortListener {
         ((MemoryImpl) memory).setRomWriteProtected(false);
         ula = new UlaImpl(memory, machineSettings);
         ula.addPortListener(0xFE, this);
-        cpu = new Z80WrapperImpl(ula, this);
+        cpu = new Z80CoreAdapter(ula, this);
     }
 
     @Test
@@ -73,7 +73,7 @@ class TStatesTest implements NotifyOps, OutPortListener {
         memory.loadROM(rom);
         memory.writeByte(0x0005, (byte) 0xC9);
 
-        Z80WrapperImpl z80core = (Z80WrapperImpl) cpu;
+        Z80CoreAdapter z80core = (Z80CoreAdapter) cpu;
 
         z80core.setRegPC(0x100);
         z80core.setRegSP(0xF000);

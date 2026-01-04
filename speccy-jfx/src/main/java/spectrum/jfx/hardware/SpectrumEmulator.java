@@ -1,21 +1,20 @@
 package spectrum.jfx.hardware;
 
 import lombok.Getter;
+import lombok.Setter;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import machine.SpectrumClock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import spectrum.jfx.debug.DebugListener;
 import spectrum.jfx.hardware.cpu.BreakPointListener;
 import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.cpu.Z80CoreAdapter;
-import spectrum.jfx.hardware.cpu.Z80WrapperImpl;
+import spectrum.jfx.hardware.cpu.Z80ProcessorAdapter;
 import spectrum.jfx.hardware.input.GamePadGLFWImpl;
 import spectrum.jfx.hardware.input.Kempston;
 import spectrum.jfx.hardware.input.KempstonImpl;
 import spectrum.jfx.hardware.input.Keyboard;
-import spectrum.jfx.hardware.machine.Device;
-import spectrum.jfx.hardware.machine.Emulator;
-import spectrum.jfx.hardware.machine.HardwareProvider;
-import spectrum.jfx.hardware.machine.MachineSettings;
+import spectrum.jfx.hardware.machine.*;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.memory.MemoryImpl;
 import spectrum.jfx.hardware.sound.OneThreadAudioImpl;
@@ -33,11 +32,12 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
+@Slf4j
 @Getter
 public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
-
-    private static final Logger logger = LoggerFactory.getLogger(SpectrumEmulator.class);
 
     // ZXCore-lib clock support
     SpectrumClock clock = SpectrumClock.INSTANCE;
@@ -55,7 +55,12 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     // Emulation management
     private volatile boolean running;
     private volatile boolean paused;
+    @Getter
+    @Setter
+    private volatile boolean debug = false;
     private volatile boolean speedUpMode = false;
+
+    private AtomicReference<DebugListener> debugListenerRef = new AtomicReference<>();
 
     // Emulation state
     private volatile boolean hold = false;
@@ -70,9 +75,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
 
     public SpectrumEmulator() {
-        machineSettings = MachineSettings.ofDefault();
-//        machineSettings.setCpuClass(Z80CoreAdapter.class);
-//        machineSettings.setUlaAddTStates(false);
+        machineSettings = MachineSettings.ofDefault(CpuImplementation.CODINGRODENT);
     }
 
     public void init() {
@@ -81,7 +84,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
         this.memory = new MemoryImpl();
 
-        this.video = new ScanlineVideoImpl(memory);
+        this.video = new ScanlineVideoImpl(memory, machineSettings);
         this.keyboard = new Keyboard();
         this.keyboard.resetKeyboard();
         this.ula = new UlaImpl(memory, machineSettings);
@@ -128,17 +131,16 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     }
 
-
     /**
-     * Запускает эмуляцию
+     * starts emulation
      */
     public void start() {
         if (running) {
-            logger.warn("Emulator is already running");
+            log.warn("Emulator is already running");
             return;
         }
 
-        logger.info("Starting emulation");
+        log.info("Starting emulation");
         running = true;
         paused = false;
 
@@ -162,7 +164,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
      */
     public void stop() {
         if (!running) {
-            logger.warn("Emulator is not running");
+            log.warn("Emulator is not running");
             return;
         }
         pause();
@@ -170,20 +172,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         video.stop();
         ula.reset();
         sound.close();
-        logger.info("Stopping emulation");
-    }
-
-    /**
-     * Приостанавливает/возобновляет эмуляцию
-     */
-    public void togglePause() {
-        if (!running) {
-            logger.warn("Cannot pause - emulator is not running");
-            return;
-        }
-
-        paused = !paused;
-        logger.info(paused ? "Emulation paused" : "Emulation resumed");
+        log.info("Stopping emulation");
     }
 
     @Override
@@ -199,40 +188,39 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     /**
      * Main emulation loop
      */
-    private synchronized void startEmulationLoop() {
-        Thread emulationThread = new Thread(() -> {
-            logger.info("Starting emulation thread");
-            long lastFrameTime = System.nanoTime();
-
-            while (running) {
-                if (!paused) {
-                    hold = false;
-                    long currentTime = System.nanoTime();
-                    long deltaTime = currentTime - lastFrameTime;
-                    if (deltaTime >= FRAME_TIME_NS || speedUpMode) {
-                        executeFrame();
-                    } else {
-                        Thread.onSpinWait();
-                    }
-                } else {
-                    runExternalTasks();
-                    hold = true;
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-            }
-
-            logger.info("Emulation thread stopped");
-        }, "EmulationThread");
-
+    private void startEmulationLoop() {
+        Thread emulationThread = new Thread(this::emulationLoop, "EmulationThread");
         emulationThread.setDaemon(true);
         emulationThread.start();
     }
 
+    void emulationLoop() {
+        log.info("Starting emulation thread");
+        long lastFrameTime = System.nanoTime();
+
+        while (running) {
+            if (!paused) {
+                hold = false;
+                long currentTime = System.nanoTime();
+                long deltaTime = currentTime - lastFrameTime;
+                if (deltaTime >= FRAME_TIME_NS || speedUpMode) {
+                    executeFrame();
+                } else {
+                    Thread.onSpinWait();
+                }
+            } else {
+                hold = true;
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+
+        log.info("Emulation thread stopped");
+    }
 
     private void runExternalTasks() {
         Runnable task = contextsTasks.poll();
@@ -242,7 +230,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
             long endTime = System.nanoTime();
             long elapsedTime = endTime - startTime;
             if (elapsedTime > 1000000) {
-                logger.warn("Task took {} ms", elapsedTime / 1000000);
+                log.warn("Task took {} ms", elapsedTime / 1000000);
             }
         }
     }
@@ -250,7 +238,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     /**
      * Emulates one frame of the Spectrum
      */
-    private synchronized void executeFrame() {
+    private void executeFrame() {
 
         long executedCycles = 0;
         while (executedCycles < machineSettings.getMachineType().tstatesFrame) {
@@ -260,6 +248,10 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
                 ula.addTStates(cycles);
             }
             executedCycles += cycles;
+
+            if (debug && debugListenerRef.get() != null) {
+                debugListenerRef.get().onStepComplete(this);
+            }
 
             video.update(cycles);
 
@@ -278,10 +270,9 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     @Override
     public void reset() {
+        log.warn("Resetting emulator state...");
         pause();
-        while (!isHold()) {
-            Thread.yield();
-        }
+        waitForHold();
         memory.reset();
         sound.reset();
         video.reset();
@@ -329,8 +320,9 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     }
 
     @Override
-    public synchronized void loadRom(String fullName) {
+    public void loadRom(String fullName) {
         pause();
+        waitForHold();
         byte[] rom = null;
         try {
             rom = EmulatorUtils.loadFile(fullName);
@@ -342,7 +334,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     }
 
     @Override
-    public synchronized void setSpeedUpMode(boolean speedUp) {
+    public void setSpeedUpMode(boolean speedUp) {
         this.speedUpMode = speedUp;
         if (video instanceof Device device) {
             device.setSpeedUpMode(speedUp);
@@ -350,14 +342,31 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     }
 
     private CPU createZ80Core(MachineSettings machineSettings) {
-        if (machineSettings.getCpuClass() == Z80WrapperImpl.class) {
-            return new Z80WrapperImpl(ula, this);
+        if (machineSettings.getCpuImplementation() == CpuImplementation.SANCHES) {
+            return new Z80CoreAdapter(ula, this);
         }
-        if (machineSettings.getCpuClass() == Z80CoreAdapter.class && ula instanceof UlaImpl ulaImpl) {
-            return new Z80CoreAdapter(ulaImpl, ulaImpl);
+        if (machineSettings.getCpuImplementation() == CpuImplementation.CODINGRODENT && ula instanceof UlaImpl ulaImpl) {
+            return new Z80ProcessorAdapter(ulaImpl, ulaImpl);
         } else {
-            throw new IllegalArgumentException("Unsupported CPU class: " + machineSettings.getCpuClass());
+            throw new IllegalArgumentException("Unsupported CPU implementation");
         }
+    }
+
+    @SneakyThrows
+    private void waitForHold() {
+        int c = 0;
+        while (!isHold()) {
+            Thread.sleep(10);
+            c++;
+            if (c > 100) {
+                log.error("Hold timeout exceeded, aborting");
+                throw new TimeoutException("Hold timeout exceeded");
+            }
+        }
+    }
+
+    public void setDebugListener(DebugListener listener) {
+        debugListenerRef.set(listener);
     }
 
 }

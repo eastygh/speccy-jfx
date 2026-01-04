@@ -1,5 +1,6 @@
 package spectrum.jfx.hardware.machine;
 
+import spectrum.jfx.debug.DebugListener;
 import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.input.Kempston;
 import spectrum.jfx.hardware.memory.Memory;
@@ -19,5 +20,9 @@ public interface HardwareProvider {
     Sound getSound();
 
     CPU getCPU();
+
+    void setDebug(boolean debug);
+
+    void setDebugListener(DebugListener listener);
 
 }

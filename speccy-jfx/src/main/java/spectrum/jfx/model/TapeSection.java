@@ -78,7 +78,7 @@ public class TapeSection {
      *
      * @return byteArray of section data
      */
-    public synchronized byte[] getData() {
+    public byte[] getData() {
         if (data == null) {
 
         }

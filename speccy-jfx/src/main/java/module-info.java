@@ -15,11 +15,10 @@ module spectrum.jfx {
     requires com.fasterxml.jackson.datatype.jsr310;
     requires java.logging;
 
-    requires Z80Processor;
-
     requires org.lwjgl.glfw;
     requires org.apache.commons.lang3;
     requires z80core;
+    requires z80processor;
 
     opens spectrum.jfx to javafx.fxml;
     exports spectrum.jfx;

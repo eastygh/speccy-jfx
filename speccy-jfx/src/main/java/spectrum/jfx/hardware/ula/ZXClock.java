@@ -11,7 +11,7 @@ public class ZXClock {
     @Getter
     private volatile long tStates = 0;
     private final Set<ClockListener> clockListeners = new HashSet<>();
-    private final SpectrumClock clock = SpectrumClock.INSTANCE;
+    private static final SpectrumClock clock = SpectrumClock.INSTANCE;
 
     public void incrementTStates(int amount) {
         tStates += amount;

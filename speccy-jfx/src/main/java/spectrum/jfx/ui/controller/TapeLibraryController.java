@@ -13,6 +13,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.tape.CassetteDeckEvent;
 import spectrum.jfx.hardware.tape.FlashTapLoader;
 import spectrum.jfx.machine.Machine;
@@ -27,14 +28,12 @@ import spectrum.jfx.ui.theme.ThemeManager;
 import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 
 import static spectrum.jfx.hardware.tape.FlashTapLoader.triggerLoadCommand;
 import static spectrum.jfx.ui.util.TapeFileParser.parseTapeFile;
 
+@Slf4j
 public class TapeLibraryController implements Initializable, LocalizationChangeListener, CassetteDeckEvent {
-
-    private static final Logger logger = Logger.getLogger(TapeLibraryController.class.getName());
 
     // Toolbar controls
     @FXML
@@ -288,7 +287,7 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
             currentSectionLabel.setText(localizationManager.getString("playback.section.prefix", currentSection.getIndex()));
             statusLabel.setText(localizationManager.getString("playback.playingSection", currentSection.getIndex()));
 
-            logger.info("Playing: " + currentFile.getFileName() +
+            log.info("Playing: " + currentFile.getFileName() +
                     ", section " + currentSection.getIndex());
             Machine.withCassetteDeck((cd, hv) -> {
                 if (cd != null) {
@@ -318,7 +317,7 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
                 cassetteDeck.setMotor(false);
             }
         });
-        logger.info("Stopping playback");
+        log.info("Stopping playback");
     }
 
     @FXML
@@ -422,7 +421,7 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
         if (currentSection != null && currentSection.isPlayable()) {
             statusLabel.setText(localizationManager.getString("playback.gotoingSection", currentSection.getIndex()));
             // TODO: Integration with emulator for section navigation
-            logger.info("Going to section " + currentSection.getIndex());
+            log.info("Going to section " + currentSection.getIndex());
         }
     }
 

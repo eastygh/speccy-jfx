@@ -1,123 +1,68 @@
 package spectrum.jfx.hardware.cpu;
 
-import com.codingrodent.microprocessor.IBaseDevice;
-import com.codingrodent.microprocessor.IMemory;
-import com.codingrodent.microprocessor.Z80.Z80Core;
+import lombok.extern.slf4j.Slf4j;
+import z80core.MemIoOps;
+import z80core.NotifyOps;
+import z80core.Z80;
 
-import static com.codingrodent.microprocessor.Z80.CPUConstants.RegisterNames.*;
+@Slf4j
+public class Z80CoreAdapter extends Z80 implements CPU {
 
-
-public class Z80CoreAdapter extends Z80Core implements CPU {
-
-    public Z80CoreAdapter(IMemory ram, IBaseDevice io) {
-        super(ram, io);
-    }
-
-    @Override
-    public int executeInstruction() {
-        long startTStates = getTStates();
-        executeOneInstruction();
-        return (int) (getTStates() - startTStates);
+    public Z80CoreAdapter(MemIoOps memory, NotifyOps notify) {
+        super(memory, notify);
     }
 
     @Override
     public int executeInstruction(int tStatesLimit) {
-        int startTStates = (int) getTStates();
-        long tillTStates = startTStates + tStatesLimit;
-        while (getTStates() < tillTStates) {
-            executeOneInstruction();
+        long startCycles = MemIoImpl.gettStates();
+        execute(tStatesLimit);
+        return (int) (MemIoImpl.gettStates() - startCycles);
+    }
+
+    @Override
+    public int executeInstruction() {
+        long startCycles = MemIoImpl.gettStates();
+        execute();
+        return (int) (MemIoImpl.gettStates() - startCycles);
+    }
+
+    protected void execute() {
+
+        if (prefixOpcode == 0) {
+            int opCode = MemIoImpl.fetchOpcode(regPC);
+            regR++;
+
+            if (breakpointAt.get(regPC)) {
+                opCode = NotifyImpl.breakpoint(regPC, opCode);
+            }
+
+            if (!halted) {
+                regPC = (regPC + 1) & 0xffff;
+                flagQ = pendingEI = false;
+                decodeOpcode(opCode);
+            }
+        } else {
+            int opCode = prefixOpcode;
+            prefixOpcode = 0;
+            decodeOpcode(opCode);
         }
-        return (int) (getTStates() - startTStates);
-    }
 
-    @Override
-    public boolean isBreakpoint(int address) {
-        return false;
-    }
+        lastFlagQ = flagQ;
 
-    @Override
-    public void setBreakpoint(int address, boolean state) {
+        if (execDone) {
+            NotifyImpl.execDone();
+        }
 
-    }
+        if (activeNMI) {
+            activeNMI = false;
+            nmi();
+            return;
+        }
 
-    @Override
-    public void resetBreakpoints() {
+        if (ffIFF1 && !pendingEI && MemIoImpl.isActiveINT()) {
+            interruption();
+        }
 
-    }
-
-    @Override
-    public void setRegA(int value) {
-        setRegisterValue(A, value);
-    }
-
-    @Override
-    public int getRegA() {
-        return getRegisterValue(A);
-    }
-
-    @Override
-    public void setFlags(int value) {
-        setRegisterValue(F, value);
-    }
-
-    @Override
-    public int getFlags() {
-        return getRegisterValue(F);
-    }
-
-    @Override
-    public void setRegPC(int address) {
-        setProgramCounter(address);
-    }
-
-    @Override
-    public void setRegSP(int address) {
-        setRegisterValue(SP, address);
-    }
-
-    @Override
-    public int getRegIX() {
-        return getRegisterValue(IX);
-    }
-
-    @Override
-    public void setRegIX(int value) {
-        setRegisterValue(IX, value);
-    }
-
-    @Override
-    public int getRegIY() {
-        return getRegisterValue(IY);
-    }
-
-    @Override
-    public void setRegIY(int value) {
-        setRegisterValue(IY, value);
-    }
-
-    @Override
-    public int getRegDE() {
-        return getRegisterValue(DE);
-    }
-
-    @Override
-    public void setRegDE(int value) {
-        setRegisterValue(DE, value);
-    }
-
-    @Override
-    public void setCarryFlag(boolean state) {
-        setRegisterValue(F, state ? (getRegisterValue(F) | 0x01) : (getRegisterValue(F) & 0xfe));
-    }
-
-    @Override
-    public boolean isCarryFlag() {
-        return (getRegisterValue(F) & 0x01) != 0;
-    }
-
-    @Override
-    public int getRegPC() {
-        return getProgramCounter();
     }
 
 }
