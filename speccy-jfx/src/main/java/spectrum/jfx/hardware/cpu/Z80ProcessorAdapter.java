@@ -85,6 +85,11 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
     }
 
     @Override
+    public int getRegSP() {
+        return getRegisterValue(SP);
+    }
+
+    @Override
     public void setRegSP(int address) {
         setRegisterValue(SP, address);
     }
@@ -117,6 +122,26 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
     @Override
     public void setRegDE(int value) {
         setRegisterValue(DE, value);
+    }
+
+    @Override
+    public int getRegHL() {
+        return getRegisterValue(HL);
+    }
+
+    @Override
+    public void setRegHL(int value) {
+        setRegisterValue(HL, value);
+    }
+
+    @Override
+    public void setRegBC(int value) {
+        setRegisterValue(BC, value);
+    }
+
+    @Override
+    public int getRegBC() {
+        return getRegisterValue(BC);
     }
 
     @Override
@@ -157,6 +182,10 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
         IFF1 = false;
         IFF2 = false;
         int pc = getProgramCounter();
+        if (halt) {
+            pc++;
+            halt = false;
+        }
         softPush(pc);
         if (interruptMode == 0 || interruptMode == 1) {
             setProgramCounter(0x0038);

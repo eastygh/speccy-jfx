@@ -37,6 +37,8 @@ public interface CPU {
 
     void setRegPC(int address);
 
+    int getRegSP();
+
     void setRegSP(int address);
 
     int getRegIX();
@@ -50,6 +52,14 @@ public interface CPU {
     int getRegDE();
 
     void setRegDE(int value);
+
+    int getRegHL();
+
+    void setRegBC(int value);
+
+    int getRegBC();
+
+    void setRegHL(int value);
 
     // Flags
     void setCarryFlag(boolean state);

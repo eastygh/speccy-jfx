@@ -202,3 +202,25 @@
 .stop-button:hover {
     -fx-background-color: #d32f2f;
 }
+
+/* Debugger */
+.table-row-cell:pc-line {
+    -fx-background-color: #0d7377 !important;
+}
+
+.table-row-cell:pc-line .table-cell {
+    -fx-text-fill: white !important;
+}
+
+/* Selected row with current PC - make it very distinct (Magenta/Pink background) */
+.table-row-cell:filled:selected:pc-line,
+.table-row-cell:filled:focused:selected:pc-line {
+    -fx-background-color: #ff00ff !important;
+    -fx-table-cell-border-color: #eeeeee !important;
+}
+
+.table-row-cell:filled:selected:pc-line .table-cell,
+.table-row-cell:filled:focused:selected:pc-line .table-cell {
+    -fx-text-fill: white !important;
+    -fx-font-weight: bold !important;
+}

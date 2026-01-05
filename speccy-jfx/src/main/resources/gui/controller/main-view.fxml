@@ -24,6 +24,8 @@
                     <MenuItem text="%menu.emulation.reset" fx:id="resetMenuItem" onAction="#onReset"/>
                     <SeparatorMenuItem/>
                     <MenuItem text="%menu.emulation.fastLoad" fx:id="fastLoadMenuItem" onAction="#onFastLoad"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem text="%menu.emulation.debug" fx:id="debugMenuItem" onAction="#onDebug"/>
                 </Menu>
                 <Menu text="%menu.settings">
                     <Menu text="%menu.settings.zoom">
@@ -60,6 +62,8 @@
                 <Button text="%btn.save" fx:id="saveButton" onAction="#onSaveSnapshot"/>
                 <Separator/>
                 <Button text="%btn.settings" fx:id="settingsButton" onAction="#onSettings"/>
+                <Separator/>
+                <Button text="%btn.debug" fx:id="debugButton" onAction="#onDebug"/>
             </ToolBar>
         </VBox>
     </top>
