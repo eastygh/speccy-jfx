@@ -30,7 +30,7 @@ public interface IMemory {
     }
 
     default int fetchOpCode(int address) {
-        return 0x76; // Halt
+        return readByte(address); // Halt
     }
 
     /**
@@ -62,4 +62,5 @@ public interface IMemory {
     default void writeWord(int address, int data) {
         // do nothing
     }
+
 }

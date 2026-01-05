@@ -243,10 +243,14 @@ public class Z80Core implements ICPUData {
             }
         }
         halt = false;
-        instruction = ram.readByte(reg_PC);
+        instruction = fetchOpCode(reg_PC);
         incPC();
         EIDIFlag = false; // clear prior to decoding next instruction
         decodeOneByteInstruction(instruction);
+    }
+
+    protected int fetchOpCode(int address) {
+        return ram.fetchOpCode(address);
     }
 
     /**

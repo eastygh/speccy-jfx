@@ -346,7 +346,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
             return new Z80CoreAdapter(ula, this);
         }
         if (machineSettings.getCpuImplementation() == CpuImplementation.CODINGRODENT && ula instanceof UlaImpl ulaImpl) {
-            return new Z80ProcessorAdapter(ulaImpl, ulaImpl);
+            return new Z80ProcessorAdapter(ulaImpl, ulaImpl, this);
         } else {
             throw new IllegalArgumentException("Unsupported CPU implementation");
         }

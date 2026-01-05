@@ -25,6 +25,7 @@ public class UlaImpl implements Ula {
     private final Map<Integer, Set<OutPortListener>> outPortListeners = new HashMap<>();
     private final ZXClock clock;
     private final MachineSettings machineSettings;
+    private final FloatingBus floatingBus = new FloatingBus();
     // Support zx-core project lib
     private static final SpectrumClock spectrumClock = SpectrumClock.INSTANCE;
 
@@ -131,6 +132,8 @@ public class UlaImpl implements Ula {
                 int portValue = listener.inPort(port) & 0xff;
                 value = value | portValue;
             }
+        } else {
+            value = floatingBus.inPort(port);
         }
         return value & 0xff;
     }

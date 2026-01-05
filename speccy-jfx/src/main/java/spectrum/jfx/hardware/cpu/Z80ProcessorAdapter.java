@@ -5,6 +5,7 @@ import com.codingrodent.microprocessor.IMemory;
 import com.codingrodent.microprocessor.z80.Z80Core;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.ula.Ula;
+import z80core.NotifyOps;
 
 import java.util.BitSet;
 
@@ -15,10 +16,12 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
 
     private final IMemory ram;
     private final Ula ula;
+    private final NotifyOps notifyOps;
     protected final BitSet breakpointAt = new BitSet(65536);
 
-    public Z80ProcessorAdapter(IMemory ram, IBaseDevice io) {
+    public Z80ProcessorAdapter(IMemory ram, IBaseDevice io, NotifyOps notify) {
         super(ram, io);
+        this.notifyOps = notify;
         this.ram = ram;
         if (Ula.class.isAssignableFrom(ram.getClass())) {
             ula = (Ula) ram;
@@ -56,7 +59,7 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
 
     @Override
     public void resetBreakpoints() {
-
+        breakpointAt.clear();
     }
 
     @Override
@@ -159,6 +162,21 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
         return getProgramCounter();
     }
 
+    @Override
+    public void reset() {
+        resetBreakpoints();
+        super.reset();
+    }
+
+    @Override
+    protected int fetchOpCode(int address) {
+        int opCode = ram.fetchOpCode(address);
+        if (breakpointAt.get(address)) {
+            opCode = notifyOps.breakpoint(address, opCode);
+        }
+        return opCode;
+    }
+
     public void softPush(int value) {
         int sp = getSP();
         sp = (sp - 2) & 0xFFFF;
@@ -167,12 +185,12 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
     }
 
     private void executeOneInstruction0() {
+        executeOneInstruction();
         if (ula != null && IFF1 && ula.isActiveINT()) {
             // an additional 13 T-states by interrupt call
             ula.addTStates(13);
             callInterrupt();
         }
-        executeOneInstruction();
     }
 
     void callInterrupt() {
