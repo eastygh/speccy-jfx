@@ -4,6 +4,7 @@ import com.codingrodent.microprocessor.IBaseDevice;
 import com.codingrodent.microprocessor.IMemory;
 import com.codingrodent.microprocessor.z80.Z80Core;
 import lombok.extern.slf4j.Slf4j;
+import spectrum.jfx.hardware.machine.CpuImplementation;
 import spectrum.jfx.hardware.ula.Ula;
 import spectrum.jfx.snapshot.CPUSnapShot;
 import z80core.NotifyOps;
@@ -232,6 +233,7 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
                 .activeINT(ula != null && ula.isActiveINT())
                 .modeINT(getInterruptMode())
                 .halted(halt)
+                .cpuImplementation(CpuImplementation.CODINGRODENT)
                 .build();
     }
 

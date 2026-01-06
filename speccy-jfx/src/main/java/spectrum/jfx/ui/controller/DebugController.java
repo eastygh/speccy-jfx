@@ -23,6 +23,7 @@ import spectrum.jfx.debug.Z80Disassembler;
 import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.machine.HardwareProvider;
 import spectrum.jfx.hardware.memory.Memory;
+import spectrum.jfx.snapshot.CPUSnapShot;
 import spectrum.jfx.ui.theme.ThemeManager;
 
 import java.net.URL;
@@ -54,19 +55,39 @@ public class DebugController implements Initializable, DebugListener {
     @FXML
     private TextField afField;
     @FXML
+    private TextField afxField;
+    @FXML
     private TextField bcField;
+    @FXML
+    private TextField bcxField;
     @FXML
     private TextField deField;
     @FXML
+    private TextField dexField;
+    @FXML
     private TextField hlField;
+    @FXML
+    private TextField hlxField;
     @FXML
     private TextField ixField;
     @FXML
     private TextField iyField;
     @FXML
+    private TextField iField;
+    @FXML
+    private TextField rField;
+    @FXML
     private TextField flagsField;
     @FXML
     private Label framesLabel;
+    @FXML
+    private Label iff1Label;
+    @FXML
+    private Label iff2Label;
+    @FXML
+    private Label haltLabel;
+    @FXML
+    private Label imLabel;
     @FXML
     private Label statusLabel;
 
@@ -158,9 +179,16 @@ public class DebugController implements Initializable, DebugListener {
     private void updateUI() {
         if (hardwareProvider == null) return;
 
-        updateRegisters();
+        CPU cpu = hardwareProvider.getCPU();
+        CPUSnapShot snapshot = (CPUSnapShot) cpu.getSnapShot();
+
+        updateRegisters(snapshot);
         updateDisassembly();
         framesLabel.setText(String.valueOf(hardwareProvider.getEmulator().getFrames()));
+        iff1Label.setText(snapshot.isFfIFF1() ? "1" : "0");
+        iff2Label.setText(snapshot.isFfIFF2() ? "1" : "0");
+        haltLabel.setText(snapshot.isHalted() ? "1" : "0");
+        imLabel.setText(String.valueOf(snapshot.getModeINT()));
 
         boolean suspended = hardwareProvider.isDebugSuspended();
         runButton.setDisable(!suspended);
@@ -173,18 +201,29 @@ public class DebugController implements Initializable, DebugListener {
         statusLabel.setText(statusText);
     }
 
-    private void updateRegisters() {
-        CPU cpu = hardwareProvider.getCPU();
-        pcField.setText(String.format("%04X", cpu.getRegPC()));
-        spField.setText(String.format("%04X", cpu.getRegSP()));
-        afField.setText(String.format("%02X%02X", cpu.getRegA(), cpu.getFlags()));
-        bcField.setText(String.format("%04X", cpu.getRegBC()));
-        deField.setText(String.format("%04X", cpu.getRegDE()));
-        hlField.setText(String.format("%04X", cpu.getRegHL()));
-        ixField.setText(String.format("%04X", cpu.getRegIX()));
-        iyField.setText(String.format("%04X", cpu.getRegIY()));
+    private void updateRegisters(CPUSnapShot snapshot) {
+        pcField.setText(String.format("%04X", snapshot.getRegPC()));
+        spField.setText(String.format("%04X", snapshot.getRegSP()));
 
-        flagsField.setText(getFlagsString(cpu.getFlags()));
+        afField.setText(String.format("%02X%02X", snapshot.getRegA(), snapshot.getRegF()));
+        afxField.setText(String.format("%02X%02X", snapshot.getRegAx(), snapshot.getRegFx()));
+
+        bcField.setText(String.format("%02X%02X", snapshot.getRegB(), snapshot.getRegC()));
+        bcxField.setText(String.format("%02X%02X", snapshot.getRegBx(), snapshot.getRegCx()));
+
+        deField.setText(String.format("%02X%02X", snapshot.getRegD(), snapshot.getRegE()));
+        dexField.setText(String.format("%02X%02X", snapshot.getRegDx(), snapshot.getRegEx()));
+
+        hlField.setText(String.format("%02X%02X", snapshot.getRegH(), snapshot.getRegL()));
+        hlxField.setText(String.format("%02X%02X", snapshot.getRegHx(), snapshot.getRegLx()));
+
+        ixField.setText(String.format("%04X", snapshot.getRegIX()));
+        iyField.setText(String.format("%04X", snapshot.getRegIY()));
+
+        iField.setText(String.format("%02X", snapshot.getRegI()));
+        rField.setText(String.format("%02X", snapshot.getRegR()));
+
+        flagsField.setText(getFlagsString(snapshot.getRegF()));
     }
 
     private String getFlagsString(int f) {

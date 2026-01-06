@@ -46,24 +46,34 @@
                     
                     <Label text="%debug.sp" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
                     <TextField fx:id="spField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-                    
+
                     <Label text="%debug.af" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
                     <TextField fx:id="afField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-                    
+                    <TextField fx:id="afxField" editable="false" prefWidth="80" GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+
                     <Label text="%debug.bc" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
                     <TextField fx:id="bcField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-                    
+                    <TextField fx:id="bcxField" editable="false" prefWidth="80" GridPane.columnIndex="2" GridPane.rowIndex="3"/>
+
                     <Label text="%debug.de" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
                     <TextField fx:id="deField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
-                    
+                    <TextField fx:id="dexField" editable="false" prefWidth="80" GridPane.columnIndex="2" GridPane.rowIndex="4"/>
+
                     <Label text="%debug.hl" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
                     <TextField fx:id="hlField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
-                    
+                    <TextField fx:id="hlxField" editable="false" prefWidth="80" GridPane.columnIndex="2" GridPane.rowIndex="5"/>
+
                     <Label text="%debug.ix" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
                     <TextField fx:id="ixField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
                     
                     <Label text="%debug.iy" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
                     <TextField fx:id="iyField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+
+                    <Label text="%debug.i" GridPane.columnIndex="0" GridPane.rowIndex="8"/>
+                    <TextField fx:id="iField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="8"/>
+
+                    <Label text="%debug.r" GridPane.columnIndex="0" GridPane.rowIndex="9"/>
+                    <TextField fx:id="rField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="9"/>
                 </GridPane>
                 
                 <Separator/>
@@ -75,6 +85,18 @@
                 <GridPane hgap="10" vgap="5">
                     <Label text="%debug.frames" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
                     <Label fx:id="framesLabel" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                    <Label text="%debug.iff1" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <Label fx:id="iff1Label" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                    <Label text="%debug.iff2" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <Label fx:id="iff2Label" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                    <Label text="%debug.halt" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                    <Label fx:id="haltLabel" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+                    <Label text="%debug.im" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                    <Label fx:id="imLabel" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
                 </GridPane>
             </VBox>
         </SplitPane>

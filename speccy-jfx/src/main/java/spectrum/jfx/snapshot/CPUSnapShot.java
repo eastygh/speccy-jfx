@@ -3,11 +3,14 @@ package spectrum.jfx.snapshot;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import spectrum.jfx.hardware.machine.CpuImplementation;
 
 @Data
 @Builder
 @Accessors(chain = true)
 public class CPUSnapShot implements SnapShot {
+
+    private CpuImplementation cpuImplementation;
 
     private int regA, regB, regC, regD, regE, regH, regL;
     private int regF;
