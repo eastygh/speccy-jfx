@@ -14,6 +14,10 @@ public interface Memory extends Device {
 
     void writeByte(int address, int value);
 
+    byte[] getScreen();
+
+    byte[] getBlock(int startAddress, int length);
+
     void loadROM(byte[] rom);
 
     void flash(int address, byte[] data);

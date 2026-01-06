@@ -196,6 +196,16 @@ public class MemoryImpl implements Memory {
         return false;
     }
 
+    @Override
+    public byte[] getScreen() {
+        return readBlock(SCREEN_RAM_START, SCREEN_RAM_END + 1);
+    }
+
+    @Override
+    public byte[] getBlock(int startAddress, int length) {
+        return readBlock(startAddress, length);
+    }
+
     /**
      * Read block of memory
      */
