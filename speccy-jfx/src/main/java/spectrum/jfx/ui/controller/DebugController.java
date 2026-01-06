@@ -1,6 +1,7 @@
 package spectrum.jfx.ui.controller;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -9,10 +10,14 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.debug.DebugListener;
+import spectrum.jfx.debug.SuspendType;
 import spectrum.jfx.debug.Z80Disassembler;
 import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.machine.HardwareProvider;
@@ -22,12 +27,17 @@ import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 
+@Slf4j
 public class DebugController implements Initializable, DebugListener {
 
     private static final PseudoClass PC_PSEUDO_CLASS = PseudoClass.getPseudoClass("pc-line");
 
     @FXML
     private TableView<DisassemblyRow> disassemblyTable;
+    @FXML
+    private TableColumn<DisassemblyRow, Boolean> breakpointColumn;
+    @FXML
+    private TableColumn<DisassemblyRow, String> pcColumn;
     @FXML
     private TableColumn<DisassemblyRow, String> addressColumn;
     @FXML
@@ -55,15 +65,60 @@ public class DebugController implements Initializable, DebugListener {
     private TextField flagsField;
     @FXML
     private Label framesLabel;
+    @FXML
+    private Label statusLabel;
+
+    @FXML
+    private Button runButton;
+    @FXML
+    private Button stopButton;
+    @FXML
+    private Button stepIntoButton;
+    @FXML
+    private Button stepOverButton;
 
     private volatile boolean nextStep = false;
 
     private HardwareProvider hardwareProvider;
+    private ResourceBundle resources;
     private final ObservableList<DisassemblyRow> disassemblyRows = FXCollections.observableArrayList();
     private final Z80Disassembler disassembler = new Z80Disassembler();
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        this.resources = resources;
+        breakpointColumn.setCellValueFactory(new PropertyValueFactory<>("breakpoint"));
+        // Handle clicks on breakpoint column
+        breakpointColumn.setCellFactory(column -> {
+            TableCell<DisassemblyRow, Boolean> cell = new TableCell<>() {
+                private final Circle circle = new Circle(5, Color.RED);
+
+                @Override
+                protected void updateItem(Boolean item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null || !item) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(circle);
+                    }
+                }
+            };
+            cell.setOnMouseClicked(event -> {
+                if (!cell.isEmpty()) {
+                    DisassemblyRow row = cell.getTableRow().getItem();
+                    if (row != null) {
+                        int address = Integer.parseInt(row.getAddress(), 16);
+                        boolean currentState = hardwareProvider.getEmulator().isDebugBreakpoint(address);
+                        hardwareProvider.getEmulator().setDebugBreakpoint(address, !currentState);
+                        updateDisassembly(); // Refresh to show/hide the red ball
+                    }
+                }
+            });
+            return cell;
+        });
+
+
+        pcColumn.setCellValueFactory(new PropertyValueFactory<>("pcIndicator"));
         addressColumn.setCellValueFactory(new PropertyValueFactory<>("address"));
         hexColumn.setCellValueFactory(new PropertyValueFactory<>("hex"));
         mnemonicColumn.setCellValueFactory(new PropertyValueFactory<>("mnemonic"));
@@ -85,13 +140,14 @@ public class DebugController implements Initializable, DebugListener {
     }
 
     @Override
-    public void onStepComplete(HardwareProvider hv) {
+    public void onStepComplete(HardwareProvider hv, SuspendType suspendType) {
         Platform.runLater(this::updateUI);
         while (!nextStep) {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                log.error("Interrupted while waiting for next step", e);
+                Thread.currentThread().interrupt();
             }
         }
         nextStep = false;
@@ -103,6 +159,16 @@ public class DebugController implements Initializable, DebugListener {
         updateRegisters();
         updateDisassembly();
         framesLabel.setText(String.valueOf(hardwareProvider.getEmulator().getFrames()));
+
+        boolean suspended = hardwareProvider.isDebugSuspended();
+        runButton.setDisable(!suspended);
+        stopButton.setDisable(suspended);
+        stepIntoButton.setDisable(!suspended);
+        stepOverButton.setDisable(!suspended);
+
+        String statusKey = suspended ? "debug.status.suspended" : "debug.status.running";
+        String statusText = resources.getString("debug.status") + " " + resources.getString(statusKey);
+        statusLabel.setText(statusText);
     }
 
     private void updateRegisters() {
@@ -138,7 +204,9 @@ public class DebugController implements Initializable, DebugListener {
             Z80Disassembler.DisassemblyResult result = disassembler.disassemble(memory, currentAddr);
             boolean isPC = currentAddr == pc;
             disassemblyRows.add(new DisassemblyRow(
-                    (isPC ? "▶ " : "  ") + String.format("%04X", currentAddr),
+                    hardwareProvider.getEmulator().isDebugBreakpoint(currentAddr),
+                    isPC ? "▶" : "",
+                    String.format("%04X", currentAddr),
                     result.getHexBytes(),
                     result.getMnemonic(),
                     isPC
@@ -150,22 +218,20 @@ public class DebugController implements Initializable, DebugListener {
     @FXML
     @SneakyThrows
     private void onRun() {
-        hardwareProvider.setDebug(false);
+        hardwareProvider.setDebugSuspended(false);
         nextStep = true;
-        Thread.sleep(30);
-        nextStep = false;
         updateUI();
     }
 
     @FXML
     private void onStop() {
-        hardwareProvider.setDebug(true);
+        hardwareProvider.setDebugSuspended(true);
         updateUI();
     }
 
     @FXML
     private void onStepInto() {
-        hardwareProvider.setDebug(true);
+        hardwareProvider.setDebugSuspended(true);
         nextStep = true;
         updateUI();
     }
@@ -185,7 +251,7 @@ public class DebugController implements Initializable, DebugListener {
 
     @FXML
     public void onClose() {
-        hardwareProvider.setDebug(false);
+        hardwareProvider.setDebugSuspended(false);
         hardwareProvider.setDebugListener(null);
         ((Stage) disassemblyTable.getScene().getWindow()).close();
     }
@@ -212,17 +278,33 @@ public class DebugController implements Initializable, DebugListener {
     }
 
     public static class DisassemblyRow {
+        private final SimpleBooleanProperty breakpoint;
+        private final SimpleStringProperty pcIndicator;
         private final SimpleStringProperty address;
         private final SimpleStringProperty hex;
         private final SimpleStringProperty mnemonic;
         @Getter
         private final boolean currentPC;
 
-        public DisassemblyRow(String address, String hex, String mnemonic, boolean currentPC) {
+        public DisassemblyRow(boolean breakpoint, String pcIndicator, String address, String hex, String mnemonic, boolean currentPC) {
+            this.breakpoint = new SimpleBooleanProperty(breakpoint);
+            this.pcIndicator = new SimpleStringProperty(pcIndicator);
             this.address = new SimpleStringProperty(address);
             this.hex = new SimpleStringProperty(hex);
             this.mnemonic = new SimpleStringProperty(mnemonic);
             this.currentPC = currentPC;
+        }
+
+        public boolean isBreakpoint() {
+            return breakpoint.get();
+        }
+
+        public SimpleBooleanProperty breakpointProperty() {
+            return breakpoint;
+        }
+
+        public String getPcIndicator() {
+            return pcIndicator.get();
         }
 
         public String getAddress() {

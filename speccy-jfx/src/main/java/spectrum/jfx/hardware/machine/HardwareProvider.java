@@ -21,7 +21,9 @@ public interface HardwareProvider {
 
     CPU getCPU();
 
-    void setDebug(boolean debug);
+    void setDebugSuspended(boolean debug);
+
+    boolean isDebugSuspended();
 
     void setDebugListener(DebugListener listener);
 
