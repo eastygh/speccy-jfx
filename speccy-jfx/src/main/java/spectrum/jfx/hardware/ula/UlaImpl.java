@@ -25,7 +25,8 @@ public class UlaImpl implements Ula {
     private final Map<Integer, Set<OutPortListener>> outPortListeners = new HashMap<>();
     private final ZXClock clock;
     private final MachineSettings machineSettings;
-    private final FloatingBus floatingBus = new FloatingBus();
+    // Floating bus by ULA (IN ports)
+    private final FloatingBus floatingBus;
     // Support zx-core project lib
     private static final SpectrumClock spectrumClock = SpectrumClock.INSTANCE;
 
@@ -42,6 +43,7 @@ public class UlaImpl implements Ula {
         } else {
             throw new NotImplementedException("Not implemented machine " + machineSettings.getMachineType());
         }
+        this.floatingBus = new FloatingBus(machineSettings);
         this.clock = new ZXClock();
     }
 

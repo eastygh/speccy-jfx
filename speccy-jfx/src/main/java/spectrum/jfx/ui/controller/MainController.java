@@ -315,20 +315,20 @@ public class MainController implements LocalizationChangeListener {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/gui/controller/debug-view.fxml"));
             fxmlLoader.setResources(java.util.ResourceBundle.getBundle("i18n/messages", localizationManager.getCurrentLanguage().getLocale()));
-            
+
             BorderPane root = fxmlLoader.load();
             DebugController controller = fxmlLoader.getController();
-            if (getEmulator() instanceof spectrum.jfx.hardware.machine.HardwareProvider) {
-                controller.setHardwareProvider((spectrum.jfx.hardware.machine.HardwareProvider) getEmulator());
+            if (getEmulator() instanceof spectrum.jfx.hardware.machine.HardwareProvider hp) {
+                controller.setHardwareProvider(hp);
             }
 
             debugStage = new Stage();
             debugStage.setTitle(localizationManager.getString("debug.title"));
             Scene debugScene = new Scene(root);
-            
+
             // Применяем текущую тему к окну отладки
             ThemeManager.applyTheme(debugScene, AppSettings.getInstance().getTheme());
-            
+
             debugStage.setScene(debugScene);
             debugStage.setOnCloseRequest(event -> {
                 controller.onClose();

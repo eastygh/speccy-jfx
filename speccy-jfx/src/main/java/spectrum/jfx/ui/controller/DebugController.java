@@ -19,6 +19,7 @@ import spectrum.jfx.hardware.machine.HardwareProvider;
 import spectrum.jfx.hardware.memory.Memory;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class DebugController implements Initializable, DebugListener {
@@ -131,7 +132,7 @@ public class DebugController implements Initializable, DebugListener {
         int pc = hardwareProvider.getCPU().getRegPC();
 
         disassemblyRows.clear();
-        int currentAddr = pc;
+        int currentAddr = backShiftInstruction(memory, pc, 5);
         // Show 20 instructions starting from PC
         for (int i = 0; i < 20; i++) {
             Z80Disassembler.DisassemblyResult result = disassembler.disassemble(memory, currentAddr);
@@ -187,6 +188,27 @@ public class DebugController implements Initializable, DebugListener {
         hardwareProvider.setDebug(false);
         hardwareProvider.setDebugListener(null);
         ((Stage) disassemblyTable.getScene().getWindow()).close();
+    }
+
+    private int backShiftInstruction(Memory memory, int address, int backStepsInstructions) {
+        int result = address;
+        Z80Disassembler.DisassemblyResult anchor = disassembler.disassemble(memory, address);
+        int ins = 0;
+        while (ins++ <= backStepsInstructions && result > 0) {
+            result++;
+            boolean mactch = false;
+            while (!mactch) {
+                List<Z80Disassembler.DisassemblyResult> l = disassembler.disassembleBlock(memory, result, ins);
+                Z80Disassembler.DisassemblyResult last = l.getLast();
+                if (last.getMnemonic().equals(anchor.getMnemonic())) {
+                    mactch = true;
+                } else {
+                    result--;
+                    if (result <= 0) break;
+                }
+            }
+        }
+        return result;
     }
 
     public static class DisassemblyRow {
