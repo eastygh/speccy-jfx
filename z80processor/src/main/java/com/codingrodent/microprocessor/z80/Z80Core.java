@@ -29,24 +29,24 @@ public class Z80Core implements ICPUData {
 
     //
     // maximum address size
-    private final static int MAX_ADDRESS = 0xFFFF;
+    private static final int MAX_ADDRESS = 0xFFFF;
     private final IMemory ram;
     private final IBaseDevice io;
     //
     private int instruction;
     protected boolean halt;
-    private long tStates;
+    protected long tStates;
     /* registers */
     private int reg_B, reg_C, reg_D, reg_E, reg_H, reg_L;
     private int reg_B_ALT, reg_C_ALT, reg_D_ALT, reg_E_ALT, reg_H_ALT, reg_L_ALT;
     private int reg_IX, reg_IY, reg_PC, reg_SP;
     private int reg_A, reg_A_ALT, reg_F, reg_F_ALT, reg_I, reg_R, reg_R8;
     private int reg_index;
-    private boolean EIDIFlag;
+    protected boolean EIDIFlag;
     protected boolean IFF1, IFF2;
-    private boolean NMI_FF;
-    private boolean blockMove;
-    private int resetAddress;
+    protected boolean NMI_FF;
+    protected boolean blockMove;
+    protected int resetAddress;
     protected int interruptMode;
 
     /**

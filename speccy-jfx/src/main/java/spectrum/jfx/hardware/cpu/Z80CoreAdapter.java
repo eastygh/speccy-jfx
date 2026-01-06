@@ -1,6 +1,8 @@
 package spectrum.jfx.hardware.cpu;
 
 import lombok.extern.slf4j.Slf4j;
+import spectrum.jfx.snapshot.CPUSnapShot;
+import spectrum.jfx.snapshot.mapper.CPUSnapShotMapper;
 import z80core.MemIoOps;
 import z80core.NotifyOps;
 import z80core.Z80;
@@ -63,6 +65,26 @@ public class Z80CoreAdapter extends Z80 implements CPU {
             interruption();
         }
 
+    }
+
+    @Override
+    public void init() {
+        reset();
+    }
+
+    @Override
+    public void open() {
+        // nothing to do
+    }
+
+    @Override
+    public void close() {
+        // nothing to do
+    }
+
+    @Override
+    public CPUSnapShot getSnapShot() {
+        return CPUSnapShotMapper.toCPUSnapShot(getZ80State());
     }
 
 }

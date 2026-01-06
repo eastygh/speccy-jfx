@@ -248,13 +248,13 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         long executedCycles = 0;
         while (executedCycles < machineSettings.getMachineType().tstatesFrame) {
 
+            debugHookHandler(); // hook debug event if needed
+
             int cycles = cpu.executeInstruction();
             if (!machineSettings.isUlaAddTStates()) {
                 ula.addTStates(cycles);
             }
             executedCycles += cycles;
-
-            debugHookHandler();
 
             video.update(cycles);
 

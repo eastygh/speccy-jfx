@@ -1,5 +1,7 @@
 package spectrum.jfx.hardware.machine;
 
+import spectrum.jfx.snapshot.SnapShot;
+
 public interface Device {
 
     void init();
@@ -12,6 +14,10 @@ public interface Device {
 
     default void setSpeedUpMode(boolean speedUpMode) {
 
+    }
+
+    default SnapShot getSnapShot() {
+        throw new UnsupportedOperationException("Device does not support snapshots");
     }
 
 }

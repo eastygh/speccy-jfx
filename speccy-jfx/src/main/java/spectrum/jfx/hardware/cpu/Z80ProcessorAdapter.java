@@ -5,6 +5,7 @@ import com.codingrodent.microprocessor.IMemory;
 import com.codingrodent.microprocessor.z80.Z80Core;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.ula.Ula;
+import spectrum.jfx.snapshot.CPUSnapShot;
 import z80core.NotifyOps;
 
 import java.util.BitSet;
@@ -177,6 +178,63 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
         return opCode;
     }
 
+    @Override
+    public void init() {
+        reset();
+    }
+
+    @Override
+    public void open() {
+        // nothing to do
+    }
+
+    @Override
+    public void close() {
+        // nothing to do
+    }
+
+    @Override
+    public CPUSnapShot getSnapShot() {
+        int bc = getRegisterValue(BC);
+        int de = getRegisterValue(DE);
+        int hl = getRegisterValue(HL);
+        int bcx = getRegisterValue(BC_ALT);
+        int dex = getRegisterValue(DE_ALT);
+        int hlx = getRegisterValue(HL_ALT);
+
+        return CPUSnapShot.builder()
+                .regA(getRegisterValue(A))
+                .regF(getRegisterValue(F))
+                .regB((bc >> 8) & 0xFF)
+                .regC(bc & 0xFF)
+                .regD((de >> 8) & 0xFF)
+                .regE(de & 0xFF)
+                .regH((hl >> 8) & 0xFF)
+                .regL(hl & 0xFF)
+                .regAx(getRegisterValue(A_ALT))
+                .regFx(getRegisterValue(F_ALT))
+                .regBx((bcx >> 8) & 0xFF)
+                .regCx(bcx & 0xFF)
+                .regDx((dex >> 8) & 0xFF)
+                .regEx(dex & 0xFF)
+                .regHx((hlx >> 8) & 0xFF)
+                .regLx(hlx & 0xFF)
+                .regPC(getProgramCounter())
+                .regIX(getRegisterValue(IX))
+                .regIY(getRegisterValue(IY))
+                .regSP(getSP())
+                .regI(getRegisterValue(I))
+                .regR(getRegisterValue(R))
+                .ffIFF1(IFF1)
+                .ffIFF2(IFF2)
+                .pendingEI(EIDIFlag)
+                .activeNMI(NMI_FF)
+                .activeINT(ula != null && ula.isActiveINT())
+                .modeINT(getInterruptMode())
+                .halted(halt)
+                .build();
+    }
+
     public void softPush(int value) {
         int sp = getSP();
         sp = (sp - 2) & 0xFFFF;
@@ -212,25 +270,5 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
         }
 
     }
-
-//    void handleInterrupt() {
-//
-//        iff1 = false;
-//        iff2 = false;
-//
-//        // Затраты времени: стандартный цикл прерывания занимает ~13 T-states
-//        addTStates(13);
-//
-//        pushStack(pc); // Сначала старший байт, потом младший
-//
-//        if (interruptMode == 1) {
-//            pc = 0x0038;
-//        } else if (interruptMode == 2) {
-//            int vector = bus.readInterruptVector(); // Обычно возвращает 0xFF на Spectrum
-//            int addressTablePointer = (i << 8) | vector;
-//            pc = memory.readWord(addressTablePointer);
-//        }
-//        // Mode 0 реализуется через fetch и выполнение инструкции с шины
-//    }
 
 }

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="spectrum.jfx.ui.controller.DebugController" prefWidth="800" prefHeight="600">
+    <top>
+        <ToolBar>
+            <Button text="%debug.toolbar.run" fx:id="runButton" onAction="#onRun"/>
+            <Button text="%debug.toolbar.stop" fx:id="stopButton" onAction="#onStop"/>
+            <Separator/>
+            <Button text="%debug.toolbar.stepInto" fx:id="stepIntoButton" onAction="#onStepInto"/>
+            <Button text="%debug.toolbar.stepOver" fx:id="stepOverButton" onAction="#onStepOver"/>
+            <Separator/>
+            <Button text="%debug.toolbar.addBreakpoint" onAction="#onAddBreakpoint"/>
+            <Separator/>
+            <Button text="%debug.toolbar.reset" fx:id="resetButton" onAction="#onReset"/>
+        </ToolBar>
+    </top>
+    <center>
+        <SplitPane dividerPositions="0.7">
+            <VBox spacing="5">
+                <padding>
+                    <Insets top="5" right="5" bottom="5" left="5"/>
+                </padding>
+                <Label text="%debug.disassembly" style="-fx-font-weight: bold;"/>
+                <TableView fx:id="disassemblyTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="breakpointColumn" text="" prefWidth="20" minWidth="20" maxWidth="20" resizable="false"/>
+                        <TableColumn fx:id="pcColumn" text="" prefWidth="20" minWidth="20" maxWidth="20" resizable="false"/>
+                        <TableColumn fx:id="addressColumn" text="Address" prefWidth="80"/>
+                        <TableColumn fx:id="hexColumn" text="Hex" prefWidth="120"/>
+                        <TableColumn fx:id="mnemonicColumn" text="Mnemonic" prefWidth="250"/>
+                    </columns>
+                </TableView>
+            </VBox>
+            <VBox spacing="10">
+                <padding>
+                    <Insets top="5" right="5" bottom="5" left="5"/>
+                </padding>
+                <Label text="%debug.registers" style="-fx-font-weight: bold;"/>
+                <GridPane hgap="10" vgap="5">
+                    <Label text="%debug.pc" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="pcField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                    
+                    <Label text="%debug.sp" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <TextField fx:id="spField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    
+                    <Label text="%debug.af" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                    <TextField fx:id="afField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    
+                    <Label text="%debug.bc" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                    <TextField fx:id="bcField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                    
+                    <Label text="%debug.de" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                    <TextField fx:id="deField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                    
+                    <Label text="%debug.hl" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                    <TextField fx:id="hlField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+                    
+                    <Label text="%debug.ix" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+                    <TextField fx:id="ixField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+                    
+                    <Label text="%debug.iy" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+                    <TextField fx:id="iyField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+                </GridPane>
+                
+                <Separator/>
+                <Label text="%debug.flags" style="-fx-font-weight: bold;"/>
+                <TextField fx:id="flagsField" editable="false" prefWidth="150"/>
+                
+                <Separator/>
+                <Label text="%debug.state" style="-fx-font-weight: bold;"/>
+                <GridPane hgap="10" vgap="5">
+                    <Label text="%debug.frames" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <Label fx:id="framesLabel" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                </GridPane>
+            </VBox>
+        </SplitPane>
+    </center>
+    <bottom>
+        <VBox>
+            <HBox alignment="CENTER_RIGHT">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+                <Button text="%btn.close" onAction="#onClose"/>
+            </HBox>
+            <Separator/>
+            <HBox spacing="10">
+                <padding>
+                    <Insets top="2" right="5" bottom="2" left="5"/>
+                </padding>
+                <Label fx:id="statusLabel" text="Status: "/>
+            </HBox>
+        </VBox>
+    </bottom>
+</BorderPane>

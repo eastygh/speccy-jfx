@@ -10,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
@@ -22,6 +23,7 @@ import spectrum.jfx.debug.Z80Disassembler;
 import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.machine.HardwareProvider;
 import spectrum.jfx.hardware.memory.Memory;
+import spectrum.jfx.ui.theme.ThemeManager;
 
 import java.net.URL;
 import java.util.List;
@@ -247,6 +249,87 @@ public class DebugController implements Initializable, DebugListener {
     private void onReset() {
         hardwareProvider.getEmulator().reset();
         updateUI();
+    }
+
+    @FXML
+    private void onAddBreakpoint() {
+        Dialog<Integer> dialog = new Dialog<>();
+        ThemeManager.applyThemeToDialog(dialog);
+        dialog.setTitle(resources.getString("debug.addBreakpoint.title"));
+        dialog.setHeaderText(resources.getString("debug.addBreakpoint.header"));
+
+        ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new javafx.geometry.Insets(20, 150, 10, 10));
+
+        TextField decimalField = new TextField();
+        decimalField.setPromptText("0-65535");
+        TextField hexField = new TextField();
+        hexField.setPromptText("0000-FFFF");
+
+        grid.add(new Label(resources.getString("debug.addBreakpoint.decimal")), 0, 0);
+        grid.add(decimalField, 1, 0);
+        grid.add(new Label(resources.getString("debug.addBreakpoint.hex")), 0, 1);
+        grid.add(hexField, 1, 1);
+
+        // Synchronization logic
+        decimalField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (decimalField.isFocused()) {
+                try {
+                    if (newValue.isEmpty()) {
+                        hexField.setText("");
+                    } else {
+                        int val = Integer.parseInt(newValue);
+                        if (val >= 0 && val <= 65535) {
+                            hexField.setText(String.format("%04X", val));
+                        }
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        });
+
+        hexField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (hexField.isFocused()) {
+                try {
+                    if (newValue.isEmpty()) {
+                        decimalField.setText("");
+                    } else {
+                        int val = Integer.parseInt(newValue, 16);
+                        if (val >= 0 && val <= 65535) {
+                            decimalField.setText(String.valueOf(val));
+                        }
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        });
+
+        dialog.getDialogPane().setContent(grid);
+
+        Platform.runLater(decimalField::requestFocus);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == okButtonType) {
+                try {
+                    return Integer.parseInt(decimalField.getText());
+                } catch (NumberFormatException e) {
+                    try {
+                        return Integer.parseInt(hexField.getText(), 16);
+                    } catch (NumberFormatException e2) {
+                        return null;
+                    }
+                }
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(address -> {
+            hardwareProvider.getEmulator().setDebugBreakpoint(address, true);
+            updateDisassembly();
+        });
     }
 
     @FXML

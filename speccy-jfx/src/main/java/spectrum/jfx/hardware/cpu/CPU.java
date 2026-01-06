@@ -1,6 +1,8 @@
 package spectrum.jfx.hardware.cpu;
 
-public interface CPU {
+import spectrum.jfx.hardware.machine.Device;
+
+public interface CPU extends Device {
 
     /**
      * Execute one instruction.
