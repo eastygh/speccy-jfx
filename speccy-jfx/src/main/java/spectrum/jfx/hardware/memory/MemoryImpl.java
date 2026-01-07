@@ -2,6 +2,7 @@ package spectrum.jfx.hardware.memory;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import spectrum.jfx.hardware.machine.MachineSettings;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -31,6 +32,7 @@ public class MemoryImpl implements Memory {
     private final byte[] ram;       // RAM (48K)
 
     private final boolean volatileRam = false;
+    private final MachineSettings machineSettings;
 
     // Volatile if sets
     private static final VarHandle BYTE_ARRAY_HANDLE;
@@ -47,10 +49,11 @@ public class MemoryImpl implements Memory {
     @Getter
     private boolean romWriteProtected = true;
 
-    public MemoryImpl() {
+    public MemoryImpl(MachineSettings machineSettings) {
         log.info("Initializing ZX Spectrum memory");
 
         ram = new byte[RAM_SIZE];
+        this.machineSettings = machineSettings;
 
         clearMemory();
 

@@ -122,7 +122,7 @@ public class CassetteDeckImpl
 
     @Override
     public void close() {
-        // ignored
+        reset();
     }
 
     @Override

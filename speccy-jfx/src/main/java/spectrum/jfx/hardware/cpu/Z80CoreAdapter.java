@@ -2,17 +2,17 @@ package spectrum.jfx.hardware.cpu;
 
 import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.machine.CpuImplementation;
+import spectrum.jfx.hardware.ula.Ula;
 import spectrum.jfx.snapshot.CPUSnapShot;
 import spectrum.jfx.snapshot.mapper.CPUSnapShotMapper;
-import z80core.MemIoOps;
 import z80core.NotifyOps;
 import z80core.Z80;
 
 @Slf4j
 public class Z80CoreAdapter extends Z80 implements CPU {
 
-    public Z80CoreAdapter(MemIoOps memory, NotifyOps notify) {
-        super(memory, notify);
+    public Z80CoreAdapter(Ula ula, NotifyOps notify) {
+        super(ula, notify);
     }
 
     @Override

@@ -6,4 +6,6 @@ public interface DebugListener {
 
     void onStepComplete(HardwareProvider hv, SuspendType suspendType);
 
+    void onDebugDisabled();
+
 }

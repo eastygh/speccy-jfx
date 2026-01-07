@@ -1,7 +1,5 @@
 package spectrum.jfx.hardware.cpu;
 
-import com.codingrodent.microprocessor.IBaseDevice;
-import com.codingrodent.microprocessor.IMemory;
 import com.codingrodent.microprocessor.z80.Z80Core;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.machine.CpuImplementation;
@@ -16,20 +14,14 @@ import static com.codingrodent.microprocessor.z80.CPUConstants.RegisterNames.*;
 @Slf4j
 public class Z80ProcessorAdapter extends Z80Core implements CPU {
 
-    private final IMemory ram;
     private final Ula ula;
     private final NotifyOps notifyOps;
     protected final BitSet breakpointAt = new BitSet(65536);
 
-    public Z80ProcessorAdapter(IMemory ram, IBaseDevice io, NotifyOps notify) {
-        super(ram, io);
+    public Z80ProcessorAdapter(Ula ula, NotifyOps notify) {
+        super(ula, ula);
         this.notifyOps = notify;
-        this.ram = ram;
-        if (Ula.class.isAssignableFrom(ram.getClass())) {
-            ula = (Ula) ram;
-        } else {
-            ula = null;
-        }
+        this.ula = ula;
     }
 
     @Override
@@ -172,7 +164,7 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
 
     @Override
     protected int fetchOpCode(int address) {
-        int opCode = ram.fetchOpCode(address);
+        int opCode = ula.fetchOpCode(address);
         if (breakpointAt.get(address)) {
             opCode = notifyOps.breakpoint(address, opCode);
         }
@@ -240,7 +232,7 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
     public void softPush(int value) {
         int sp = getSP();
         sp = (sp - 2) & 0xFFFF;
-        ram.writeWord(sp, value & 0xFFFF);
+        ula.writeWord(sp, value & 0xFFFF);
         setRegSP(sp);
     }
 

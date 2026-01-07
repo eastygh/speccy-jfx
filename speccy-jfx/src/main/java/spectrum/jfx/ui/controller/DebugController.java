@@ -47,6 +47,17 @@ public class DebugController implements Initializable, DebugListener {
     private TableColumn<DisassemblyRow, String> hexColumn;
     @FXML
     private TableColumn<DisassemblyRow, String> mnemonicColumn;
+    @FXML
+    private Label hexViewLabel;
+
+    @FXML
+    private TableView<MemoryRow> hexTableView;
+    @FXML
+    private TableColumn<MemoryRow, String> hexAddressColumn;
+    @FXML
+    private TableColumn<MemoryRow, String> hexDataColumn;
+    @FXML
+    private TableColumn<MemoryRow, String> hexAsciiColumn;
 
     @FXML
     private TextField pcField;
@@ -105,6 +116,7 @@ public class DebugController implements Initializable, DebugListener {
     private HardwareProvider hardwareProvider;
     private ResourceBundle resources;
     private final ObservableList<DisassemblyRow> disassemblyRows = FXCollections.observableArrayList();
+    private final ObservableList<MemoryRow> hexRows = FXCollections.observableArrayList();
     private final Z80Disassembler disassembler = new Z80Disassembler();
 
     @Override
@@ -154,6 +166,96 @@ public class DebugController implements Initializable, DebugListener {
                 pseudoClassStateChanged(PC_PSEUDO_CLASS, item != null && !empty && item.isCurrentPC());
             }
         });
+
+        hexAddressColumn.setCellValueFactory(new PropertyValueFactory<>("address"));
+        hexDataColumn.setCellValueFactory(new PropertyValueFactory<>("hex"));
+        hexAsciiColumn.setCellValueFactory(new PropertyValueFactory<>("ascii"));
+        hexTableView.setItems(hexRows);
+
+        setupRegisterClick(pcField, "PC");
+        setupRegisterClick(spField, "SP");
+        setupRegisterClick(afField, "AF");
+        setupRegisterClick(afxField, "AF'");
+        setupRegisterClick(bcField, "BC");
+        setupRegisterClick(bcxField, "BC'");
+        setupRegisterClick(deField, "DE");
+        setupRegisterClick(dexField, "DE'");
+        setupRegisterClick(hlField, "HL");
+        setupRegisterClick(hlxField, "HL'");
+        setupRegisterClick(ixField, "IX");
+        setupRegisterClick(iyField, "IY");
+        setupRegisterClick(iField, "I");
+        setupRegisterClick(rField, "R");
+    }
+
+    private void setupRegisterClick(TextField field, String regName) {
+        field.setOnMouseClicked(event -> {
+            try {
+                String text = field.getText();
+                if (text != null && !text.isEmpty()) {
+                    int address;
+                    if (text.length() > 4) {
+                        address = Integer.parseInt(text.substring(0, 4), 16);
+                    } else {
+                        address = Integer.parseInt(text, 16);
+                    }
+                    updateHexView(address, regName);
+                }
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+        });
+    }
+
+    private void updateHexView(int centerAddress, String regName) {
+        if (hardwareProvider == null) return;
+        if (regName != null) {
+            hexViewLabel.setText("Hex View - " + regName);
+        } else {
+            hexViewLabel.setText("Hex View");
+        }
+        Memory memory = hardwareProvider.getMemory();
+        hexRows.clear();
+
+        int centerRowStart = centerAddress & 0xFFF0;
+        int startAddress = (centerRowStart - 32) & 0xFFFF;
+
+        for (int i = 0; i < 5; i++) {
+            int rowAddr = (startAddress + i * 16) & 0xFFFF;
+            byte[] data = memory.getBlock(rowAddr, 16);
+
+            StringBuilder hexSb = new StringBuilder();
+            StringBuilder asciiSb = new StringBuilder();
+
+            for (byte b : data) {
+                hexSb.append(String.format("%02X ", b));
+                char c = (char) (b & 0xFF);
+                if (c >= 32 && c <= 126) {
+                    asciiSb.append(c);
+                } else {
+                    asciiSb.append('.');
+                }
+            }
+
+            hexRows.add(new MemoryRow(
+                    String.format("%04X", rowAddr),
+                    hexSb.toString().trim(),
+                    asciiSb.toString()
+            ));
+        }
+    }
+
+    @Getter
+    public static class MemoryRow {
+        private final String address;
+        private final String hex;
+        private final String ascii;
+
+        public MemoryRow(String address, String hex, String ascii) {
+            this.address = address;
+            this.hex = hex;
+            this.ascii = ascii;
+        }
     }
 
     public void setHardwareProvider(HardwareProvider hardwareProvider) {
@@ -174,6 +276,15 @@ public class DebugController implements Initializable, DebugListener {
             }
         }
         nextStep = false;
+    }
+
+    @Override
+    public void onDebugDisabled() {
+        if (hardwareProvider.isDebugSuspended()) {
+            // run next
+            hardwareProvider.setDebugSuspended(false);
+            nextStep = true;
+        }
     }
 
     private void updateUI() {
@@ -238,6 +349,11 @@ public class DebugController implements Initializable, DebugListener {
         Memory memory = hardwareProvider.getMemory();
         int pc = hardwareProvider.getCPU().getRegPC();
 
+        // Update hex view with PC address if it's the first update or just to keep it fresh
+        if (hexRows.isEmpty()) {
+            updateHexView(pc, "PC");
+        }
+
         disassemblyRows.clear();
         int currentAddr = backShiftInstruction(memory, pc, 5);
         // Show 20 instructions starting from PC
@@ -286,6 +402,9 @@ public class DebugController implements Initializable, DebugListener {
 
     @FXML
     private void onReset() {
+        if (hardwareProvider.isDebugSuspended()) {
+            onRun();
+        }
         hardwareProvider.getEmulator().reset();
         updateUI();
     }
@@ -327,7 +446,8 @@ public class DebugController implements Initializable, DebugListener {
                             hexField.setText(String.format("%04X", val));
                         }
                     }
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
             }
         });
 
@@ -342,7 +462,8 @@ public class DebugController implements Initializable, DebugListener {
                             decimalField.setText(String.valueOf(val));
                         }
                     }
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
             }
         });
 

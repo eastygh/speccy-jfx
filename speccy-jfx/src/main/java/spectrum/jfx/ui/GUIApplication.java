@@ -40,7 +40,6 @@ public class GUIApplication extends Application {
 
         // Get controller and pass emulator reference to it
         MainController controller = fxmlLoader.getController();
-        controller.setEmulator(emulator);
 
         // Calculate window size considering all UI elements
         // Canvas includes full size: screen + two borders on each side

@@ -37,7 +37,7 @@ class TStatesTest implements NotifyOps, OutPortListener {
 
     @BeforeEach
     void init() {
-        memory = new MemoryImpl();
+        memory = new MemoryImpl(machineSettings);
         ((MemoryImpl) memory).setRomWriteProtected(false);
         ula = new UlaImpl(memory, machineSettings);
         ula.addPortListener(0xFE, this);

@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static spectrum.jfx.hardware.memory.MemoryImpl.RAM_SIZE;
@@ -77,6 +76,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     private final BitSet debugBreakpoints = new BitSet(RAM_SIZE);
 
     private final MachineSettings machineSettings;
+    private Thread emulationThread;
 
 
     public SpectrumEmulator() {
@@ -87,7 +87,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
         SpectrumClock.INSTANCE.setSpectrumModel(machineSettings.getMachineType());
 
-        this.memory = new MemoryImpl();
+        this.memory = new MemoryImpl(machineSettings);
 
         this.video = new ScanlineVideoImpl(memory, machineSettings);
         this.keyboard = new Keyboard();
@@ -165,19 +165,36 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     }
 
     /**
-     * Останавливает эмуляцию
+     * Stops emulation
      */
     public void stop() {
+        cancelDebug();
         if (!running) {
             log.warn("Emulator is not running");
             return;
         }
         pause();
+        waitForHold();
         running = false;
         video.stop();
         ula.reset();
         sound.close();
+        cassetteDeck.close();
+        stopEmulationThread();
         log.info("Stopping emulation");
+    }
+
+    private void stopEmulationThread() {
+        if (emulationThread != null) {
+            emulationThread.interrupt();
+            try {
+                emulationThread.join(1000);
+            } catch (InterruptedException e) {
+                log.error("Error while waiting for emulation thread to stop", e);
+                Thread.currentThread().interrupt();
+            }
+            emulationThread = null;
+        }
     }
 
     @Override
@@ -194,7 +211,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
      * Main emulation loop
      */
     private void startEmulationLoop() {
-        Thread emulationThread = new Thread(this::emulationLoop, "EmulationThread");
+        emulationThread = new Thread(this::emulationLoop, "EmulationThread");
         emulationThread.setDaemon(true);
         emulationThread.start();
     }
@@ -287,6 +304,10 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     public void reset() {
         log.warn("Resetting emulator state...");
         pause();
+        if (isDebugSuspended()) {
+            setDebugSuspended(false);
+            debugListenerRef.get().onDebugDisabled();
+        }
         waitForHold();
         memory.reset();
         sound.reset();
@@ -370,8 +391,8 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         if (machineSettings.getCpuImplementation() == CpuImplementation.SANCHES) {
             return new Z80CoreAdapter(ula, this);
         }
-        if (machineSettings.getCpuImplementation() == CpuImplementation.CODINGRODENT && ula instanceof UlaImpl ulaImpl) {
-            return new Z80ProcessorAdapter(ulaImpl, ulaImpl, this);
+        if (machineSettings.getCpuImplementation() == CpuImplementation.CODINGRODENT) {
+            return new Z80ProcessorAdapter(ula, this);
         } else {
             throw new IllegalArgumentException("Unsupported CPU implementation");
         }
@@ -383,10 +404,20 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         while (!isHold()) {
             Thread.sleep(10);
             c++;
-            if (c > 100) {
+            if (c > 200) {
                 log.error("Hold timeout exceeded, aborting");
-                throw new TimeoutException("Hold timeout exceeded");
+                return;
             }
+        }
+    }
+
+    private void cancelDebug() {
+        if (isDebugSuspended()) {
+            DebugListener db = debugListenerRef.get();
+            if (db != null) {
+                db.onDebugDisabled();
+            }
+            setDebugSuspended(false);
         }
     }
 

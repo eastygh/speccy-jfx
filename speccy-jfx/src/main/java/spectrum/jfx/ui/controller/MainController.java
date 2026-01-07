@@ -22,7 +22,6 @@ import spectrum.jfx.ui.theme.ThemeManager;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Getter
@@ -91,7 +90,6 @@ public class MainController implements LocalizationChangeListener {
     @FXML
     private Button settingsButton;
 
-    private AtomicReference<Emulator> emulator = new AtomicReference<>();
     private Scene scene;
     private boolean isPaused = false;
     private LocalizationManager localizationManager;
@@ -175,8 +173,8 @@ public class MainController implements LocalizationChangeListener {
 
         if (file != null && getEmulator() != null) {
             settings.saveLastSnapshotPath(file.getAbsolutePath());
-            // TODO: Реализовать загрузку снэпшота
-            System.out.println(localizationManager.getString("tape.loadingSnapshot", file.getName()));
+            // TODO: do snapshot loading
+            log.info(localizationManager.getString("tape.loadingSnapshot", file.getName()));
         }
     }
 
@@ -193,7 +191,7 @@ public class MainController implements LocalizationChangeListener {
 
         if (file != null && getEmulator() != null) {
             // TODO: Реализовать сохранение снэпшота
-            System.out.println(localizationManager.getString("tape.savingSnapshot", file.getName()));
+            log.info(localizationManager.getString("tape.savingSnapshot", file.getName()));
         }
     }
 
@@ -297,7 +295,7 @@ public class MainController implements LocalizationChangeListener {
     protected void onFastLoad() {
         if (getEmulator() != null) {
             // TODO: Реализовать быструю загрузку
-            System.out.println("Быстрая загрузка включена");
+            log.info("Быстрая загрузка включена");
         }
     }
 
@@ -344,7 +342,7 @@ public class MainController implements LocalizationChangeListener {
     protected void onZoom1() {
         if (getEmulator() != null) {
             // TODO: Установить масштаб x1
-            System.out.println("Масштаб установлен: x1");
+            log.info("Масштаб установлен: x1");
         }
     }
 
@@ -352,7 +350,7 @@ public class MainController implements LocalizationChangeListener {
     protected void onZoom2() {
         if (getEmulator() != null) {
             // TODO: Установить масштаб x2
-            System.out.println("Масштаб установлен: x2");
+            log.info("Масштаб установлен: x2");
         }
     }
 
@@ -360,7 +358,7 @@ public class MainController implements LocalizationChangeListener {
     protected void onZoom3() {
         if (getEmulator() != null) {
             // TODO: Установить масштаб x3
-            System.out.println("Масштаб установлен: x3");
+            log.info("Масштаб установлен: x3");
         }
     }
 
@@ -403,7 +401,7 @@ public class MainController implements LocalizationChangeListener {
         if (scene != null) {
             ThemeManager.applyTheme(scene, ThemeManager.Theme.SYSTEM);
             AppSettings.getInstance().saveTheme(ThemeManager.Theme.SYSTEM);
-            System.out.println("Применена системная тема");
+            log.info("Применена системная тема");
         }
     }
 
@@ -412,7 +410,7 @@ public class MainController implements LocalizationChangeListener {
         if (scene != null) {
             ThemeManager.applyTheme(scene, ThemeManager.Theme.LIGHT);
             AppSettings.getInstance().saveTheme(ThemeManager.Theme.LIGHT);
-            System.out.println("Применена светлая тема");
+            log.info("Применена светлая тема");
         }
     }
 
@@ -421,7 +419,7 @@ public class MainController implements LocalizationChangeListener {
         if (scene != null) {
             ThemeManager.applyTheme(scene, ThemeManager.Theme.DARK);
             AppSettings.getInstance().saveTheme(ThemeManager.Theme.DARK);
-            System.out.println("Применена темная тема");
+            log.info("Применена темная тема");
         }
     }
 
@@ -483,12 +481,8 @@ public class MainController implements LocalizationChangeListener {
         onTapeLibrary();
     }
 
-    public void setEmulator(Emulator emulator) {
-        this.emulator.set(emulator);
-    }
-
     public Emulator getEmulator() {
-        return emulator.get();
+        return Machine.getHardwareProvider().getEmulator();
     }
 
 }

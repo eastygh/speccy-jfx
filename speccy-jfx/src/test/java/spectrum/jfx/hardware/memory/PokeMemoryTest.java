@@ -23,7 +23,7 @@ public class PokeMemoryTest implements NotifyOps {
         MachineSettings settings = MachineSettings.builder()
                 .machineType(MachineTypes.SPECTRUM48K)
                 .build();
-        memory = new MemoryImpl();
+        memory = new MemoryImpl(settings);
         ula = new UlaImpl(memory, settings);
         cpu = new Z80CoreAdapter(ula, this);
         ((MemoryImpl) memory).setRomWriteProtected(true);

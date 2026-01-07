@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="spectrum.jfx.ui.controller.DebugController" prefWidth="800" prefHeight="600">
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="spectrum.jfx.ui.controller.DebugController" prefWidth="1000" prefHeight="700">
     <top>
         <ToolBar>
             <Button text="%debug.toolbar.run" fx:id="runButton" onAction="#onRun"/>
@@ -32,6 +32,16 @@
                         <TableColumn fx:id="addressColumn" text="Address" prefWidth="80"/>
                         <TableColumn fx:id="hexColumn" text="Hex" prefWidth="120"/>
                         <TableColumn fx:id="mnemonicColumn" text="Mnemonic" prefWidth="250"/>
+                    </columns>
+                </TableView>
+
+                <Separator/>
+                <Label fx:id="hexViewLabel" text="Hex View" style="-fx-font-weight: bold;"/>
+                <TableView fx:id="hexTableView" prefHeight="150" minHeight="150" style="-fx-font-family: 'Courier New';">
+                    <columns>
+                        <TableColumn fx:id="hexAddressColumn" text="Address" prefWidth="65" style="-fx-font-family: 'Courier New';"/>
+                        <TableColumn fx:id="hexDataColumn" text="Hex" prefWidth="380" style="-fx-font-family: 'Courier New';"/>
+                        <TableColumn fx:id="hexAsciiColumn" text="ASCII" prefWidth="140" style="-fx-font-family: 'Courier New';"/>
                     </columns>
                 </TableView>
             </VBox>
