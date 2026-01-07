@@ -1,6 +1,7 @@
 package spectrum.jfx.hardware.machine;
 
 import spectrum.jfx.debug.DebugListener;
+import spectrum.jfx.debug.DebugManager;
 import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.input.Kempston;
 import spectrum.jfx.hardware.memory.Memory;
@@ -21,9 +22,7 @@ public interface HardwareProvider {
 
     CPU getCPU();
 
-    void setDebugSuspended(boolean debug);
-
-    boolean isDebugSuspended();
+    DebugManager getDebugManager();
 
     void setDebugListener(DebugListener listener);
 

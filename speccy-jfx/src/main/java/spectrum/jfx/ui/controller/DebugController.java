@@ -23,12 +23,14 @@ import spectrum.jfx.debug.Z80Disassembler;
 import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.machine.HardwareProvider;
 import spectrum.jfx.hardware.memory.Memory;
+import spectrum.jfx.machine.Machine;
 import spectrum.jfx.snapshot.CPUSnapShot;
 import spectrum.jfx.ui.theme.ThemeManager;
 
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 public class DebugController implements Initializable, DebugListener {
@@ -111,19 +113,17 @@ public class DebugController implements Initializable, DebugListener {
     @FXML
     private Button stepOverButton;
 
-    private volatile boolean nextStep = false;
-
-    private HardwareProvider hardwareProvider;
     private ResourceBundle resources;
     private final ObservableList<DisassemblyRow> disassemblyRows = FXCollections.observableArrayList();
     private final ObservableList<MemoryRow> hexRows = FXCollections.observableArrayList();
     private final Z80Disassembler disassembler = new Z80Disassembler();
+    private final AtomicReference<HardwareProvider> hardwareProviderRef = new AtomicReference<>();
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         this.resources = resources;
         breakpointColumn.setCellValueFactory(new PropertyValueFactory<>("breakpoint"));
-        // Handle clicks on breakpoint column
+        // Handle clicks on the breakpoint column
         breakpointColumn.setCellFactory(column -> {
             TableCell<DisassemblyRow, Boolean> cell = new TableCell<>() {
                 private final Circle circle = new Circle(5, Color.RED);
@@ -143,8 +143,8 @@ public class DebugController implements Initializable, DebugListener {
                     DisassemblyRow row = cell.getTableRow().getItem();
                     if (row != null) {
                         int address = Integer.parseInt(row.getAddress(), 16);
-                        boolean currentState = hardwareProvider.getEmulator().isDebugBreakpoint(address);
-                        hardwareProvider.getEmulator().setDebugBreakpoint(address, !currentState);
+                        boolean currentState = getHardwareProvider().getEmulator().isDebugBreakpoint(address);
+                        getHardwareProvider().getEmulator().setDebugBreakpoint(address, !currentState);
                         updateDisassembly(); // Refresh to show/hide the red ball
                     }
                 }
@@ -208,13 +208,13 @@ public class DebugController implements Initializable, DebugListener {
     }
 
     private void updateHexView(int centerAddress, String regName) {
-        if (hardwareProvider == null) return;
+        if (getHardwareProvider() == null) return;
         if (regName != null) {
             hexViewLabel.setText("Hex View - " + regName);
         } else {
             hexViewLabel.setText("Hex View");
         }
-        Memory memory = hardwareProvider.getMemory();
+        Memory memory = getHardwareProvider().getMemory();
         hexRows.clear();
 
         int centerRowStart = centerAddress & 0xFFF0;
@@ -259,49 +259,39 @@ public class DebugController implements Initializable, DebugListener {
     }
 
     public void setHardwareProvider(HardwareProvider hardwareProvider) {
-        this.hardwareProvider = hardwareProvider;
-        this.hardwareProvider.setDebugListener(this);
+        hardwareProviderRef.set(getHardwareProvider());
+        getHardwareProvider().setDebugListener(this);
         updateUI();
     }
 
     @Override
-    public void onStepComplete(HardwareProvider hv, SuspendType suspendType) {
-        Platform.runLater(this::updateUI);
-        while (!nextStep) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                log.error("Interrupted while waiting for next step", e);
-                Thread.currentThread().interrupt();
-            }
-        }
-        nextStep = false;
+    public void onStepComplete(final HardwareProvider hv, SuspendType suspendType) {
+        Platform.runLater(() -> {
+            setHardwareProvider(hv);
+            updateUI();
+        });
     }
 
     @Override
-    public void onDebugDisabled() {
-        if (hardwareProvider.isDebugSuspended()) {
-            // run next
-            hardwareProvider.setDebugSuspended(false);
-            nextStep = true;
-        }
+    public void onResumed() {
+        Platform.runLater(this::updateUI);
     }
 
     private void updateUI() {
-        if (hardwareProvider == null) return;
+        if (getHardwareProvider() == null) return;
 
-        CPU cpu = hardwareProvider.getCPU();
+        CPU cpu = getHardwareProvider().getCPU();
         CPUSnapShot snapshot = (CPUSnapShot) cpu.getSnapShot();
 
         updateRegisters(snapshot);
         updateDisassembly();
-        framesLabel.setText(String.valueOf(hardwareProvider.getEmulator().getFrames()));
+        framesLabel.setText(String.valueOf(getHardwareProvider().getEmulator().getFrames()));
         iff1Label.setText(snapshot.isFfIFF1() ? "1" : "0");
         iff2Label.setText(snapshot.isFfIFF2() ? "1" : "0");
         haltLabel.setText(snapshot.isHalted() ? "1" : "0");
         imLabel.setText(String.valueOf(snapshot.getModeINT()));
 
-        boolean suspended = hardwareProvider.isDebugSuspended();
+        boolean suspended = getHardwareProvider().getDebugManager().isPaused();
         runButton.setDisable(!suspended);
         stopButton.setDisable(suspended);
         stepIntoButton.setDisable(!suspended);
@@ -344,10 +334,10 @@ public class DebugController implements Initializable, DebugListener {
     }
 
     private void updateDisassembly() {
-        if (hardwareProvider == null) return;
+        if (getHardwareProvider() == null) return;
 
-        Memory memory = hardwareProvider.getMemory();
-        int pc = hardwareProvider.getCPU().getRegPC();
+        Memory memory = getHardwareProvider().getMemory();
+        int pc = getHardwareProvider().getCPU().getRegPC();
 
         // Update hex view with PC address if it's the first update or just to keep it fresh
         if (hexRows.isEmpty()) {
@@ -361,7 +351,7 @@ public class DebugController implements Initializable, DebugListener {
             Z80Disassembler.DisassemblyResult result = disassembler.disassemble(memory, currentAddr);
             boolean isPC = currentAddr == pc;
             disassemblyRows.add(new DisassemblyRow(
-                    hardwareProvider.getEmulator().isDebugBreakpoint(currentAddr),
+                    getHardwareProvider().getEmulator().isDebugBreakpoint(currentAddr),
                     isPC ? "▶" : "",
                     String.format("%04X", currentAddr),
                     result.getHexBytes(),
@@ -375,21 +365,19 @@ public class DebugController implements Initializable, DebugListener {
     @FXML
     @SneakyThrows
     private void onRun() {
-        hardwareProvider.setDebugSuspended(false);
-        nextStep = true;
+        getHardwareProvider().getDebugManager().resume();
         updateUI();
     }
 
     @FXML
     private void onStop() {
-        hardwareProvider.setDebugSuspended(true);
+        getHardwareProvider().getDebugManager().pause();
         updateUI();
     }
 
     @FXML
     private void onStepInto() {
-        hardwareProvider.setDebugSuspended(true);
-        nextStep = true;
+        getHardwareProvider().getDebugManager().stepInto();
         updateUI();
     }
 
@@ -402,10 +390,10 @@ public class DebugController implements Initializable, DebugListener {
 
     @FXML
     private void onReset() {
-        if (hardwareProvider.isDebugSuspended()) {
+        if (getHardwareProvider().getDebugManager().isPaused()) {
             onRun();
         }
-        hardwareProvider.getEmulator().reset();
+        getHardwareProvider().getEmulator().reset();
         updateUI();
     }
 
@@ -487,16 +475,24 @@ public class DebugController implements Initializable, DebugListener {
         });
 
         dialog.showAndWait().ifPresent(address -> {
-            hardwareProvider.getEmulator().setDebugBreakpoint(address, true);
+            getHardwareProvider().getEmulator().setDebugBreakpoint(address, true);
             updateDisassembly();
         });
     }
 
     @FXML
     public void onClose() {
-        hardwareProvider.setDebugSuspended(false);
-        hardwareProvider.setDebugListener(null);
+        getHardwareProvider().getDebugManager().resume();
+        getHardwareProvider().setDebugListener(null);
         ((Stage) disassemblyTable.getScene().getWindow()).close();
+    }
+
+    private HardwareProvider getHardwareProvider() {
+        HardwareProvider hp = hardwareProviderRef.get();
+        if (hp == null) {
+            hardwareProviderRef.set(Machine.getHardwareProvider());
+        }
+        return hardwareProviderRef.get();
     }
 
     private int backShiftInstruction(Memory memory, int address, int backStepsInstructions) {

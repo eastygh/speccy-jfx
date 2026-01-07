@@ -1,12 +1,12 @@
 package spectrum.jfx.hardware;
 
 import lombok.Getter;
-import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import machine.SpectrumClock;
 import spectrum.jfx.debug.DebugListener;
-import spectrum.jfx.debug.SuspendType;
+import spectrum.jfx.debug.DebugManager;
+import spectrum.jfx.debug.DebugManagerImpl;
 import spectrum.jfx.hardware.cpu.BreakPointListener;
 import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.cpu.Z80CoreAdapter;
@@ -29,14 +29,10 @@ import spectrum.jfx.machine.Machine;
 import z80core.NotifyOps;
 
 import java.io.IOException;
-import java.util.BitSet;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static spectrum.jfx.hardware.memory.MemoryImpl.RAM_SIZE;
 
 @Slf4j
 @Getter
@@ -53,17 +49,13 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     Ula ula;
     CassetteDeckImpl cassetteDeck;
     Kempston kempston;
-
+    DebugManager debugManager = new DebugManagerImpl();
 
     // Emulation management
     private volatile boolean running;
     private volatile boolean paused;
-    @Getter
-    @Setter
-    private volatile boolean debugSuspended = false;
-    private volatile boolean speedUpMode = false;
 
-    private AtomicReference<DebugListener> debugListenerRef = new AtomicReference<>();
+    private volatile boolean speedUpMode = false;
 
     // Emulation state
     private volatile boolean hold = false;
@@ -73,7 +65,6 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     private final Map<Integer, BreakPointListener> breakPoints = new ConcurrentHashMap<>();
     private final Queue<Runnable> contextsTasks = new ConcurrentLinkedQueue<>();
-    private final BitSet debugBreakpoints = new BitSet(RAM_SIZE);
 
     private final MachineSettings machineSettings;
     private Thread emulationThread;
@@ -265,7 +256,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         long executedCycles = 0;
         while (executedCycles < machineSettings.getMachineType().tstatesFrame) {
 
-            debugHookHandler(); // hook debug event if needed
+            debugManager.preExecuteCheck(this); // hook debug event if needed
 
             int cycles = cpu.executeInstruction();
             if (!machineSettings.isUlaAddTStates()) {
@@ -276,6 +267,8 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
             video.update(cycles);
 
             sound.play(cycles);
+
+            debugManager.postExecuteCheck(this);
         }
         // Render frame by hardware
         video.render();
@@ -288,25 +281,12 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         runExternalTasks();
     }
 
-    private void debugHookHandler() {
-        DebugListener debugListener = debugListenerRef.get();
-        if (debugListener != null) {
-            if (debugSuspended) {
-                debugListener.onStepComplete(this, SuspendType.STEP);
-            } else if (debugBreakpoints.get(cpu.getRegPC())) {
-                debugSuspended = true;
-                debugListener.onStepComplete(this, SuspendType.BREAKPOINT);
-            }
-        }
-    }
-
     @Override
     public void reset() {
         log.warn("Resetting emulator state...");
         pause();
-        if (isDebugSuspended()) {
-            setDebugSuspended(false);
-            debugListenerRef.get().onDebugDisabled();
+        if (debugManager.isPaused()) {
+            debugManager.resume();
         }
         waitForHold();
         memory.reset();
@@ -379,12 +359,16 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     @Override
     public void setDebugBreakpoint(int address, boolean enabled) {
-        debugBreakpoints.set(address, enabled);
+        if (enabled) {
+            debugManager.removeBreakpoint(address);
+        } else {
+            debugManager.removeBreakpoint(address);
+        }
     }
 
     @Override
     public boolean isDebugBreakpoint(int address) {
-        return debugBreakpoints.get(address);
+        return debugManager.isBreakpoint(address);
     }
 
     private CPU createZ80Core(MachineSettings machineSettings) {
@@ -412,17 +396,13 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     }
 
     private void cancelDebug() {
-        if (isDebugSuspended()) {
-            DebugListener db = debugListenerRef.get();
-            if (db != null) {
-                db.onDebugDisabled();
-            }
-            setDebugSuspended(false);
+        if (debugManager.isPaused()) {
+            debugManager.resume();
         }
     }
 
     public void setDebugListener(DebugListener listener) {
-        debugListenerRef.set(listener);
+        debugManager.setDebugListener(listener);
     }
 
 }
