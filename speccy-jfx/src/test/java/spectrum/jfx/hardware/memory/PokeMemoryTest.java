@@ -23,10 +23,10 @@ public class PokeMemoryTest implements NotifyOps {
         MachineSettings settings = MachineSettings.builder()
                 .machineType(MachineTypes.SPECTRUM48K)
                 .build();
-        memory = new MemoryImpl(settings);
+        memory = new Memory64KImpl(settings);
         ula = new UlaImpl(memory, settings);
         cpu = new Z80CoreAdapter(ula, this);
-        ((MemoryImpl) memory).setRomWriteProtected(true);
+        ((Memory64KImpl) memory).setRomWriteProtected(true);
     }
 
     @Test
@@ -34,23 +34,23 @@ public class PokeMemoryTest implements NotifyOps {
         // LD HL, 0xAFC8 (45000)
         // LD (HL), 0
         int address = 0xAFC8;
-        
+
         // Машинный код: 
         // 21 C8 AF (LD HL, 0xAFC8)
         // 36 00    (LD (HL), 0)
-        
-        ((MemoryImpl) memory).setRomWriteProtected(false);
+
+        ((Memory64KImpl) memory).setRomWriteProtected(false);
         memory.writeByte(0x0000, 0x21);
         memory.writeByte(0x0001, 0xC8);
         memory.writeByte(0x0002, 0xAF);
         memory.writeByte(0x0003, 0x36);
         memory.writeByte(0x0004, 0x00);
-        ((MemoryImpl) memory).setRomWriteProtected(true);
-        
+        ((Memory64KImpl) memory).setRomWriteProtected(true);
+
         cpu.setRegPC(0);
         cpu.executeInstruction(); // LD HL, 0xAFC8
         cpu.executeInstruction(); // LD (HL), 0
-        
+
         assertEquals(0, memory.readByte(address));
     }
 

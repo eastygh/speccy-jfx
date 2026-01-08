@@ -1,6 +1,7 @@
 package spectrum.jfx.debug;
 
 
+import lombok.Getter;
 import spectrum.jfx.hardware.memory.Memory;
 
 import java.util.ArrayList;
@@ -14,7 +15,10 @@ public class Z80Disassembler {
     /**
      *
      */
+    @Getter
     public static class DisassemblyResult {
+
+        // Getters
         private final String mnemonic;
         private final int length;
         private final int[] bytes;
@@ -50,41 +54,16 @@ public class Z80Disassembler {
         }
 
         private String formatOutput() {
-        // Format bytes (fixed width for alignment)
-        return String.format("%-12s", hexBytes) + mnemonic;
-    }
+            // Format bytes (fixed width for alignment)
+            return String.format("%-12s", hexBytes) + mnemonic;
+        }
 
         private String formatAddressedOutput(int address) {
             return String.format("%04X: %-12s %s", address, hexBytes, mnemonic);
         }
 
-        // Getters
-        public String getMnemonic() {
-            return mnemonic;
-        }
-
-        public int getLength() {
-            return length;
-        }
-
-        public int[] getBytes() {
-            return bytes;
-        }
-
-        public String getFormattedOutput() {
-            return formattedOutput;
-        }
-
-        public String getHexBytes() {
-            return hexBytes;
-        }
-
-        public String getAddressedOutput() {
-            return addressedOutput;
-        }
-
         /**
-         * Creates a result with address specified for GUI
+         * Creates a result with an address specified for GUI
          */
         public DisassemblyResult withAddress(int address) {
             return new DisassemblyResult(mnemonic, length, bytes, address);
@@ -118,19 +97,17 @@ public class Z80Disassembler {
      * @return disassembly result
      */
     public DisassemblyResult disassemble(Memory memory, int position) {
-        int originalPosition = position;
 
         // Read first byte
         int opcode = memory.readByte(position) & 0xFF;
-        position++;
 
         // Check prefixes
         return switch (opcode) {
-            case 0xCB -> disassembleCB(memory, originalPosition);
-            case 0xDD -> disassembleDD(memory, originalPosition);
-            case 0xED -> disassembleED(memory, originalPosition);
-            case 0xFD -> disassembleFD(memory, originalPosition);
-            default -> disassembleMain(memory, originalPosition, opcode);
+            case 0xCB -> disassembleCB(memory, position);
+            case 0xDD -> disassembleDD(memory, position);
+            case 0xED -> disassembleED(memory, position);
+            case 0xFD -> disassembleFD(memory, position);
+            default -> disassembleMain(memory, position, opcode);
         };
     }
 
@@ -239,14 +216,22 @@ public class Z80Disassembler {
             case 0x76 -> new DisassemblyResult("HALT", 1, new int[]{opcode});
 
             // Arithmetic instructions with registers
-            case 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87 -> new DisassemblyResult("ADD A," + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
-            case 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F -> new DisassemblyResult("ADC A," + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
-            case 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97 -> new DisassemblyResult("SUB " + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
-            case 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F -> new DisassemblyResult("SBC A," + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
-            case 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7 -> new DisassemblyResult("AND " + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
-            case 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF -> new DisassemblyResult("XOR " + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
-            case 0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7 -> new DisassemblyResult("OR " + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
-            case 0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF -> new DisassemblyResult("CP " + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
+            case 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87 ->
+                    new DisassemblyResult("ADD A," + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
+            case 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F ->
+                    new DisassemblyResult("ADC A," + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
+            case 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97 ->
+                    new DisassemblyResult("SUB " + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
+            case 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F ->
+                    new DisassemblyResult("SBC A," + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
+            case 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7 ->
+                    new DisassemblyResult("AND " + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
+            case 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF ->
+                    new DisassemblyResult("XOR " + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
+            case 0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7 ->
+                    new DisassemblyResult("OR " + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
+            case 0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF ->
+                    new DisassemblyResult("CP " + REG8_NAMES[opcode & 0x07], 1, new int[]{opcode});
 
             // Arithmetic instructions with immediate
             case 0xC6 -> formatArithmeticImmediate(memory, originalPosition, "ADD A");
@@ -483,7 +468,8 @@ public class Z80Disassembler {
             case 0xE9 -> new DisassemblyResult("JP (IX)", 2, new int[]{ddPrefix, opcode});
             case 0xF9 -> new DisassemblyResult("LD SP,IX", 2, new int[]{ddPrefix, opcode});
 
-            default -> new DisassemblyResult(String.format("DB 0x%02X, 0x%02X", ddPrefix, opcode), 2, new int[]{ddPrefix, opcode});
+            default ->
+                    new DisassemblyResult(String.format("DB 0x%02X, 0x%02X", ddPrefix, opcode), 2, new int[]{ddPrefix, opcode});
         };
     }
 
@@ -611,7 +597,8 @@ public class Z80Disassembler {
             case 0xE9 -> new DisassemblyResult("JP (IY)", 2, new int[]{fdPrefix, opcode});
             case 0xF9 -> new DisassemblyResult("LD SP,IY", 2, new int[]{fdPrefix, opcode});
 
-            default -> new DisassemblyResult(String.format("DB 0x%02X, 0x%02X", fdPrefix, opcode), 2, new int[]{fdPrefix, opcode});
+            default ->
+                    new DisassemblyResult(String.format("DB 0x%02X, 0x%02X", fdPrefix, opcode), 2, new int[]{fdPrefix, opcode});
         };
     }
 
@@ -879,7 +866,8 @@ public class Z80Disassembler {
             case 0x5F -> new DisassemblyResult("LD A,R", 2, new int[]{edPrefix, opcode});
 
             // Return from interrupt and negate
-            case 0x44, 0x4C, 0x54, 0x5C, 0x64, 0x6C, 0x74, 0x7C -> new DisassemblyResult("NEG", 2, new int[]{edPrefix, opcode});
+            case 0x44, 0x4C, 0x54, 0x5C, 0x64, 0x6C, 0x74, 0x7C ->
+                    new DisassemblyResult("NEG", 2, new int[]{edPrefix, opcode});
             case 0x45, 0x55, 0x65, 0x75 -> new DisassemblyResult("RETN", 2, new int[]{edPrefix, opcode});
             case 0x4D, 0x5D, 0x6D, 0x7D -> new DisassemblyResult("RETI", 2, new int[]{edPrefix, opcode});
 

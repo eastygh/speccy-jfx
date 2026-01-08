@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import spectrum.jfx.hardware.machine.MachineSettings;
 import spectrum.jfx.hardware.memory.Memory;
-import spectrum.jfx.hardware.memory.MemoryImpl;
+import spectrum.jfx.hardware.memory.Memory64KImpl;
 import spectrum.jfx.hardware.ula.OutPortListener;
 import spectrum.jfx.hardware.ula.Ula;
 import spectrum.jfx.hardware.ula.UlaImpl;
@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static spectrum.jfx.hardware.memory.MemoryImpl.ROM_SIZE;
+import static spectrum.jfx.hardware.memory.Memory64KImpl.ROM_SIZE;
 import static spectrum.jfx.hardware.util.EmulatorUtils.loadFile;
 
 @Disabled
@@ -37,8 +37,8 @@ class TStatesTest implements NotifyOps, OutPortListener {
 
     @BeforeEach
     void init() {
-        memory = new MemoryImpl(machineSettings);
-        ((MemoryImpl) memory).setRomWriteProtected(false);
+        memory = new Memory64KImpl(machineSettings);
+        ((Memory64KImpl) memory).setRomWriteProtected(false);
         ula = new UlaImpl(memory, machineSettings);
         ula.addPortListener(0xFE, this);
         cpu = new Z80CoreAdapter(ula, this);

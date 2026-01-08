@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static spectrum.jfx.hardware.memory.MemoryImpl.RAM_SIZE;
+import static spectrum.jfx.hardware.memory.Memory64KImpl.RAM_SIZE;
 
 @Slf4j
 public class DebugManagerImpl implements DebugListener, DebugManager {

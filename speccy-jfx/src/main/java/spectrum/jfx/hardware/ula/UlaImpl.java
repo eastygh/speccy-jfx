@@ -40,6 +40,8 @@ public class UlaImpl implements Ula {
         this.contentionTable = new byte[machineSettings.getMachineType().tstatesFrame];
         if (machineSettings.getMachineType() == MachineTypes.SPECTRUM48K) {
             buildContentionTable48(machineSettings.getMachineType());
+        } else if (machineSettings.getMachineType() == MachineTypes.SPECTRUM128K) {
+            buildContentionTable128(machineSettings.getMachineType());
         } else {
             throw new NotImplementedException("Not implemented machine " + machineSettings.getMachineType());
         }
@@ -230,6 +232,29 @@ public class UlaImpl implements Ula {
 
             }
             currentT += machineType.tstatesLine;
+        }
+    }
+
+    private void buildContentionTable128(MachineTypes machineType) {
+
+        for (int i = 0; i < machineType.tstatesFrame; i++) {
+            contentionTable[i] = 0;
+        }
+
+        int currentT = machineType.firstScrByte;
+
+        for (int line = 0; line < 192; line++) {
+            for (int t = 0; t < 128; t += 8) {
+                setDelay(currentT + t, 6);
+                setDelay(currentT + t + 1, 5);
+                setDelay(currentT + t + 2, 4);
+                setDelay(currentT + t + 3, 3);
+                setDelay(currentT + t + 4, 2);
+                setDelay(currentT + t + 5, 1);
+                setDelay(currentT + t + 6, 0); // Эти два такта не тормозят CPU
+                setDelay(currentT + t + 7, 0);
+            }
+            currentT += machineType.tstatesLine; // 228 для 128K
         }
     }
 

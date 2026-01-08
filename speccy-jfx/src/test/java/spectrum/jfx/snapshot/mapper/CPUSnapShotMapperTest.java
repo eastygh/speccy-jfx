@@ -62,17 +62,37 @@ class CPUSnapShotMapperTest {
     @Test
     void testToCPUSnapShot() {
         Z80State state = new Z80State();
-        state.setRegA(0x01); state.setRegB(0x02); state.setRegC(0x03);
-        state.setRegD(0x04); state.setRegE(0x05); state.setRegH(0x06); state.setRegL(0x07);
-        state.setRegF(0x08); state.setFlagQ(true);
-        state.setRegAx(0x11); state.setRegFx(0x12);
-        state.setRegBx(0x13); state.setRegCx(0x14); state.setRegDx(0x15);
-        state.setRegEx(0x16); state.setRegHx(0x17); state.setRegLx(0x18);
-        state.setRegPC(0x1234); state.setRegIX(0x5678); state.setRegIY(0x9ABC);
-        state.setRegSP(0xFFFE); state.setRegI(0x3F); state.setRegR(0x7F);
-        state.setIFF1(true); state.setIFF2(false); state.setPendingEI(true);
-        state.setNMI(false); state.setINTLine(true); state.setIM(IntMode.IM2);
-        state.setHalted(true); state.setMemPtr(0x4321);
+        state.setRegA(0x01);
+        state.setRegB(0x02);
+        state.setRegC(0x03);
+        state.setRegD(0x04);
+        state.setRegE(0x05);
+        state.setRegH(0x06);
+        state.setRegL(0x07);
+        state.setRegF(0x08);
+        state.setFlagQ(true);
+        state.setRegAx(0x11);
+        state.setRegFx(0x12);
+        state.setRegBx(0x13);
+        state.setRegCx(0x14);
+        state.setRegDx(0x15);
+        state.setRegEx(0x16);
+        state.setRegHx(0x17);
+        state.setRegLx(0x18);
+        state.setRegPC(0x1234);
+        state.setRegIX(0x5678);
+        state.setRegIY(0x9ABC);
+        state.setRegSP(0xFFFE);
+        state.setRegI(0x3F);
+        state.setRegR(0x7F);
+        state.setIFF1(true);
+        state.setIFF2(false);
+        state.setPendingEI(true);
+        state.setNMI(false);
+        state.setINTLine(true);
+        state.setIM(IntMode.IM2);
+        state.setHalted(true);
+        state.setMemPtr(0x4321);
 
         CPUSnapShot snapshot = CPUSnapShotMapper.toCPUSnapShot(state);
 

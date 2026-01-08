@@ -1,0 +1,26 @@
+package spectrum.jfx.hardware.factory;
+
+import lombok.experimental.UtilityClass;
+import spectrum.jfx.hardware.cpu.CPU;
+import spectrum.jfx.hardware.cpu.Z80CoreAdapter;
+import spectrum.jfx.hardware.cpu.Z80ProcessorAdapter;
+import spectrum.jfx.hardware.machine.CpuImplementation;
+import spectrum.jfx.hardware.machine.MachineSettings;
+import spectrum.jfx.hardware.ula.Ula;
+import z80core.NotifyOps;
+
+@UtilityClass
+public class CPUFactory {
+
+    public static CPU createCPU(MachineSettings machineSettings, Ula ula, NotifyOps notify) {
+        if (machineSettings.getCpuImplementation() == CpuImplementation.SANCHES) {
+            return new Z80CoreAdapter(ula, notify);
+        }
+        if (machineSettings.getCpuImplementation() == CpuImplementation.CODINGRODENT) {
+            return new Z80ProcessorAdapter(ula, notify);
+        } else {
+            throw new IllegalArgumentException("Unsupported CPU implementation");
+        }
+    }
+
+}

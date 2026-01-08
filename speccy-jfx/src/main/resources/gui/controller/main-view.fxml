@@ -2,8 +2,8 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="spectrum.jfx.ui.controller.MainController">
     <top>
         <VBox>
@@ -30,17 +30,23 @@
                 <Menu text="%menu.settings">
                     <Menu text="%menu.settings.zoom">
                         <RadioMenuItem text="%menu.settings.zoom.x1" fx:id="zoom1MenuItem" onAction="#onZoom1"/>
-                        <RadioMenuItem text="%menu.settings.zoom.x2" fx:id="zoom2MenuItem" onAction="#onZoom2" selected="true"/>
+                        <RadioMenuItem text="%menu.settings.zoom.x2" fx:id="zoom2MenuItem" onAction="#onZoom2"
+                                       selected="true"/>
                         <RadioMenuItem text="%menu.settings.zoom.x3" fx:id="zoom3MenuItem" onAction="#onZoom3"/>
                     </Menu>
                     <Menu text="%menu.settings.theme">
-                        <RadioMenuItem text="%menu.settings.theme.system" fx:id="themeSystemMenuItem" onAction="#onThemeSystem" selected="true"/>
-                        <RadioMenuItem text="%menu.settings.theme.light" fx:id="themeLightMenuItem" onAction="#onThemeLight"/>
-                        <RadioMenuItem text="%menu.settings.theme.dark" fx:id="themeDarkMenuItem" onAction="#onThemeDark"/>
+                        <RadioMenuItem text="%menu.settings.theme.system" fx:id="themeSystemMenuItem"
+                                       onAction="#onThemeSystem" selected="true"/>
+                        <RadioMenuItem text="%menu.settings.theme.light" fx:id="themeLightMenuItem"
+                                       onAction="#onThemeLight"/>
+                        <RadioMenuItem text="%menu.settings.theme.dark" fx:id="themeDarkMenuItem"
+                                       onAction="#onThemeDark"/>
                     </Menu>
                     <Menu text="%menu.settings.language">
-                        <RadioMenuItem text="%menu.settings.language.english" fx:id="languageEnglishMenuItem" onAction="#onLanguageEnglish"/>
-                        <RadioMenuItem text="%menu.settings.language.russian" fx:id="languageRussianMenuItem" onAction="#onLanguageRussian"/>
+                        <RadioMenuItem text="%menu.settings.language.english" fx:id="languageEnglishMenuItem"
+                                       onAction="#onLanguageEnglish"/>
+                        <RadioMenuItem text="%menu.settings.language.russian" fx:id="languageRussianMenuItem"
+                                       onAction="#onLanguageRussian"/>
                     </Menu>
                     <MenuItem text="%menu.settings.preferences" fx:id="settingsMenuItem" onAction="#onSettings"/>
                 </Menu>

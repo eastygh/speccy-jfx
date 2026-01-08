@@ -15,7 +15,6 @@ import spectrum.jfx.ui.theme.ThemeManager;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import static spectrum.jfx.hardware.util.EmulatorUtils.loadFile;
 import static spectrum.jfx.hardware.video.ZoomLevel.X2;
 
 public class GUIApplication extends Application {
@@ -135,8 +134,6 @@ public class GUIApplication extends Application {
         // Set focus on videoContainer after adding canvas
         controller.getVideoContainer().requestFocus();
 
-        byte[] rom = loadFile("/roms/spectrum.rom");
-        emulator.getMemory().loadROM(rom);
         emulator.start();
 
     }

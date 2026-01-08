@@ -35,7 +35,7 @@
     -fx-background-color: #ffffff;
     -fx-border-color: #cccccc;
     -fx-border-width: 1;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 8, 0, 0, 2);
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.3), 8, 0, 0, 2);
 }
 
 .menu-item {

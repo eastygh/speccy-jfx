@@ -28,8 +28,6 @@ public interface Emulator {
 
     void setSpeedUpMode(boolean speedUp);
 
-    void setDebugBreakpoint(int address, boolean enabled);
-
-    boolean isDebugBreakpoint(int address);
+    MachineSettings getMachineSettings();
 
 }

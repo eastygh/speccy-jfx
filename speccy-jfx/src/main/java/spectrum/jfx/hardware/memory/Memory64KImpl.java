@@ -1,11 +1,14 @@
 package spectrum.jfx.hardware.memory;
 
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.machine.MachineSettings;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+
+import static spectrum.jfx.hardware.util.EmulatorUtils.loadFile;
 
 /**
  * Memory map Spectrum 48K
@@ -14,19 +17,7 @@ import java.lang.invoke.VarHandle;
  * 0x8000-0xFFFF: User RAM (32K)
  */
 @Slf4j
-public class MemoryImpl implements Memory {
-
-    // Memory sizes
-    public static final int ROM_SIZE = 0x4000;     // 16K ROM
-    public static final int RAM_SIZE = 0x10000;     // 64K RAM (16K rom + 16K screen + 32K user)
-
-    // Map
-    private static final int ROM_START = 0x0000;
-    private static final int ROM_END = 0x3FFF;
-    private static final int SCREEN_RAM_START = 0x4000;
-    private static final int SCREEN_RAM_END = 0x7FFF;
-    private static final int USER_RAM_START = 0x8000;
-    private static final int USER_RAM_END = 0xFFFF;
+public class Memory64KImpl implements Memory {
 
     // RAM/ROM array
     private final byte[] ram;       // RAM (48K)
@@ -49,7 +40,7 @@ public class MemoryImpl implements Memory {
     @Getter
     private boolean romWriteProtected = true;
 
-    public MemoryImpl(MachineSettings machineSettings) {
+    public Memory64KImpl(MachineSettings machineSettings) {
         log.info("Initializing ZX Spectrum memory");
 
         ram = new byte[RAM_SIZE];
@@ -108,6 +99,12 @@ public class MemoryImpl implements Memory {
         romWriteProtected = wasProtected;
 
         log.info("ROM loaded successfully");
+    }
+
+    @Override
+    @SneakyThrows
+    public void loadRoms() {
+        loadROM(loadFile(machineSettings.getRomFilePath01()));
     }
 
     @Override
@@ -189,14 +186,6 @@ public class MemoryImpl implements Memory {
     @Override
     public void close() {
         clearMemory();
-    }
-
-    @Override
-    public boolean isScreenAddress(int address) {
-        if (address >= 0x4000 && address <= 0x7FFF) {
-            return true;
-        }
-        return false;
     }
 
     @Override

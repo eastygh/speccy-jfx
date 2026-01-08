@@ -143,8 +143,12 @@ public class DebugController implements Initializable, DebugListener {
                     DisassemblyRow row = cell.getTableRow().getItem();
                     if (row != null) {
                         int address = Integer.parseInt(row.getAddress(), 16);
-                        boolean currentState = getHardwareProvider().getEmulator().isDebugBreakpoint(address);
-                        getHardwareProvider().getEmulator().setDebugBreakpoint(address, !currentState);
+                        boolean currentState = getHardwareProvider().getDebugManager().isBreakpoint(address);
+                        if (currentState) {
+                            getHardwareProvider().getDebugManager().removeBreakpoint(address);
+                        } else {
+                            getHardwareProvider().getDebugManager().addBreakpoint(address);
+                        }
                         updateDisassembly(); // Refresh to show/hide the red ball
                     }
                 }
@@ -351,7 +355,7 @@ public class DebugController implements Initializable, DebugListener {
             Z80Disassembler.DisassemblyResult result = disassembler.disassemble(memory, currentAddr);
             boolean isPC = currentAddr == pc;
             disassemblyRows.add(new DisassemblyRow(
-                    getHardwareProvider().getEmulator().isDebugBreakpoint(currentAddr),
+                    getHardwareProvider().getDebugManager().isBreakpoint(currentAddr),
                     isPC ? "▶" : "",
                     String.format("%04X", currentAddr),
                     result.getHexBytes(),
@@ -475,7 +479,7 @@ public class DebugController implements Initializable, DebugListener {
         });
 
         dialog.showAndWait().ifPresent(address -> {
-            getHardwareProvider().getEmulator().setDebugBreakpoint(address, true);
+            getHardwareProvider().getDebugManager().addBreakpoint(address);
             updateDisassembly();
         });
     }

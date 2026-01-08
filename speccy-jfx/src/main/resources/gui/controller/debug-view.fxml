@@ -3,8 +3,8 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="spectrum.jfx.ui.controller.DebugController" prefWidth="1000" prefHeight="700">
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="spectrum.jfx.ui.controller.DebugController"
+            prefWidth="1000" prefHeight="700">
     <top>
         <ToolBar>
             <Button text="%debug.toolbar.run" fx:id="runButton" onAction="#onRun"/>
@@ -27,8 +27,10 @@
                 <Label text="%debug.disassembly" style="-fx-font-weight: bold;"/>
                 <TableView fx:id="disassemblyTable" VBox.vgrow="ALWAYS">
                     <columns>
-                        <TableColumn fx:id="breakpointColumn" text="" prefWidth="20" minWidth="20" maxWidth="20" resizable="false"/>
-                        <TableColumn fx:id="pcColumn" text="" prefWidth="20" minWidth="20" maxWidth="20" resizable="false"/>
+                        <TableColumn fx:id="breakpointColumn" text="" prefWidth="20" minWidth="20" maxWidth="20"
+                                     resizable="false"/>
+                        <TableColumn fx:id="pcColumn" text="" prefWidth="20" minWidth="20" maxWidth="20"
+                                     resizable="false"/>
                         <TableColumn fx:id="addressColumn" text="Address" prefWidth="80"/>
                         <TableColumn fx:id="hexColumn" text="Hex" prefWidth="120"/>
                         <TableColumn fx:id="mnemonicColumn" text="Mnemonic" prefWidth="250"/>
@@ -37,11 +39,15 @@
 
                 <Separator/>
                 <Label fx:id="hexViewLabel" text="Hex View" style="-fx-font-weight: bold;"/>
-                <TableView fx:id="hexTableView" prefHeight="150" minHeight="150" style="-fx-font-family: 'Courier New';">
+                <TableView fx:id="hexTableView" prefHeight="150" minHeight="150"
+                           style="-fx-font-family: 'Courier New';">
                     <columns>
-                        <TableColumn fx:id="hexAddressColumn" text="Address" prefWidth="65" style="-fx-font-family: 'Courier New';"/>
-                        <TableColumn fx:id="hexDataColumn" text="Hex" prefWidth="380" style="-fx-font-family: 'Courier New';"/>
-                        <TableColumn fx:id="hexAsciiColumn" text="ASCII" prefWidth="140" style="-fx-font-family: 'Courier New';"/>
+                        <TableColumn fx:id="hexAddressColumn" text="Address" prefWidth="65"
+                                     style="-fx-font-family: 'Courier New';"/>
+                        <TableColumn fx:id="hexDataColumn" text="Hex" prefWidth="380"
+                                     style="-fx-font-family: 'Courier New';"/>
+                        <TableColumn fx:id="hexAsciiColumn" text="ASCII" prefWidth="140"
+                                     style="-fx-font-family: 'Courier New';"/>
                     </columns>
                 </TableView>
             </VBox>
@@ -52,44 +58,58 @@
                 <Label text="%debug.registers" style="-fx-font-weight: bold;"/>
                 <GridPane hgap="10" vgap="5">
                     <Label text="%debug.pc" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                    <TextField fx:id="pcField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-                    
+                    <TextField fx:id="pcField" editable="false" prefWidth="80" GridPane.columnIndex="1"
+                               GridPane.rowIndex="0"/>
+
                     <Label text="%debug.sp" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                    <TextField fx:id="spField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    <TextField fx:id="spField" editable="false" prefWidth="80" GridPane.columnIndex="1"
+                               GridPane.rowIndex="1"/>
 
                     <Label text="%debug.af" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-                    <TextField fx:id="afField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-                    <TextField fx:id="afxField" editable="false" prefWidth="80" GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+                    <TextField fx:id="afField" editable="false" prefWidth="80" GridPane.columnIndex="1"
+                               GridPane.rowIndex="2"/>
+                    <TextField fx:id="afxField" editable="false" prefWidth="80" GridPane.columnIndex="2"
+                               GridPane.rowIndex="2"/>
 
                     <Label text="%debug.bc" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-                    <TextField fx:id="bcField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-                    <TextField fx:id="bcxField" editable="false" prefWidth="80" GridPane.columnIndex="2" GridPane.rowIndex="3"/>
+                    <TextField fx:id="bcField" editable="false" prefWidth="80" GridPane.columnIndex="1"
+                               GridPane.rowIndex="3"/>
+                    <TextField fx:id="bcxField" editable="false" prefWidth="80" GridPane.columnIndex="2"
+                               GridPane.rowIndex="3"/>
 
                     <Label text="%debug.de" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
-                    <TextField fx:id="deField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
-                    <TextField fx:id="dexField" editable="false" prefWidth="80" GridPane.columnIndex="2" GridPane.rowIndex="4"/>
+                    <TextField fx:id="deField" editable="false" prefWidth="80" GridPane.columnIndex="1"
+                               GridPane.rowIndex="4"/>
+                    <TextField fx:id="dexField" editable="false" prefWidth="80" GridPane.columnIndex="2"
+                               GridPane.rowIndex="4"/>
 
                     <Label text="%debug.hl" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
-                    <TextField fx:id="hlField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
-                    <TextField fx:id="hlxField" editable="false" prefWidth="80" GridPane.columnIndex="2" GridPane.rowIndex="5"/>
+                    <TextField fx:id="hlField" editable="false" prefWidth="80" GridPane.columnIndex="1"
+                               GridPane.rowIndex="5"/>
+                    <TextField fx:id="hlxField" editable="false" prefWidth="80" GridPane.columnIndex="2"
+                               GridPane.rowIndex="5"/>
 
                     <Label text="%debug.ix" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
-                    <TextField fx:id="ixField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
-                    
+                    <TextField fx:id="ixField" editable="false" prefWidth="80" GridPane.columnIndex="1"
+                               GridPane.rowIndex="6"/>
+
                     <Label text="%debug.iy" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
-                    <TextField fx:id="iyField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="7"/>
+                    <TextField fx:id="iyField" editable="false" prefWidth="80" GridPane.columnIndex="1"
+                               GridPane.rowIndex="7"/>
 
                     <Label text="%debug.i" GridPane.columnIndex="0" GridPane.rowIndex="8"/>
-                    <TextField fx:id="iField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="8"/>
+                    <TextField fx:id="iField" editable="false" prefWidth="80" GridPane.columnIndex="1"
+                               GridPane.rowIndex="8"/>
 
                     <Label text="%debug.r" GridPane.columnIndex="0" GridPane.rowIndex="9"/>
-                    <TextField fx:id="rField" editable="false" prefWidth="80" GridPane.columnIndex="1" GridPane.rowIndex="9"/>
+                    <TextField fx:id="rField" editable="false" prefWidth="80" GridPane.columnIndex="1"
+                               GridPane.rowIndex="9"/>
                 </GridPane>
-                
+
                 <Separator/>
                 <Label text="%debug.flags" style="-fx-font-weight: bold;"/>
                 <TextField fx:id="flagsField" editable="false" prefWidth="150"/>
-                
+
                 <Separator/>
                 <Label text="%debug.state" style="-fx-font-weight: bold;"/>
                 <GridPane hgap="10" vgap="5">

@@ -1,8 +1,9 @@
 package spectrum.jfx.hardware.ula;
 
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.machine.MachineSettings;
 
+@Slf4j
 public class FloatingBus implements InPortListener {
 
     private final MachineSettings machineSettings;
@@ -15,6 +16,7 @@ public class FloatingBus implements InPortListener {
 
     @Override
     public int inPort(int port) {
+        log.trace("inPort floating bus: port={}", String.format("%04X", port));
         return 0xFF;
     }
 

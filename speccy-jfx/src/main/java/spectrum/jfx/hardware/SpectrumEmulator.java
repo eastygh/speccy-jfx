@@ -3,22 +3,20 @@ package spectrum.jfx.hardware;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import machine.MachineTypes;
 import machine.SpectrumClock;
 import spectrum.jfx.debug.DebugListener;
 import spectrum.jfx.debug.DebugManager;
 import spectrum.jfx.debug.DebugManagerImpl;
 import spectrum.jfx.hardware.cpu.BreakPointListener;
 import spectrum.jfx.hardware.cpu.CPU;
-import spectrum.jfx.hardware.cpu.Z80CoreAdapter;
-import spectrum.jfx.hardware.cpu.Z80ProcessorAdapter;
 import spectrum.jfx.hardware.input.GamePadGLFWImpl;
 import spectrum.jfx.hardware.input.Kempston;
 import spectrum.jfx.hardware.input.KempstonImpl;
 import spectrum.jfx.hardware.input.Keyboard;
 import spectrum.jfx.hardware.machine.*;
 import spectrum.jfx.hardware.memory.Memory;
-import spectrum.jfx.hardware.memory.MemoryImpl;
-import spectrum.jfx.hardware.sound.OneThreadAudioImpl;
+import spectrum.jfx.hardware.sound.SoundImpl;
 import spectrum.jfx.hardware.sound.Sound;
 import spectrum.jfx.hardware.tape.CassetteDeckImpl;
 import spectrum.jfx.hardware.ula.*;
@@ -33,6 +31,9 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import static spectrum.jfx.hardware.factory.CPUFactory.createCPU;
+import static spectrum.jfx.hardware.factory.MemoryFactory.createMemory;
 
 @Slf4j
 @Getter
@@ -71,23 +72,26 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
 
     public SpectrumEmulator() {
-        machineSettings = MachineSettings.ofDefault(CpuImplementation.CODINGRODENT);
+        machineSettings = MachineSettings
+                .ofDefault(CpuImplementation.SANCHES)
+                .setMachineType(MachineTypes.SPECTRUM128K);
     }
 
     public void init() {
 
         SpectrumClock.INSTANCE.setSpectrumModel(machineSettings.getMachineType());
 
-        this.memory = new MemoryImpl(machineSettings);
-
+        this.memory = createMemory(machineSettings);
         this.video = new ScanlineVideoImpl(memory, machineSettings);
         this.keyboard = new Keyboard();
         this.keyboard.resetKeyboard();
+
         this.ula = new UlaImpl(memory, machineSettings);
+        this.ula.addPortListener(0xfd, memory); //  0x7ffd Bank switching
         this.ula.addPortListener(0xfe, keyboard); // keyboard
         this.ula.addPortListener(0xfe, (OutPortListener) video); // Border color
 
-        this.sound = new OneThreadAudioImpl(machineSettings); // Sound
+        this.sound = new SoundImpl(machineSettings); // Sound
         this.ula.addPortListener(0xfe, sound); // Sound
         this.ula.addClockListener(sound);
 
@@ -107,7 +111,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         this.ula.addPortListener(0x1F, kempston);
         this.kempston.init();
 
-        cpu = createZ80Core(machineSettings);
+        cpu = createCPU(machineSettings, ula, this);
 
         Machine.setHardwareProvider(this);
 
@@ -354,31 +358,6 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         this.speedUpMode = speedUp;
         if (video instanceof Device device) {
             device.setSpeedUpMode(speedUp);
-        }
-    }
-
-    @Override
-    public void setDebugBreakpoint(int address, boolean enabled) {
-        if (enabled) {
-            debugManager.removeBreakpoint(address);
-        } else {
-            debugManager.removeBreakpoint(address);
-        }
-    }
-
-    @Override
-    public boolean isDebugBreakpoint(int address) {
-        return debugManager.isBreakpoint(address);
-    }
-
-    private CPU createZ80Core(MachineSettings machineSettings) {
-        if (machineSettings.getCpuImplementation() == CpuImplementation.SANCHES) {
-            return new Z80CoreAdapter(ula, this);
-        }
-        if (machineSettings.getCpuImplementation() == CpuImplementation.CODINGRODENT) {
-            return new Z80ProcessorAdapter(ula, this);
-        } else {
-            throw new IllegalArgumentException("Unsupported CPU implementation");
         }
     }
 
