@@ -64,7 +64,7 @@ public class Memory128KImpl implements Memory {
     public void writeByte(int address, int value) {
         int window = (address >> 14) & 3; // 0, 1, 2 or 3
         if (window == 0 && romWriteProtected) {
-            log.warn("ROM write protection is enabled. Write operation is ignored at address: {}", address);
+            log.trace("ROM write protection is enabled. Write operation is ignored at address: {}", address);
             return;
         }
         int offset = address & 0x3FFF;// offset 16КБ

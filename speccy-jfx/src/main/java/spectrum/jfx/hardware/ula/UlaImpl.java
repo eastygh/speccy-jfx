@@ -7,9 +7,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import spectrum.jfx.hardware.machine.MachineSettings;
 import spectrum.jfx.hardware.memory.Memory;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class UlaImpl implements Ula {
@@ -21,8 +19,10 @@ public class UlaImpl implements Ula {
     private volatile long interruptPendingLength = 0;
     @Getter
     private final boolean ulaAddTStates;
-    private final Map<Integer, Set<InPortListener>> inPortListeners = new HashMap<>();
-    private final Map<Integer, Set<OutPortListener>> outPortListeners = new HashMap<>();
+    @SuppressWarnings("unchecked")
+    private final Set<InPortListener>[] inPortListeners = (Set<InPortListener>[]) new Set[256];
+    @SuppressWarnings("unchecked")
+    private final Set<OutPortListener>[] outPortListeners = (Set<OutPortListener>[]) new Set[256];
     private final ZXClock clock;
     private final MachineSettings machineSettings;
     // Floating bus by ULA (IN ports)
@@ -51,16 +51,24 @@ public class UlaImpl implements Ula {
 
     @Override
     public void addPortListener(int port, InPortListener listener) {
-        Set<InPortListener> listeners = inPortListeners.getOrDefault(port, new HashSet<>());
+        int portLow = port & 0xff;
+        Set<InPortListener> listeners = inPortListeners[portLow];
+        if (listeners == null) {
+            listeners = new HashSet<>();
+        }
         listeners.add(listener);
-        inPortListeners.put(port, listeners);
+        inPortListeners[portLow] = listeners;
     }
 
     @Override
     public void addPortListener(int port, OutPortListener listener) {
-        Set<OutPortListener> listeners = outPortListeners.getOrDefault(port, new HashSet<>());
+        int portLow = port & 0xff;
+        Set<OutPortListener> listeners = outPortListeners[portLow];
+        if (listeners == null) {
+            listeners = new HashSet<>();
+        }
         listeners.add(listener);
-        outPortListeners.put(port, listeners);
+        outPortListeners[portLow] = listeners;
     }
 
     @Override
@@ -128,11 +136,12 @@ public class UlaImpl implements Ula {
     @Override
     public int inPort(int port) {
         int value = 0;
+        int portLow = port & 0xff;
         if (ulaAddTStates) {
             clock.incrementTStates(4); // 4 clocks for read byte from bus
         }
-        if (inPortListeners.containsKey(port & 0xff)) {
-            for (InPortListener listener : inPortListeners.get(port & 0xff)) {
+        if (inPortListeners[portLow] != null) {
+            for (InPortListener listener : inPortListeners[portLow]) {
                 int portValue = listener.inPort(port) & 0xff;
                 value = value | portValue;
             }
@@ -147,11 +156,11 @@ public class UlaImpl implements Ula {
         value &= 0xff;
         port &= 0xffff;
         if (ulaAddTStates) {
-            clock.incrementTStates(4); // 4 clocks for write byte to bus
+            clock.incrementTStates(4); // 4 clocks for writing byte to bus
         }
         int lowPort = port & 0xff;
-        if (outPortListeners.containsKey(lowPort)) {
-            for (OutPortListener listener : outPortListeners.get(lowPort)) {
+        if (outPortListeners[lowPort] != null) {
+            for (OutPortListener listener : outPortListeners[lowPort]) {
                 listener.outPort(port, value);
             }
         }

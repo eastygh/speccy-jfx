@@ -16,8 +16,9 @@ import spectrum.jfx.hardware.input.KempstonImpl;
 import spectrum.jfx.hardware.input.Keyboard;
 import spectrum.jfx.hardware.machine.*;
 import spectrum.jfx.hardware.memory.Memory;
-import spectrum.jfx.hardware.sound.SoundImpl;
+import spectrum.jfx.hardware.sound.AY38912;
 import spectrum.jfx.hardware.sound.Sound;
+import spectrum.jfx.hardware.sound.SoundImpl;
 import spectrum.jfx.hardware.tape.CassetteDeckImpl;
 import spectrum.jfx.hardware.ula.*;
 import spectrum.jfx.hardware.util.EmulatorUtils;
@@ -47,6 +48,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     Video<?> video;
     Keyboard keyboard;
     Sound sound;
+    AY38912 ay38912;
     Ula ula;
     CassetteDeckImpl cassetteDeck;
     Kempston kempston;
@@ -73,7 +75,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     public SpectrumEmulator() {
         machineSettings = MachineSettings
-                .ofDefault(CpuImplementation.SANCHES)
+                .ofDefault(CpuImplementation.CODINGRODENT)
                 .setMachineType(MachineTypes.SPECTRUM128K);
     }
 
@@ -94,6 +96,11 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         this.sound = new SoundImpl(machineSettings); // Sound
         this.ula.addPortListener(0xfe, sound); // Sound
         this.ula.addClockListener(sound);
+
+        this.ay38912 = new AY38912(machineSettings);
+        this.ula.addPortListener(0xfd, (OutPortListener) ay38912);
+        this.ula.addPortListener(0xfd, (InPortListener) ay38912);
+
 
         this.cassetteDeck = new CassetteDeckImpl();
         this.ula.addPortListener(0xfe, (InPortListener) cassetteDeck); // cassette deck IN
@@ -154,6 +161,8 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
         // Start sound emulation
         sound.open();
+        ay38912.init();
+        ay38912.open();
 
         // Запуск главного цикла эмуляции
         startEmulationLoop();
