@@ -22,9 +22,6 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
 
     private final MachineSettings machineSettings;
 
-    private static final int SAMPLE_RATE = 44100;
-    private static final double MASTER_CLOCK = 1750000.0; // 1.75 MHz for ZX Spectrum
-
     // Logarithmic volume table (16 levels)
     private static final int[] VOL_TABLE = {
             0, 2, 3, 4, 6, 8, 11, 16, 23, 32, 45, 64, 90, 127, 180, 255
@@ -36,7 +33,7 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
 
     public AY38912(MachineSettings machineSettings) {
         this.machineSettings = machineSettings;
-        this.engine = new AYAudioEngine();
+        this.engine = new AYAudioEngine(machineSettings);
     }
 
     @Override
@@ -148,6 +145,8 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
         @Setter
         private double masterGain = 1.0;
 
+        private final double ayClockFreq; // 1.75 MHz for ZX Spectrum
+
         // Generators states
         private final double[] toneCounters = new double[3];
         private final boolean[] toneStates = new boolean[3];
@@ -156,7 +155,8 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
         private int noiseSeed = 1;
         private boolean noiseState = false;
 
-        public AYAudioEngine() {
+        public AYAudioEngine(MachineSettings machineSettings) {
+            this.ayClockFreq = (double) machineSettings.getMachineType().clockFreq / 2;
             try {
                 AudioFormat format = new AudioFormat(SAMPLE_RATE, 8, 1, true, false);
                 line = AudioSystem.getSourceDataLine(format);
@@ -201,7 +201,7 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
             if (noisePeriod == 0) noisePeriod = 1;
 
             // Noise frequency is MASTER_CLOCK / (16 * noisePeriod)
-            double noiseStep = (MASTER_CLOCK / (16.0 * noisePeriod)) / SAMPLE_RATE;
+            double noiseStep = (ayClockFreq / (16.0 * noisePeriod)) / SAMPLE_RATE;
             noiseCounter += noiseStep;
 
             if (noiseCounter >= 1.0) {
@@ -220,7 +220,7 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
                 if (tonePeriod == 0) tonePeriod = 1;
 
                 // Frequency = MASTER_CLOCK / (16 * tonePeriod)
-                double toneStep = (MASTER_CLOCK / (16.0 * tonePeriod)) / SAMPLE_RATE;
+                double toneStep = (ayClockFreq / (16.0 * tonePeriod)) / SAMPLE_RATE;
                 toneCounters[i] += toneStep;
 
                 if (toneCounters[i] >= 1.0) {
