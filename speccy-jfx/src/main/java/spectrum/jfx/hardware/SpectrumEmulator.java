@@ -100,7 +100,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         this.ay38912 = new AY38912(machineSettings);
         this.ula.addPortListener(0xfd, (OutPortListener) ay38912);
         this.ula.addPortListener(0xfd, (InPortListener) ay38912);
-
+        this.ula.addClockListener(ay38912);
 
         this.cassetteDeck = new CassetteDeckImpl();
         this.ula.addPortListener(0xfe, (InPortListener) cassetteDeck); // cassette deck IN
@@ -289,6 +289,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         clock.endFrame();
         if (!speedUpMode) {
             sound.endFrame();
+            ay38912.endFrame();
         }
         frameCounter++;
         runExternalTasks();
@@ -368,6 +369,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         if (video instanceof Device device) {
             device.setSpeedUpMode(speedUp);
         }
+        ay38912.setSpeedUpMode(speedUpMode);
     }
 
     @SneakyThrows
