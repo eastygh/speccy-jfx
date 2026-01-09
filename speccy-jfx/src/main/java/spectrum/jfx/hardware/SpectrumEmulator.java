@@ -28,6 +28,8 @@ import spectrum.jfx.machine.Machine;
 import z80core.NotifyOps;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,6 +55,8 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     CassetteDeckImpl cassetteDeck;
     Kempston kempston;
     DebugManager debugManager = new DebugManagerImpl();
+
+    private final List<Device> devices = new ArrayList<>();
 
     // Emulation management
     private volatile boolean running;
@@ -85,24 +89,30 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
         this.memory = createMemory(machineSettings);
         this.video = new ScanlineVideoImpl(memory, machineSettings);
+        devices.add(video);
         this.keyboard = new Keyboard();
+        devices.add(keyboard);
         this.keyboard.resetKeyboard();
 
         this.ula = new UlaImpl(memory, machineSettings);
+
         this.ula.addPortListener(0xfd, memory); //  0x7ffd Bank switching
         this.ula.addPortListener(0xfe, keyboard); // keyboard
         this.ula.addPortListener(0xfe, (OutPortListener) video); // Border color
 
-        this.sound = new SoundImpl(machineSettings); // Sound
+        this.sound = new SoundImpl(machineSettings); // Sound Beeper
+        devices.add(sound);
         this.ula.addPortListener(0xfe, sound); // Sound
         this.ula.addClockListener(sound);
 
-        this.ay38912 = new AY38912(machineSettings);
+        this.ay38912 = new AY38912(machineSettings); // Sound AY-3-8912
+        devices.add(ay38912);
         this.ula.addPortListener(0xfd, (OutPortListener) ay38912);
         this.ula.addPortListener(0xfd, (InPortListener) ay38912);
         this.ula.addClockListener(ay38912);
 
-        this.cassetteDeck = new CassetteDeckImpl();
+        this.cassetteDeck = new CassetteDeckImpl(); // Cassette deck
+        devices.add(cassetteDeck);
         this.ula.addPortListener(0xfe, (InPortListener) cassetteDeck); // cassette deck IN
         this.ula.addPortListener(0xfe, (OutPortListener) cassetteDeck); // cassette deck OUT
         if (video instanceof ClockListener videoClock) {
@@ -115,6 +125,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         cassetteDeck.setSound(sound);
 
         this.kempston = new KempstonImpl(new GamePadGLFWImpl());
+        devices.add(kempston);
         this.ula.addPortListener(0x1F, kempston);
         this.kempston.init();
 
@@ -312,7 +323,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         kempston.reset();
         keyboard.reset();
         frameCounter = 0;
-        speedUpMode = false;
+        setSpeedUpMode(false);
         resume();
     }
 
@@ -366,10 +377,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     @Override
     public void setSpeedUpMode(boolean speedUp) {
         this.speedUpMode = speedUp;
-        if (video instanceof Device device) {
-            device.setSpeedUpMode(speedUp);
-        }
-        ay38912.setSpeedUpMode(speedUpMode);
+        devices.forEach(device -> device.setSpeedUpMode(speedUp));
     }
 
     @SneakyThrows

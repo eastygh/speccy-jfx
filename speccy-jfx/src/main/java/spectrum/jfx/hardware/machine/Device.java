@@ -13,7 +13,7 @@ public interface Device {
     void close();
 
     default void setSpeedUpMode(boolean speedUpMode) {
-
+        // ignore
     }
 
     default SnapShot getSnapShot() {

@@ -38,12 +38,12 @@ public class KempstonImpl implements Kempston {
     }
 
     /*
-    bit 0 (1)  RIGHT
-    bit 1 (2)  LEFT
-    bit 2 (4)  DOWN
-    bit 3 (8)  UP
+    bit 0 (1) RIGHT
+    bit 1 (2) LEFT
+    bit 2 (4) DOWN
+    bit 3 (8) UP
     bit 4 (16) FIRE
-    bit 5–7    not used =0
+    bit 5–7 not used =0
      */
     private int translateState() {
         if (gamePad == null) return 0;
@@ -58,9 +58,9 @@ public class KempstonImpl implements Kempston {
 
     @Override
     public void reset() {
-        GamePad gamePad = getGamePad();
-        if (gamePad != null) {
-            gamePad.reset();
+        GamePad gp = getGamePad();
+        if (gp != null) {
+            gp.reset();
         }
     }
 

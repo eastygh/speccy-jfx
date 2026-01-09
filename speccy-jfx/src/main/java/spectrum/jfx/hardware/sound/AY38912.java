@@ -15,8 +15,9 @@ import java.util.Arrays;
 @Slf4j
 public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
 
+    private static final int SAMPLE_RATE = 44100;
     private static final int BUFFER_SIZE = 4096;
-    private static final double AY_GAIN = 64.0; // корректная амплитуда для 16-bit
+    private static final double AY_GAIN = 64.0;
 
     private static final int[] VOL_TABLE = {
             0, 2, 3, 4, 6, 8, 11, 16,
@@ -29,8 +30,9 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
     private final int[] regs = new int[16];
     private int selectedRegister;
 
-    private final double ayClock;
     private final double tStatesPerSample;
+    private final double baseStep;
+    private final double envBaseStep;
 
     private final double[] toneCounter = new double[3];
     private final boolean[] toneState = new boolean[3];
@@ -43,6 +45,7 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
     private int envStep;
     private int envDir = 1;
     private boolean envHold;
+    private int envShape = 0;
 
     private volatile boolean enabled = true;
     private volatile boolean speedUpMode = false;
@@ -56,9 +59,11 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
     private boolean muted;
 
     public AY38912(MachineSettings settings) {
-        this.ayClock = settings.getMachineType().clockFreq / 2.0;
-        this.tStatesPerSample =
-                settings.getMachineType().clockFreq / (double) SAMPLE_RATE;
+        double cpuFreq = settings.getMachineType().clockFreq;
+        double ayClock = cpuFreq / 2.0;
+        this.tStatesPerSample = cpuFreq / SAMPLE_RATE;
+        this.baseStep = ayClock / (16.0 * SAMPLE_RATE);
+        this.envBaseStep = ayClock / (256.0 * SAMPLE_RATE);
         initAudio();
     }
 
@@ -88,12 +93,17 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
         noiseCounter = 0;
         noiseSeed = 0x1FFFF;
         noiseState = false;
-        envCounter = 0;
-        envStep = 0;
-        envDir = 1;
-        envHold = false;
+        resetEnvelopeState();
         audioPos = 0;
         tStateAcc = 0;
+    }
+
+    private void resetEnvelopeState() {
+        envCounter = 0;
+        envHold = false;
+        boolean attack = (envShape & 0x04) != 0;
+        envStep = attack ? 0 : 15;
+        envDir = attack ? 1 : -1;
     }
 
     @Override
@@ -114,7 +124,7 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
     @Override
     public int inPort(int port) {
         if ((port & 0xC002) == 0xC000) {
-            if (selectedRegister == 14) {
+            if (selectedRegister >= 14) {
                 return 0xFF;
             } else {
                 return regs[selectedRegister] & 0xFF;
@@ -125,8 +135,8 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
 
     @Override
     public void outPort(int port, int value) {
-        value &= 0xFF;
         int p = port & 0xC002;
+        value &= 0xFF;
         if (p == 0xC000) {
             selectedRegister = value & 0x0F;
         } else if (p == 0x8000) {
@@ -137,10 +147,8 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
     private void writeReg(int r, int v) {
         regs[r] = v;
         if (r == 13) {
-            envCounter = 0;
-            envStep = (v & 0x04) != 0 ? 0 : 15;
-            envDir = (v & 0x04) != 0 ? 1 : -1;
-            envHold = false;
+            envShape = v & 0x0F;
+            resetEnvelopeState();
         }
     }
 
@@ -169,20 +177,30 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
     private void renderSample() {
         updateNoise();
         updateEnvelope();
+
         double left = 0;
         double right = 0;
         int mixer = regs[7];
 
         for (int ch = 0; ch < 3; ch++) {
             updateTone(ch);
+
             boolean toneEnabled = (mixer & (1 << ch)) == 0;
             boolean noiseEnabled = (mixer & (1 << (ch + 3))) == 0;
+
             boolean t = !toneEnabled || toneState[ch];
             boolean n = !noiseEnabled || noiseState;
+
             if (t && n) {
                 int vr = regs[8 + ch];
-                int vol = (vr & 0x10) != 0 ? getEnvVolume() : (vr & 0x0F);
+                int vol;
+                if ((vr & 0x10) != 0) {
+                    vol = getEnvVolume();
+                } else {
+                    vol = vr & 0x0F;
+                }
                 double amp = VOL_TABLE[vol] * AY_GAIN;
+
                 left += amp * PAN_L[ch];
                 right += amp * PAN_R[ch];
             }
@@ -194,7 +212,7 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
     private void updateTone(int ch) {
         int p = regs[ch * 2] | ((regs[ch * 2 + 1] & 0x0F) << 8);
         if (p == 0) p = 1;
-        toneCounter[ch] += (ayClock / (16.0 * p)) / SAMPLE_RATE;
+        toneCounter[ch] += baseStep / p;
         if (toneCounter[ch] >= 1.0) {
             toneCounter[ch] -= 1.0;
             toneState[ch] = !toneState[ch];
@@ -204,7 +222,7 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
     private void updateNoise() {
         int p = regs[6] & 0x1F;
         if (p == 0) p = 1;
-        noiseCounter += (ayClock / (16.0 * p)) / SAMPLE_RATE;
+        noiseCounter += baseStep / p;
         if (noiseCounter >= 1.0) {
             noiseCounter -= 1.0;
             int bit = (noiseSeed ^ (noiseSeed >> 3)) & 1;
@@ -214,30 +232,46 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
     }
 
     private void updateEnvelope() {
+        if (envHold) return;
+
         int p = regs[11] | (regs[12] << 8);
         if (p == 0) p = 1;
-        envCounter += (ayClock / (256.0 * p)) / SAMPLE_RATE;
-        if (envCounter >= 1.0 && !envHold) {
+        envCounter += envBaseStep / p;
+        if (envCounter >= 1.0) {
             envCounter -= 1.0;
             envStep += envDir;
-            if (envStep < 0 || envStep > 15) handleEnvelopeShape();
+            if (envStep < 0 || envStep > 15) {
+                processEnvelopeShape();
+            }
         }
     }
 
-    private void handleEnvelopeShape() {
-        int shape = regs[13] & 0x0F;
-        boolean cont = (shape & 0x08) != 0;
-        boolean alt = (shape & 0x02) != 0;
-        boolean hold = (shape & 0x01) != 0;
+    private void processEnvelopeShape() {
 
-        if (!cont) {
+        boolean continueBit = (envShape & 0x08) != 0;
+        boolean attackBit = (envShape & 0x04) != 0;
+        boolean alternateBit = (envShape & 0x02) != 0;
+        boolean holdBit = (envShape & 0x01) != 0;
+
+        if (!continueBit) {
             envHold = true;
-            envStep = envDir > 0 ? 15 : 0;
-            return;
+            envStep = 0;
+        } else {
+            if (alternateBit) {
+                envDir = -envDir;
+                envStep += envDir;
+                if (holdBit) {
+                    envHold = true;
+                }
+            } else {
+                if (holdBit) {
+                    envHold = true;
+                    envStep = attackBit ? 15 : 0;
+                } else {
+                    envStep = attackBit ? 0 : 15;
+                }
+            }
         }
-        if (alt) envDir = -envDir;
-        if (hold) envHold = true;
-        envStep = envDir > 0 ? 0 : 15;
     }
 
     private int getEnvVolume() {
@@ -250,19 +284,22 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
         }
         l *= masterGain;
         r *= masterGain;
+
         short ls = (short) Math.clamp(l, Short.MIN_VALUE, Short.MAX_VALUE);
         short rs = (short) Math.clamp(r, Short.MIN_VALUE, Short.MAX_VALUE);
-        audioBuffer[audioPos++] = (byte) ls;
-        audioBuffer[audioPos++] = (byte) (ls >> 8);
-        audioBuffer[audioPos++] = (byte) rs;
-        audioBuffer[audioPos++] = (byte) (rs >> 8);
+
+        audioBuffer[audioPos++] = (byte) (ls & 0xFF);
+        audioBuffer[audioPos++] = (byte) ((ls >> 8) & 0xFF);
+        audioBuffer[audioPos++] = (byte) (rs & 0xFF);
+        audioBuffer[audioPos++] = (byte) ((rs >> 8) & 0xFF);
+
         if (audioPos >= audioBuffer.length) {
             flush();
         }
     }
 
     private void flush() {
-        if (audioPos > 0) {
+        if (audioPos > 0 && line != null) {
             line.write(audioBuffer, 0, audioPos);
             audioPos = 0;
         }
