@@ -27,6 +27,7 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
             0, 2, 3, 4, 6, 8, 11, 16, 23, 32, 45, 64, 90, 127, 180, 255
     };
 
+    private static final int SAMPLE_RATE = 44100;
     private final AYAudioEngine engine;
     private double globalVolume = 1.0;
     private boolean isMuted = false;
@@ -47,9 +48,8 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
         synchronized (this) {
             Arrays.fill(regs, 0);
             selectedRegister = 0;
-            // Register 7 (Mixer) defaults to 0xFF (all channels off) on some systems,
-            // but 0 is common for a clean state.
-            regs[7] = 0x3F;
+            regs[7] = 0x3F; // Mixer: all tones and noise off
+            engine.resetStates();
             engine.updateRegisters(regs);
         }
         log.debug("AY-3-8912 Reset");
@@ -67,17 +67,14 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
     @Override
     public void close() {
         engine.setPaused(true);
-        // We don't necessarily stop the thread to allow quick resume,
-        // but we could call engine.interrupt() if a hard stop is needed.
     }
 
     @Override
     public int inPort(int port) {
-        // Partial decoding: Register usually read on 0xFFFD
         if ((port & 0xC002) == 0xC000) {
             return regs[selectedRegister] & 0xFF;
         }
-        return 0xFF; // floating bus
+        return 0xFF;
     }
 
     @Override
@@ -85,9 +82,9 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
         int maskedPort = port & 0xC002;
         value &= 0xFF;
 
-        if (maskedPort == 0xC000) { // 0xFFFD: Register selection
+        if (maskedPort == 0xC000) {
             selectedRegister = value & 0x0F;
-        } else if (maskedPort == 0x8000) { // 0xBFFD: Data write
+        } else if (maskedPort == 0x8000) {
             writeRegister(selectedRegister, value);
         }
     }
@@ -95,6 +92,10 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
     private synchronized void writeRegister(int reg, int value) {
         regs[reg] = value;
         engine.updateRegisters(regs);
+        // Writing to Register 13 resets the Envelope Generator cycle
+        if (reg == 13) {
+            engine.resetEnvelope();
+        }
     }
 
     @Override
@@ -116,44 +117,45 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
 
     @Override
     public void play(int cycles) {
-
     }
 
     @Override
     public void ticks(long tStates, int delta) {
-        // ignore
     }
 
     @Override
     public void endFrame() {
-        // ignore
     }
 
     @Override
     public void pushBackTape(boolean state) {
-        // ignore
     }
 
     // --- Audio engine (DSP) ---
 
     private static class AYAudioEngine extends Thread {
-
         private final int[] activeRegs = new int[16];
         private SourceDataLine line;
+
         @Setter
         private volatile boolean paused = true;
         @Setter
         private double masterGain = 1.0;
 
-        private final double ayClockFreq; // 1.75 MHz for ZX Spectrum
+        private final double ayClockFreq;
 
         // Generators states
         private final double[] toneCounters = new double[3];
         private final boolean[] toneStates = new boolean[3];
-
         private double noiseCounter = 0;
         private int noiseSeed = 1;
         private boolean noiseState = false;
+
+        // Envelope states
+        private double envCounter = 0;
+        private int envStep = 0;
+        private boolean envHold = false;
+        private boolean envReverse = false;
 
         public AYAudioEngine(MachineSettings machineSettings) {
             this.ayClockFreq = (double) machineSettings.getMachineType().clockFreq / 2;
@@ -172,6 +174,19 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
             System.arraycopy(newRegs, 0, activeRegs, 0, 16);
         }
 
+        public void resetStates() {
+            Arrays.fill(toneCounters, 0);
+            noiseCounter = 0;
+            resetEnvelope();
+        }
+
+        public void resetEnvelope() {
+            envCounter = 0;
+            envStep = 0;
+            envHold = false;
+            envReverse = false;
+        }
+
         @Override
         public void run() {
             byte[] buffer = new byte[512];
@@ -184,7 +199,6 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
                     }
                     continue;
                 }
-
                 for (int i = 0; i < buffer.length; i++) {
                     buffer[i] = generateNextSample();
                 }
@@ -196,54 +210,119 @@ public class AY38912 implements InPortListener, OutPortListener, Sound, Device {
         private byte generateNextSample() {
             int finalMix = 0;
 
-            // 1. Noise Generator (Register 6)
+            // 1. Noise Generator
             int noisePeriod = activeRegs[6] & 0x1F;
             if (noisePeriod == 0) noisePeriod = 1;
-
-            // Noise frequency is MASTER_CLOCK / (16 * noisePeriod)
             double noiseStep = (ayClockFreq / (16.0 * noisePeriod)) / SAMPLE_RATE;
             noiseCounter += noiseStep;
-
             if (noiseCounter >= 1.0) {
                 noiseCounter -= 1.0;
-                // 17-bit LFSR (Pseudo-random noise)
                 if (((noiseSeed + 1) & 2) != 0) noiseState = !noiseState;
                 if ((noiseSeed & 1) != 0) noiseSeed ^= 0x24000;
                 noiseSeed >>= 1;
             }
 
-            // 2. Tone Channels A, B, C
+            // 2. Envelope Generator
+            int envPeriod = (activeRegs[11] & 0xFF) | ((activeRegs[12] & 0xFF) << 8);
+            if (envPeriod == 0) envPeriod = 1;
+            // Envelope clock is MASTER_CLOCK / 256
+            double envStepSize = (ayClockFreq / (256.0 * envPeriod)) / SAMPLE_RATE;
+
+            if (!envHold) {
+                envCounter += envStepSize;
+                if (envCounter >= 1.0) {
+                    envCounter -= 1.0;
+                    envStep++;
+                    if (envStep > 31) {
+                        processEnvelopeFlags();
+                    }
+                }
+            }
+
+            // 3. Mixing Tone & Noise
             int mixer = activeRegs[7];
+            int currentEnvVol = calculateEnvVolume();
 
             for (int i = 0; i < 3; i++) {
                 int tonePeriod = (activeRegs[i * 2] | ((activeRegs[i * 2 + 1] & 0x0F) << 8));
                 if (tonePeriod == 0) tonePeriod = 1;
 
-                // Frequency = MASTER_CLOCK / (16 * tonePeriod)
                 double toneStep = (ayClockFreq / (16.0 * tonePeriod)) / SAMPLE_RATE;
                 toneCounters[i] += toneStep;
-
                 if (toneCounters[i] >= 1.0) {
                     toneCounters[i] -= 1.0;
                     toneStates[i] = !toneStates[i];
                 }
 
-                // Mixer logic: 0 = Enable, 1 = Disable
-                boolean toneDisabled = (mixer & (1 << i)) != 0;
-                boolean noiseDisabled = (mixer & (1 << (i + 3))) != 0;
+                boolean toneOut = toneStates[i] | ((mixer & (1 << i)) != 0);
+                boolean noiseOut = noiseState | ((mixer & (1 << (i + 3))) != 0);
 
-                // Channel is active if (Tone is HIGH OR disabled) AND (Noise is HIGH OR disabled)
-                boolean output = (toneStates[i] | toneDisabled) & (noiseState | noiseDisabled);
-
-                if (output) {
-                    int volIdx = activeRegs[8 + i] & 0x0F;
+                if (toneOut & noiseOut) {
+                    int volReg = activeRegs[8 + i];
+                    boolean useEnv = (volReg & 0x10) != 0;
+                    int volIdx = useEnv ? currentEnvVol : (volReg & 0x0F);
                     finalMix += VOL_TABLE[volIdx];
                 }
             }
 
-            // Apply Master Volume and Mute, then normalize to signed byte
             double mixed = (finalMix / 3.0) * masterGain;
             return (byte) (mixed - 128);
+        }
+
+        private void processEnvelopeFlags() {
+            int shape = activeRegs[13] & 0x0F;
+            boolean continueBit = (shape & 0x08) != 0;
+            boolean attackBit = (shape & 0x04) != 0;
+            boolean alternateBit = (shape & 0x02) != 0;
+            boolean holdBit = (shape & 0x01) != 0;
+
+            envStep = 0; // Reset counter for the next cycle
+
+            if (!continueBit) {
+                // If Continue is 0, the envelope runs once and then stays at 0
+                // (or stays at 31 if Attack was inverted, but AY usually drops to 0)
+                envHold = true;
+                envReverse = attackBit;
+            } else {
+                if (alternateBit) {
+                    // Triangle wave logic
+                    envReverse = !envReverse;
+                    if (holdBit) {
+                        envHold = true;
+                        // After one alternate cycle, stay at the reached level
+                        envReverse = (attackBit == alternateBit);
+                    }
+                } else {
+                    if (holdBit) {
+                        envHold = true;
+                        envReverse = !attackBit;
+                    } else {
+                        // Standard repeat (sawtooth)
+                        envReverse = false;
+                    }
+                }
+            }
+        }
+
+        private int calculateEnvVolume() {
+            int shape = activeRegs[13] & 0x0F;
+            boolean attackBit = (shape & 0x04) != 0;
+
+            int volume;
+            if (envHold) {
+                // If held, volume is constant based on final state
+                volume = envReverse ? 0 : 31;
+            } else {
+                // If running, volume depends on current step and attack/alternate state
+                volume = envReverse ? (31 - envStep) : envStep;
+            }
+
+            // If attack is 0 (falling), we invert the whole logic
+            if (!attackBit) {
+                volume = 31 - volume;
+            }
+
+            return volume >> 1; // Map 0..31 to 0..15
         }
     }
 }
