@@ -29,10 +29,6 @@ public interface IMemory {
         return 0x76; // Halt
     }
 
-    default int fetchOpCode(int address) {
-        return readByte(address); // Halt
-    }
-
     /**
      * Read a 16 bit word from memory, LSB, MSB order
      *
@@ -42,6 +38,8 @@ public interface IMemory {
     default int readWord(int address) {
         return 0x7676; // Halt
     }
+
+    int fetchOpcode(int address);
 
     /**
      * Write a byte into memory

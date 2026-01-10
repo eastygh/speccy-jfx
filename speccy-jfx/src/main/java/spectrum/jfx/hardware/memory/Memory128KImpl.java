@@ -22,6 +22,8 @@ public class Memory128KImpl implements Memory {
     private volatile int lastConfiguration = 0;
     private volatile int activeVideoBank = 5; // default 5th bank
 
+    private byte[] prevRomBank = null;
+
     // Write a protection flag
     @Getter
     private boolean romWriteProtected = true;
@@ -152,6 +154,26 @@ public class Memory128KImpl implements Memory {
         // check is our port
         if ((port & 0x8002) == 0) {
             configureMapping(value);
+        }
+    }
+
+    @Override
+    public synchronized void mapBank(int bank, byte[] data) {
+        if (prevRomBank != null) {
+            log.warn("Attempt to map bank while previous bank is mapped");
+            return;
+        }
+        prevRomBank = currentMapping[bank];
+        currentMapping[bank] = data;
+    }
+
+    @Override
+    public synchronized void unmapBank(int bank) {
+        if (prevRomBank != null) {
+            currentMapping[bank] = prevRomBank;
+            prevRomBank = null;
+        } else {
+            log.warn("Attempt to unmap bank {} while no bank is mapped", bank);
         }
     }
 

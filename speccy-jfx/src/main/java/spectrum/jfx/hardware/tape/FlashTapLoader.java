@@ -3,7 +3,7 @@ package spectrum.jfx.hardware.tape;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import spectrum.jfx.hardware.cpu.BreakPointListener;
+import spectrum.jfx.hardware.cpu.AddressHookListener;
 import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.machine.HardwareProvider;
 import spectrum.jfx.hardware.memory.Memory;
@@ -47,7 +47,7 @@ public class FlashTapLoader {
     @SneakyThrows
     private void loadThread(HardwareProvider hv) {
         int timeout = 0;
-        BreakPointListener currentListener = hv.getEmulator().addBreakPointListener(LOAD_PROC_ADDRESS, this::processLoadCommand);
+        AddressHookListener currentListener = hv.getEmulator().addBreakPointListener(LOAD_PROC_ADDRESS, this::processLoadCommand);
         try {
             triggerLoadCommand(hardwareProvider.getMemory(), null);
             while (!finished && timeout < 1000) {

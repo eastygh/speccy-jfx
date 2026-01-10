@@ -1,17 +1,22 @@
 package spectrum.jfx.hardware.ula;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import machine.MachineTypes;
 import machine.SpectrumClock;
 import org.apache.commons.lang3.NotImplementedException;
 import spectrum.jfx.hardware.machine.MachineSettings;
 import spectrum.jfx.hardware.memory.Memory;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+@Slf4j
 public class UlaImpl implements Ula {
 
+    @Getter
     private final Memory memory;
 
     private volatile boolean interruptRequested = false;
@@ -20,9 +25,10 @@ public class UlaImpl implements Ula {
     @Getter
     private final boolean ulaAddTStates;
     @SuppressWarnings("unchecked")
-    private final Set<InPortListener>[] inPortListeners = (Set<InPortListener>[]) new Set[256];
+    private final Set<InPortListener>[] inPortListeners = new Set[256];
     @SuppressWarnings("unchecked")
-    private final Set<OutPortListener>[] outPortListeners = (Set<OutPortListener>[]) new Set[256];
+    private final Set<OutPortListener>[] outPortListeners = new Set[256];
+    private final List<AddressHookController> addressHookControllers = new ArrayList<>();
     private final ZXClock clock;
     private final MachineSettings machineSettings;
     // Floating bus by ULA (IN ports)
@@ -31,7 +37,6 @@ public class UlaImpl implements Ula {
     private static final SpectrumClock spectrumClock = SpectrumClock.INSTANCE;
 
     private final byte[] contentionTable;
-
 
     public UlaImpl(Memory memory, MachineSettings machineSettings) {
         this.memory = memory;
@@ -77,6 +82,11 @@ public class UlaImpl implements Ula {
     }
 
     @Override
+    public void addAddressHookController(AddressHookController controller) {
+        addressHookControllers.add(controller);
+    }
+
+    @Override
     public void setRam(byte[] ram) {
         //z80Ram = ram;
     }
@@ -88,6 +98,12 @@ public class UlaImpl implements Ula {
 
     @Override
     public int fetchOpcode(int address) {
+        if (!addressHookControllers.isEmpty()) {
+            // Any address hooks (like TR-DOS)
+            for (AddressHookController controller : addressHookControllers) {
+                controller.checkAddress(address);
+            }
+        }
         // 3 clocks to fetch opcode from RAM and 1 execution clock
         if (ulaAddTStates) {
             clock.incrementTStates(4);
@@ -138,12 +154,18 @@ public class UlaImpl implements Ula {
         int value = 0;
         int portLow = port & 0xff;
         if (ulaAddTStates) {
-            clock.incrementTStates(4); // 4 clocks for read byte from bus
+            clock.incrementTStates(4); // 4 clocks for read byte from the bus
         }
         if (inPortListeners[portLow] != null) {
-            for (InPortListener listener : inPortListeners[portLow]) {
+            Set<InPortListener> listeners = inPortListeners[portLow];
+            for (InPortListener listener : listeners) {
                 int portValue = listener.inPort(port) & 0xff;
-                value = value | portValue;
+                if (listener.isExclusiveValue(port)) {
+                    return portValue;
+                }
+                if (!listener.isIgnoreValue(port)) {
+                    value = value | portValue;
+                }
             }
         } else {
             value = floatingBus.inPort(port);
@@ -309,4 +331,5 @@ public class UlaImpl implements Ula {
     public void writeWord(int address, int data) {
         memory.writeWord(address, data);
     }
+
 }

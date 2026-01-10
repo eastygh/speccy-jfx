@@ -8,8 +8,9 @@ import machine.SpectrumClock;
 import spectrum.jfx.debug.DebugListener;
 import spectrum.jfx.debug.DebugManager;
 import spectrum.jfx.debug.DebugManagerImpl;
-import spectrum.jfx.hardware.cpu.BreakPointListener;
+import spectrum.jfx.hardware.cpu.AddressHookListener;
 import spectrum.jfx.hardware.cpu.CPU;
+import spectrum.jfx.hardware.disk.DiskController;
 import spectrum.jfx.hardware.input.GamePadGLFWImpl;
 import spectrum.jfx.hardware.input.Kempston;
 import spectrum.jfx.hardware.input.KempstonImpl;
@@ -36,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static spectrum.jfx.hardware.factory.CPUFactory.createCPU;
+import static spectrum.jfx.hardware.factory.DiskFactory.createDiskController;
 import static spectrum.jfx.hardware.factory.MemoryFactory.createMemory;
 
 @Slf4j
@@ -54,6 +56,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     Ula ula;
     CassetteDeckImpl cassetteDeck;
     Kempston kempston;
+    DiskController diskController;
     DebugManager debugManager = new DebugManagerImpl();
 
     private final List<Device> devices = new ArrayList<>();
@@ -70,7 +73,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     private static final long FRAME_TIME_NS = 16666666; // ~60 FPS
 
-    private final Map<Integer, BreakPointListener> breakPoints = new ConcurrentHashMap<>();
+    private final Map<Integer, AddressHookListener> addressHookListeners = new ConcurrentHashMap<>();
     private final Queue<Runnable> contextsTasks = new ConcurrentLinkedQueue<>();
 
     private final MachineSettings machineSettings;
@@ -79,7 +82,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     public SpectrumEmulator() {
         machineSettings = MachineSettings
-                .ofDefault(CpuImplementation.CODINGRODENT)
+                .ofDefault(CpuImplementation.SANCHES)
                 .setMachineType(MachineTypes.SPECTRUM128K);
     }
 
@@ -129,6 +132,12 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         this.ula.addPortListener(0x1F, kempston);
         this.kempston.init();
 
+        // Disk controller
+        diskController = createDiskController(machineSettings, ula);
+        if (diskController != null) {
+            devices.add(diskController);
+        }
+
         cpu = createCPU(machineSettings, ula, this);
 
         Machine.setHardwareProvider(this);
@@ -137,7 +146,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     @Override
     public int breakpoint(int address, int opcode) {
-        BreakPointListener listener = breakPoints.get(address);
+        AddressHookListener listener = addressHookListeners.get(address);
         if (listener != null) {
             return listener.call(address, opcode);
         }
@@ -146,7 +155,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     @Override
     public void execDone() {
-
+        // ignore
     }
 
     /**
@@ -338,15 +347,15 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     }
 
     @Override
-    public BreakPointListener addBreakPointListener(int address, BreakPointListener listener) {
+    public AddressHookListener addBreakPointListener(int address, AddressHookListener listener) {
         cpu.setBreakpoint(address, true);
-        return breakPoints.put(address, listener);
+        return addressHookListeners.put(address, listener);
     }
 
     @Override
     public boolean removeBreakPointListener(int address) {
         cpu.setBreakpoint(address, false);
-        breakPoints.remove(address);
+        addressHookListeners.remove(address);
         return true;
     }
 

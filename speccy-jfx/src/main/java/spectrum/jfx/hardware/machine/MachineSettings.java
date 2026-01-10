@@ -14,6 +14,8 @@ public class MachineSettings {
     private boolean ulaAddTStates;
     private MachineTypes machineType;
     private int audioSampleRate;
+    private boolean enableTRDOS;
+    private String trDOSRomFilePath;
     private String romFilePath01;
     private String romFilePath02;
 
@@ -40,6 +42,14 @@ public class MachineSettings {
         return romFilePath02;
     }
 
+    @SuppressWarnings("unused")
+    public String getTrDOSRomFilePath() {
+        if (StringUtils.isEmpty(trDOSRomFilePath)) {
+            trDOSRomFilePath = "/roms/trdos.rom";
+        }
+        return trDOSRomFilePath;
+    }
+
 
     private CpuImplementation cpuImplementation;
 
@@ -51,6 +61,7 @@ public class MachineSettings {
                 builder()
                 .machineType(MachineTypes.SPECTRUM48K)
                 .audioSampleRate(44100)
+                .enableTRDOS(true)
                 .ulaAddTStates(cpuImplementation.isUlaAddTStates())
                 .cpuImplementation(cpuImplementation)
                 .build();

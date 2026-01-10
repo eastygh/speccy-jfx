@@ -1,6 +1,6 @@
 package spectrum.jfx.hardware.machine;
 
-import spectrum.jfx.hardware.cpu.BreakPointListener;
+import spectrum.jfx.hardware.cpu.AddressHookListener;
 
 public interface Emulator {
 
@@ -18,7 +18,7 @@ public interface Emulator {
 
     long getFrames();
 
-    BreakPointListener addBreakPointListener(int address, BreakPointListener listener);
+    AddressHookListener addBreakPointListener(int address, AddressHookListener listener);
 
     boolean removeBreakPointListener(int address);
 

@@ -42,3 +42,4 @@ logs/
 *.log
 /.idea/
 /.ai/
+tmp/

@@ -40,6 +40,16 @@ public interface Memory extends Device, OutPortListener {
         throw new UnsupportedOperationException();
     }
 
+    // Map specific ROMs (like TR-DOS)
+    default void mapBank(int bank, byte[] data) {
+        throw new UnsupportedOperationException();
+    }
+
+    // Unmap specific ROMs and restore previous mapping
+    default void unmapBank(int bank) {
+        throw new UnsupportedOperationException();
+    }
+
     void loadRoms();
 
     void flash(int address, byte[] data);

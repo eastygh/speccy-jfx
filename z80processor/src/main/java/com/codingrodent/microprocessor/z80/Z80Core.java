@@ -250,7 +250,7 @@ public class Z80Core implements ICPUData {
     }
 
     protected int fetchOpCode(int address) {
-        return ram.fetchOpCode(address);
+        return ram.fetchOpcode(address);
     }
 
     /**

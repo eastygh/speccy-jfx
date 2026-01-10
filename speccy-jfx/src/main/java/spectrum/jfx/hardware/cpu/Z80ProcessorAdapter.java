@@ -164,7 +164,7 @@ public class Z80ProcessorAdapter extends Z80Core implements CPU {
 
     @Override
     protected int fetchOpCode(int address) {
-        int opCode = ula.fetchOpCode(address);
+        int opCode = ula.fetchOpcode(address);
         if (breakpointAt.get(address)) {
             opCode = notifyOps.breakpoint(address, opCode);
         }
