@@ -390,16 +390,17 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     }
 
     @SneakyThrows
-    private void waitForHold() {
+    public boolean waitForHold() {
         int c = 0;
         while (!isHold()) {
             Thread.sleep(10);
             c++;
             if (c > 200) {
                 log.error("Hold timeout exceeded, aborting");
-                return;
+                return false;
             }
         }
+        return true;
     }
 
     private void cancelDebug() {

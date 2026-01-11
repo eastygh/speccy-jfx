@@ -13,7 +13,12 @@ import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import spectrum.jfx.hardware.cpu.CPU;
+import spectrum.jfx.hardware.disk.DiskController;
+import spectrum.jfx.hardware.disk.TRDOSController;
 import spectrum.jfx.hardware.machine.Emulator;
+import spectrum.jfx.hardware.machine.HardwareProvider;
+import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.machine.Machine;
 import spectrum.jfx.ui.localization.LocalizationManager;
 import spectrum.jfx.ui.localization.LocalizationManager.LocalizationChangeListener;
@@ -483,6 +488,42 @@ public class MainController implements LocalizationChangeListener {
 
     public Emulator getEmulator() {
         return Machine.getHardwareProvider().getEmulator();
+    }
+
+    public void onTrDos(ActionEvent actionEvent) {
+        HardwareProvider hardwareProvider = Machine.getHardwareProvider();
+        final Emulator emulator = getEmulator();
+        Memory memory = hardwareProvider.getMemory();
+        DiskController diskController = emulator.getDiskController();
+        if (diskController == null || !emulator.getMachineSettings().isEnableTRDOS()) {
+            log.error("TR-DOS not enabled or no disk controller");
+            return;
+        }
+        TRDOSController trdosController = diskController.getTrdosController();
+        if (trdosController == null) {
+            log.error("No TRDOSController present in scope");
+            return;
+        }
+        emulator.pause();
+        if (!emulator.waitForHold()) {
+            log.error("Can't pause emulator");
+        }
+        memory.outPort(0x7FFD, 16);
+        //trdosController.switchToTRDOS();
+        //hardwareProvider.getCPU().setRegPC(15616);
+        hardwareProvider.getCPU().setRegPC(0);
+        emulator.addBreakPointListener(4780, (addr, op) -> {
+            CPU cpu = hardwareProvider.getCPU();
+            int sp = cpu.getRegSP();
+            sp -= 2;
+            hardwareProvider.getMemory().writeWord(sp, 4780);
+            cpu.setRegSP(sp);
+            emulator.removeBreakPointListener(4780);
+            cpu.setRegPC(15616);
+            Platform.runLater(() -> videoContainer.requestFocus());
+            return 0;
+        });
+        emulator.resume();
     }
 
 }

@@ -44,7 +44,11 @@ public class WD1793Impl implements DiskController {
     private long currentTStates;
     private long nextEventTStates = 0;
 
+    private int lastSysAnswer = 0;
+    private int sameAnswerCounter = 0;
+
     private enum State {IDLE, SEARCHING, TRANSFERRING}
+
     private enum StatusType {TYPE_1, TYPE_2}
 
     private State currentState = State.IDLE;
@@ -54,6 +58,9 @@ public class WD1793Impl implements DiskController {
 
     @Setter
     private DriveStatusListener driveStatusListener;
+    @Setter
+    @Getter
+    private TRDOSController trdosController;
 
     public WD1793Impl() {
         for (int i = 0; i < 4; i++) drives[i] = new VirtualDrive();
@@ -115,76 +122,101 @@ public class WD1793Impl implements DiskController {
         int port8 = port & 0xFF;
         switch (port8) {
             case PORT_CMD_STATUS:
-                intrq = false; // Reading status register clears INTRQ
-                int res = regStatus;
-                
-                // ВГ93: Бит BUSY (0) всегда отражает текущее состояние контроллера
-                if (currentState != State.IDLE) {
-                    res |= S_BUSY;
-                } else {
-                    res &= ~S_BUSY;
-                }
-                
-                // DRQ всегда отражает текущее состояние передачи
-                if (drq) {
-                    res |= S_DRQ;
-                } else {
-                    res &= ~S_DRQ;
-                }
-
-                // Index pulse simulation: в ВГ93 доступен в Idle и при командах Type I
-                // В Type II/III на этом месте бит DRQ, который в Idle всегда 0.
-                if (currentStatusType == StatusType.TYPE_1 || currentState == State.IDLE) {
-                    if (currentTStates % 700000 < 14000) { // Impulse ~4ms
-                        res |= S_INDEX;
-                    }
-                }
-
-                // Специфичные биты для Type I (Track 0, Head Loaded)
-                if (currentStatusType == StatusType.TYPE_1) {
-                    // Track 0
-                    if (drives[selectedDriveIdx].physicalTrack == 0) {
-                        res |= S_TRACK0;
-                    } else {
-                        res &= ~S_TRACK0;
-                    }
-                    
-                    // Head Loaded
-                    if (motorOn) {
-                        res |= S_HEAD_LOADED;
-                    } else {
-                        res &= ~S_HEAD_LOADED;
-                    }
-                }
-
-                // Ready bit (7) - инвертированный READY сигнал с дисковода
-                if (!drives[selectedDriveIdx].hasDisk || !motorOn) {
-                    res |= S_NOT_READY;
-                } else {
-                    res &= ~S_NOT_READY;
-                }
-
-                log.trace("BDI: Status IN: {} (State:{}, StatusType:{}, Drive:{}, T:{})", 
-                    Integer.toHexString(res), currentState, currentStatusType, selectedDriveIdx, drives[selectedDriveIdx].physicalTrack);
-                return res;
-
+                return commandStatus();
             case PORT_TRACK:
+                log.debug("In port track. Track: {}", regTrack);
                 return regTrack;
             case PORT_SECTOR:
+                log.debug("In port sector. Sector: {}", regTrack);
                 return regSector;
             case PORT_DATA:
                 int data = readDataByte();
                 log.trace("BDI: Data IN: {}", Integer.toHexString(data));
                 return data;
-
             case PORT_SYSTEM:
                 // ВГ93 System Port: Bit 7 = INTRQ, Bit 6 = DRQ (согласно beta.c)
                 int sys = 0;
                 if (intrq) sys |= 0x80;
                 if (drq) sys |= 0x40;
+                logSysAnswer(sys);
                 return sys;
+            default:
+                log.debug("Unexpected port {}", port8);
         }
         return 0xFF;
+    }
+
+    private void logSysAnswer(int sys) {
+        if (lastSysAnswer == sys) {
+            sameAnswerCounter++;
+            if (sameAnswerCounter >= 1000) {
+                log.debug("In port system. Answer: {}, Answered: {} times", lastSysAnswer, sameAnswerCounter);
+                sameAnswerCounter = 0;
+            }
+        } else {
+            if (sameAnswerCounter > 0) {
+                log.debug("In port system. Answer: {}, Answered: {} times", lastSysAnswer, sameAnswerCounter);
+            }
+            sameAnswerCounter = 0;
+            lastSysAnswer = sys;
+            log.debug("In port system. Answer: {}", sys);
+        }
+    }
+
+    private int commandStatus() {
+        log.debug("In port command status {}", PORT_CMD_STATUS);
+        intrq = false; // Reading status register clears INTRQ
+        int res = regStatus;
+
+        // ВГ93: Бит BUSY (0) всегда отражает текущее состояние контроллера
+        if (currentState != State.IDLE) {
+            res |= S_BUSY;
+        } else {
+            res &= ~S_BUSY;
+        }
+
+        // DRQ всегда отражает текущее состояние передачи
+        if (drq) {
+            res |= S_DRQ;
+        } else {
+            res &= ~S_DRQ;
+        }
+
+        // Index pulse simulation: в ВГ93 доступен в Idle и при командах Type I
+        // В Type II/III на этом месте бит DRQ, который в Idle всегда 0.
+        if (currentStatusType == StatusType.TYPE_1 || currentState == State.IDLE) {
+            if (currentTStates % 700000 < 14000) { // Impulse ~4ms
+                res |= S_INDEX;
+            }
+        }
+
+        // Специфичные биты для Type I (Track 0, Head Loaded)
+        if (currentStatusType == StatusType.TYPE_1) {
+            // Track 0
+            if (drives[selectedDriveIdx].physicalTrack == 0) {
+                res |= S_TRACK0;
+            } else {
+                res &= ~S_TRACK0;
+            }
+
+            // Head Loaded
+            if (motorOn) {
+                res |= S_HEAD_LOADED;
+            } else {
+                res &= ~S_HEAD_LOADED;
+            }
+        }
+
+        // Ready bit (7) - инвертированный READY сигнал с дисковода
+        if (!drives[selectedDriveIdx].hasDisk || !motorOn) {
+            res |= S_NOT_READY;
+        } else {
+            res &= ~S_NOT_READY;
+        }
+
+        log.trace("BDI: Status IN: {} (State:{}, StatusType:{}, Drive:{}, T:{})",
+                Integer.toHexString(res), currentState, currentStatusType, selectedDriveIdx, drives[selectedDriveIdx].physicalTrack);
+        return res;
     }
 
     private int readDataByte() {
@@ -221,7 +253,7 @@ public class WD1793Impl implements DiskController {
 
             if (dataPos >= 256) {
                 log.info("BDI: Sector Done. T:{}, S:{}, Side:{}", regTrack, regSector, currentSide);
-                
+
                 // Multi-sector read support (bit 4 'm' is set)
                 if ((commandReg & 0x10) != 0) {
                     regSector++;
@@ -260,7 +292,7 @@ public class WD1793Impl implements DiskController {
                 dataPos++;
                 if (dataPos >= 256) {
                     log.info("BDI: Write Sector Done. T:{}, S:{}, Side:{}", regTrack, regSector, currentSide);
-                    
+
                     // Multi-sector write support (bit 4 'm' is set)
                     if ((commandReg & 0x10) != 0) {
                         regSector++;
@@ -321,9 +353,9 @@ public class WD1793Impl implements DiskController {
         dataPos++;
         drq = false;
         if (dataPos >= 6) {
-            // WD1793: At the completion of the Read Address command, 
+            // WD1793: At the completion of the Read Address command,
             // the sector register contains the track number read from the ID field.
-            regSector = regTrack; 
+            regSector = regTrack;
             finalizeCommand(0);
         } else {
             nextEventTStates = currentTStates + 112;
@@ -390,7 +422,7 @@ public class WD1793Impl implements DiskController {
             currentStatusType = StatusType.TYPE_1;
             // Immediate interrupt requested?
             if ((cmd & 0x08) != 0) {
-                intrq = true; 
+                intrq = true;
             }
             log.info("BDI: Command FORCE INTERRUPT. IRQ bit: {}", (cmd & 0x08) != 0);
             return;

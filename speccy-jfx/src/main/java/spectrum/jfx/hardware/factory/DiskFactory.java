@@ -2,7 +2,7 @@ package spectrum.jfx.hardware.factory;
 
 import lombok.experimental.UtilityClass;
 import spectrum.jfx.hardware.disk.DiskController;
-import spectrum.jfx.hardware.disk.TRDOSController;
+import spectrum.jfx.hardware.disk.TRDOSControllerImpl;
 import spectrum.jfx.hardware.disk.WD1793Impl;
 import spectrum.jfx.hardware.machine.MachineSettings;
 import spectrum.jfx.hardware.ula.InPortListener;
@@ -22,6 +22,8 @@ public class DiskFactory {
         //DiskController diskController = new WD1793(machineSettings);
         //DiskController diskController = new WD1593GImpl();
         DiskController diskController = new WD1793Impl();
+        TRDOSControllerImpl trdosController = new TRDOSControllerImpl(machineSettings, diskController, ula.getMemory());
+        diskController.setTrdosController(trdosController);
         assignPorts(diskController, ula);
         assignClock(diskController, ula);
         byte[] diskData = null;
@@ -36,7 +38,7 @@ public class DiskFactory {
         diskController.loadDisk(2, diskData);
         diskController.loadDisk(3, diskData);
         // Add TRDOS controller (ROM Switcher)
-        ula.addAddressHookController(new TRDOSController(machineSettings, diskController, ula.getMemory()));
+        ula.addAddressHookController(trdosController);
         return diskController;
     }
 

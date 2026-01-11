@@ -1,6 +1,7 @@
 package spectrum.jfx.hardware.machine;
 
 import spectrum.jfx.hardware.cpu.AddressHookListener;
+import spectrum.jfx.hardware.disk.DiskController;
 
 public interface Emulator {
 
@@ -16,6 +17,8 @@ public interface Emulator {
 
     boolean isHold();
 
+    boolean waitForHold();
+
     long getFrames();
 
     AddressHookListener addBreakPointListener(int address, AddressHookListener listener);
@@ -29,5 +32,7 @@ public interface Emulator {
     void setSpeedUpMode(boolean speedUp);
 
     MachineSettings getMachineSettings();
+
+    DiskController getDiskController();
 
 }

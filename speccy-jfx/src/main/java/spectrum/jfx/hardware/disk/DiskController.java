@@ -35,4 +35,12 @@ public interface DiskController extends Device, ClockListener, InPortListener, O
      */
     void setActive(boolean active);
 
+    default void setTrdosController(TRDOSController trdosController) {
+        // ignore
+    }
+
+    default TRDOSController getTrdosController() {
+        return null;
+    }
+
 }
