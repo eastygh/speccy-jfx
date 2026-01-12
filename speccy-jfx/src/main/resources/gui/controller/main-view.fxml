@@ -70,7 +70,10 @@
                 <Button text="%btn.settings" fx:id="settingsButton" onAction="#onSettings"/>
                 <Separator/>
                 <Button text="%btn.debug" fx:id="debugButton" onAction="#onDebug"/>
-                <Separator/>
+            </ToolBar>
+
+            <!-- Disk Toolbar -->
+            <ToolBar fx:id="diskToolBar" visible="false" managed="false">
                 <Button text="%btn.trdos" fx:id="trdosButton" onAction="#onTrDos"/>
             </ToolBar>
         </VBox>

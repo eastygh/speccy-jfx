@@ -40,6 +40,9 @@ public class GUIApplication extends Application {
         // Get controller and pass emulator reference to it
         MainController controller = fxmlLoader.getController();
 
+        // Обновляем видимость тулбара диска после инициализации эмулятора
+        controller.updateDiskToolBarVisibility();
+
         // Calculate window size considering all UI elements
         // Canvas includes full size: screen + two borders on each side
         double videoWidth = (emulator.getVideo().getScaledScreenWidth() + 2 * emulator.getVideo().getScaledBorderSize());

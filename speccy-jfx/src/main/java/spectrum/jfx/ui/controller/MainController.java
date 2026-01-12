@@ -39,6 +39,8 @@ public class MainController implements LocalizationChangeListener {
     private MenuBar menuBar;
     @FXML
     private ToolBar toolBar;
+    @FXML
+    private ToolBar diskToolBar;
 
     // Menu items
     @FXML
@@ -93,6 +95,10 @@ public class MainController implements LocalizationChangeListener {
     private Button saveButton;
     @FXML
     private Button settingsButton;
+    @FXML
+    private Button debugButton;
+    @FXML
+    private Button trdosButton;
 
     private Scene scene;
     private boolean isPaused = false;
@@ -125,6 +131,16 @@ public class MainController implements LocalizationChangeListener {
 
         // Устанавливаем текущий язык
         updateLanguageSelection();
+    }
+
+    public void updateDiskToolBarVisibility() {
+        if (diskToolBar != null) {
+            boolean enableDiskController = getEmulator() != null
+                    && getEmulator().getMachineSettings() != null
+                    && getEmulator().getMachineSettings().isEnableDiskController();
+            diskToolBar.setVisible(enableDiskController);
+            diskToolBar.setManaged(enableDiskController);
+        }
     }
 
     // Обработчики файлового меню
@@ -456,6 +472,7 @@ public class MainController implements LocalizationChangeListener {
         snapshotButton.setFocusTraversable(false);
         saveButton.setFocusTraversable(false);
         settingsButton.setFocusTraversable(false);
+        trdosButton.setFocusTraversable(false);
     }
 
     private void updateLanguageSelection() {
