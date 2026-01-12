@@ -3,7 +3,7 @@ package spectrum.jfx.hardware.factory;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.disk.DiskController;
-import spectrum.jfx.hardware.disk.WD1793Impl;
+import spectrum.jfx.hardware.disk.wd1793.WD1793Impl;
 import spectrum.jfx.hardware.machine.MachineSettings;
 import spectrum.jfx.hardware.ula.Ula;
 import spectrum.jfx.hardware.util.EmulatorUtils;

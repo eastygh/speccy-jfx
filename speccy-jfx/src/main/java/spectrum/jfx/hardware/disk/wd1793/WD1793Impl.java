@@ -1,8 +1,11 @@
-package spectrum.jfx.hardware.disk;
+package spectrum.jfx.hardware.disk.wd1793;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import spectrum.jfx.hardware.disk.DiskController;
+import spectrum.jfx.hardware.disk.DiskImageAdapter;
+import spectrum.jfx.hardware.disk.DriveStatusListener;
 import spectrum.jfx.hardware.disk.trdos.TRDOSController;
 import spectrum.jfx.hardware.disk.trdos.TRDOSControllerImpl;
 import spectrum.jfx.hardware.machine.MachineSettings;
