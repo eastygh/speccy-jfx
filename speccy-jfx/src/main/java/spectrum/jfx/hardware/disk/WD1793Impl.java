@@ -538,7 +538,6 @@ public class WD1793Impl implements DiskController {
                 // Завершаем команду сразу с успехом, как делают многие эмуляторы.
                 log.info("BDI: Command WRITE TRACK (Format) - completing immediately (TRD pre-formatted)");
                 finalizeCommand(0);
-                return;
             } else {
                 nextEventTStates = currentTStates + 5000;
                 log.info("BDI: Command UNKNOWN: {}", Integer.toHexString(cmd));
@@ -558,6 +557,10 @@ public class WD1793Impl implements DiskController {
         byte[] data;
         boolean hasDisk;
         int physicalTrack;
+
+        boolean dirty;
+        String trdFileName;
+
     }
 
     @Override
