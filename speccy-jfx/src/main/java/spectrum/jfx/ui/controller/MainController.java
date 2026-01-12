@@ -15,7 +15,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.cpu.CPU;
 import spectrum.jfx.hardware.disk.DiskController;
-import spectrum.jfx.hardware.disk.TRDOSController;
 import spectrum.jfx.hardware.machine.Emulator;
 import spectrum.jfx.hardware.machine.HardwareProvider;
 import spectrum.jfx.hardware.memory.Memory;

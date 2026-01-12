@@ -3,6 +3,8 @@ package spectrum.jfx.hardware.disk;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import spectrum.jfx.hardware.disk.trdos.TRDOSController;
+import spectrum.jfx.hardware.disk.trdos.TRDOSControllerImpl;
 import spectrum.jfx.hardware.machine.MachineSettings;
 import spectrum.jfx.hardware.ula.AddressHookController;
 import spectrum.jfx.hardware.ula.InPortListener;
@@ -366,13 +368,14 @@ public class WD1793Impl implements DiskController {
     }
 
     private int readAddressByte() {
-        int val = 0;
+        int val;
         switch (dataPos) {
             case 0 -> val = regTrack;
             case 1 -> val = currentSide;
             case 2 -> val = regSector;
             case 3 -> val = 1; // Sector length code (256 bytes)
             case 4, 5 -> val = 0; // CRC
+            default -> val = 0;
         }
         log.info("BDI: Read Address byte {}: {}", dataPos, Integer.toHexString(val & 0xFF));
         dataPos++;
@@ -410,6 +413,8 @@ public class WD1793Impl implements DiskController {
             case PORT_SYSTEM:
                 handleSystemPort(value);
                 break;
+            default:
+                log.warn("BDI: Unknown port OUT: {}", Integer.toHexString(port8));
         }
     }
 

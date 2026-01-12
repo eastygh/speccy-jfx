@@ -1,6 +1,7 @@
-package spectrum.jfx.hardware.disk;
+package spectrum.jfx.hardware.disk.trdos;
 
 import lombok.SneakyThrows;
+import spectrum.jfx.hardware.disk.DiskController;
 import spectrum.jfx.hardware.machine.MachineSettings;
 import spectrum.jfx.hardware.memory.Memory;
 import spectrum.jfx.hardware.ula.AddressHookController;
