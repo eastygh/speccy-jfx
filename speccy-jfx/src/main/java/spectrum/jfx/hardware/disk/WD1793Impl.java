@@ -3,6 +3,11 @@ package spectrum.jfx.hardware.disk;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import spectrum.jfx.hardware.machine.MachineSettings;
+import spectrum.jfx.hardware.ula.AddressHookController;
+import spectrum.jfx.hardware.ula.InPortListener;
+import spectrum.jfx.hardware.ula.OutPortListener;
+import spectrum.jfx.hardware.ula.Ula;
 
 /**
  * Implementation of the Western Digital WD1793 disk controller. (1818ВГ93 Soviet Union version)</br>
@@ -32,6 +37,7 @@ public class WD1793Impl implements DiskController {
     @Getter
     private boolean active = false;
     private final VirtualDrive[] drives = new VirtualDrive[4];
+    private final MachineSettings machineSettings;
     private int selectedDriveIdx = 0;
     private int currentSide = 0;
 
@@ -66,7 +72,8 @@ public class WD1793Impl implements DiskController {
     @Getter
     private TRDOSController trdosController;
 
-    public WD1793Impl() {
+    public WD1793Impl(MachineSettings machineSettings) {
+        this.machineSettings = machineSettings;
         for (int i = 0; i < 4; i++) drives[i] = new VirtualDrive();
         reset();
     }
@@ -568,4 +575,43 @@ public class WD1793Impl implements DiskController {
     @Override
     public void triggerNMI() {
     }
+
+    @Override
+    public boolean initWithULA(Ula ula) {
+        initTRDOS(ula);
+        assignClock(ula);
+        return true;
+    }
+
+    private void initTRDOS(Ula ula) {
+        trdosController = new TRDOSControllerImpl(machineSettings, this, ula.getMemory());
+        ula.addAddressHookController((AddressHookController) trdosController);
+        assignClock(ula);
+        assignPorts(ula);
+    }
+
+    private void assignClock(Ula ula) {
+        ula.addClockListener(this);
+    }
+
+    private void assignPorts(Ula ula) {
+        /*
+         * InPorts 0x1F, 0x3F,0x5F,0x7F,0xFF
+         */
+        ula.addPortListener(PORT_CMD_STATUS, (InPortListener) this);
+        ula.addPortListener(PORT_TRACK, (InPortListener) this);
+        ula.addPortListener(PORT_SECTOR, (InPortListener) this);
+        ula.addPortListener(PORT_DATA, (InPortListener) this);
+        ula.addPortListener(PORT_SYSTEM, (InPortListener) this);
+
+        /*
+         * OutPorts 0x1F,0x3F,0x5F,0x7F,0xFF
+         */
+        ula.addPortListener(PORT_CMD_STATUS, (OutPortListener) this);
+        ula.addPortListener(PORT_TRACK, (OutPortListener) this);
+        ula.addPortListener(PORT_SECTOR, (OutPortListener) this);
+        ula.addPortListener(PORT_DATA, (OutPortListener) this);
+        ula.addPortListener(PORT_SYSTEM, (OutPortListener) this);
+    }
+
 }

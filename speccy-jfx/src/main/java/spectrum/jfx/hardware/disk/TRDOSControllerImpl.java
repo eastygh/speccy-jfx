@@ -47,7 +47,7 @@ public class TRDOSControllerImpl implements AddressHookController, TRDOSControll
     }
 
     private void trDOSSwitcher(int address) {
-        if (!machineSettings.isEnableTRDOS()) {
+        if (!machineSettings.isEnableDiskController()) {
             return;
         }
         if (trdosROMEnabled && address > ROM_END) {

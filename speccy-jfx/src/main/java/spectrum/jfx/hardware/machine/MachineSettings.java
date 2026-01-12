@@ -14,7 +14,8 @@ public class MachineSettings {
     private boolean ulaAddTStates;
     private MachineTypes machineType;
     private int audioSampleRate;
-    private boolean enableTRDOS;
+    private boolean enableDiskController;
+    private DiskControllerTypes diskControllerType;
     private String trDOSRomFilePath;
     private String romFilePath01;
     private String romFilePath02;
@@ -50,7 +51,6 @@ public class MachineSettings {
         return trDOSRomFilePath;
     }
 
-
     private CpuImplementation cpuImplementation;
 
     public static MachineSettings ofDefault(CpuImplementation cpuImplementation) {
@@ -61,7 +61,7 @@ public class MachineSettings {
                 builder()
                 .machineType(MachineTypes.SPECTRUM48K)
                 .audioSampleRate(44100)
-                .enableTRDOS(true)
+                .enableDiskController(true)
                 .ulaAddTStates(cpuImplementation.isUlaAddTStates())
                 .cpuImplementation(cpuImplementation)
                 .build();
@@ -69,6 +69,11 @@ public class MachineSettings {
 
     public static MachineSettings ofDefault() {
         return ofDefault(null);
+    }
+
+
+    public enum DiskControllerTypes {
+        WD1793
     }
 
 }

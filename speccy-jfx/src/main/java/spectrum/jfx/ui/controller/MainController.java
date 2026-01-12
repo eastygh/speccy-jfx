@@ -495,13 +495,8 @@ public class MainController implements LocalizationChangeListener {
         final Emulator emulator = getEmulator();
         Memory memory = hardwareProvider.getMemory();
         DiskController diskController = emulator.getDiskController();
-        if (diskController == null || !emulator.getMachineSettings().isEnableTRDOS()) {
+        if (diskController == null || !emulator.getMachineSettings().isEnableDiskController()) {
             log.error("TR-DOS not enabled or no disk controller");
-            return;
-        }
-        TRDOSController trdosController = diskController.getTrdosController();
-        if (trdosController == null) {
-            log.error("No TRDOSController present in scope");
             return;
         }
         emulator.pause();

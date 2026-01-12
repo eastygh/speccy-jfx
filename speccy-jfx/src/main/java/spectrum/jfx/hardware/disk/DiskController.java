@@ -4,6 +4,7 @@ import spectrum.jfx.hardware.machine.Device;
 import spectrum.jfx.hardware.ula.ClockListener;
 import spectrum.jfx.hardware.ula.InPortListener;
 import spectrum.jfx.hardware.ula.OutPortListener;
+import spectrum.jfx.hardware.ula.Ula;
 
 /**
  * General interface for Floppy Disk Controllers (e.g., WD1793, MB02, +3 Disk).
@@ -16,7 +17,7 @@ public interface DiskController extends Device, ClockListener, InPortListener, O
     void loadDisk(int drive, byte[] data);
 
     /**
-     * Sets the listener for drive activity events (LEDs)
+     * Sets the listener for drive activity events (LEDs for UI)
      */
     void setDriveStatusListener(DriveStatusListener listener);
 
@@ -35,12 +36,11 @@ public interface DiskController extends Device, ClockListener, InPortListener, O
      */
     void setActive(boolean active);
 
-    default void setTrdosController(TRDOSController trdosController) {
-        // ignore
-    }
-
-    default TRDOSController getTrdosController() {
-        return null;
+    /**
+     * Initializes the controller with the ULA
+     */
+    default boolean initWithULA(Ula ula) {
+        return false;
     }
 
 }
