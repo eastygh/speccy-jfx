@@ -4,6 +4,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of the Western Digital WD1793 disk controller. (1818ВГ93 Soviet Union version)</br>
+ * <a href="https://hansotten.file-hunter.com/technical-info/wd1793/">Data Sheet</a>
+ */
 @Slf4j
 public class WD1793Impl implements DiskController {
 
@@ -102,6 +106,10 @@ public class WD1793Impl implements DiskController {
         currentState = State.IDLE;
     }
 
+    // Timeout для DRQ в тактах (~32 мкс для DD диска = ~112 тактов, но даём больше запаса)
+    private static final long DRQ_TIMEOUT_TSTATES = 50000; // ~14ms - достаточно для обработки
+    private long drqSetTStates = 0;
+
     @Override
     public void ticks(long tStates, int delta) {
         this.currentTStates = tStates;
@@ -113,7 +121,15 @@ public class WD1793Impl implements DiskController {
                 log.info("BDI: Start Transfer. Command: {}", Integer.toHexString(commandReg));
                 currentState = State.TRANSFERRING;
                 drq = true;
+                drqSetTStates = tStates;
             }
+        }
+
+        // Timeout для DRQ - если данные не читаются/пишутся слишком долго,
+        // по спецификации WD1793 устанавливается Lost Data и команда завершается
+        if (currentState == State.TRANSFERRING && drq && (tStates - drqSetTStates) > DRQ_TIMEOUT_TSTATES) {
+            log.warn("BDI: DRQ timeout - Lost Data. Command: {}, dataPos: {}", Integer.toHexString(commandReg), dataPos);
+            finalizeCommand(S_LOST_DATA);
         }
     }
 
