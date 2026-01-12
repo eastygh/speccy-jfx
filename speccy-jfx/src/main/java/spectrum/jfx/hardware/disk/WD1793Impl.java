@@ -308,14 +308,16 @@ public class WD1793Impl implements DiskController {
                     nextEventTStates = currentTStates + 112;
                     currentState = State.SEARCHING;
                 }
-            } else if ((commandReg & 0xF0) == 0xF0) { // Write Track
+            } else if ((commandReg & 0xF0) == 0xF0) { // Write Track (Format)
+                // Write Track: данные просто принимаются и игнорируются (форматирование TRD не требуется)
+                // DRQ устанавливается сразу после каждого байта
                 dataPos++;
                 if (dataPos >= 6250) { // Approximate track size
                     log.info("BDI: Write Track Done. T:{}, Side:{}", regTrack, currentSide);
                     finalizeCommand(0);
                 } else {
-                    nextEventTStates = currentTStates + 112;
-                    currentState = State.SEARCHING;
+                    // DRQ сразу готов для следующего байта (без задержки)
+                    drq = true;
                 }
             }
         }
@@ -410,16 +412,12 @@ public class WD1793Impl implements DiskController {
     }
 
     private void startCommand(int cmd) {
-        commandReg = cmd;
-        intrq = false;
-        drq = false;
-        dataPos = 0;
-        regStatus = 0; // Clear status at command start (except bits calculated in inPort)
-
-        // Прерывание текущей команды (Type IV)
+        // Прерывание текущей команды (Type IV) - всегда обрабатывается
         if ((cmd & 0xF0) == 0xD0) {
             currentState = State.IDLE;
             currentStatusType = StatusType.TYPE_1;
+            intrq = false;
+            drq = false;
             // Immediate interrupt requested?
             if ((cmd & 0x08) != 0) {
                 intrq = true;
@@ -427,6 +425,18 @@ public class WD1793Impl implements DiskController {
             log.info("BDI: Command FORCE INTERRUPT. IRQ bit: {}", (cmd & 0x08) != 0);
             return;
         }
+
+        // По спецификации WD1793: команды игнорируются когда контроллер занят (кроме Force Interrupt)
+        if (currentState != State.IDLE) {
+            log.trace("BDI: Command {} ignored - controller busy", Integer.toHexString(cmd));
+            return;
+        }
+
+        commandReg = cmd;
+        intrq = false;
+        drq = false;
+        dataPos = 0;
+        regStatus = 0; // Clear status at command start (except bits calculated in inPort)
 
         currentState = State.SEARCHING; // Сразу входим в состояние работы
 
@@ -495,10 +505,12 @@ public class WD1793Impl implements DiskController {
                 dataPos = 0;
                 nextEventTStates = currentTStates + 50000;
                 log.info("BDI: Command READ TRACK");
-            } else if ((cmd & 0xF0) == 0xF0) { // Write Track
-                dataPos = 0;
-                nextEventTStates = currentTStates + 30000;
-                log.info("BDI: Command WRITE TRACK");
+            } else if ((cmd & 0xF0) == 0xF0) { // Write Track (Format)
+                // Для TRD образов форматирование не требуется - они уже предформатированы.
+                // Завершаем команду сразу с успехом, как делают многие эмуляторы.
+                log.info("BDI: Command WRITE TRACK (Format) - completing immediately (TRD pre-formatted)");
+                finalizeCommand(0);
+                return;
             } else {
                 nextEventTStates = currentTStates + 5000;
                 log.info("BDI: Command UNKNOWN: {}", Integer.toHexString(cmd));
