@@ -43,4 +43,9 @@ public interface DiskController extends Device, ClockListener, InPortListener, O
         return false;
     }
 
+    /**
+     * Retrieves the number of disk drives supported by the controller
+     */
+    int getDiskCount();
+
 }

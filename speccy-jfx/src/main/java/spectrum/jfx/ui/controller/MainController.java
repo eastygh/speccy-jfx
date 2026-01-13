@@ -6,7 +6,10 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -100,11 +103,33 @@ public class MainController implements LocalizationChangeListener {
     @FXML
     private Button trdosButton;
 
+    @FXML
+    private ImageView driveAImageView;
+    @FXML
+    private ImageView driveBImageView;
+    @FXML
+    private ImageView driveCImageView;
+    @FXML
+    private ImageView driveDImageView;
+    @FXML
+    private StackPane driveAPane, driveBPane, driveCPane, driveDPane;
+
+    private StackPane[] drivePanes;
+    private ImageView[] driveImageViews;
+
+    private final ContextMenu[] driveContextMenus = new ContextMenu[4];
+
+    private Image ledOn, ledOff;
+
     private Scene scene;
     private boolean isPaused = false;
     private LocalizationManager localizationManager;
 
     public void initialize() {
+        // Инициализируем массивы для удобного доступа к панелям дисководов
+        drivePanes = new StackPane[]{driveAPane, driveBPane, driveCPane, driveDPane};
+        driveImageViews = new ImageView[]{driveAImageView, driveBImageView, driveCImageView, driveDImageView};
+
         // Получаем экземпляр LocalizationManager и регистрируем слушателя
         localizationManager = LocalizationManager.getInstance();
         localizationManager.addLanguageChangeListener(this);
@@ -131,15 +156,126 @@ public class MainController implements LocalizationChangeListener {
 
         // Устанавливаем текущий язык
         updateLanguageSelection();
+
+        // Инициализируем изображения дисководов
+        initDriveImages();
+
+        // Настраиваем тултипы и контекстные меню для дисководов
+        setupDrivePanes();
+    }
+
+    private void setupDrivePanes() {
+        for (int i = 0; i < drivePanes.length; i++) {
+            Tooltip.install(drivePanes[i], new Tooltip(String.valueOf((char) ('A' + i))));
+            driveContextMenus[i] = createDriveContextMenu(i);
+        }
+    }
+
+    private ContextMenu createDriveContextMenu(int driveIdx) {
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem insertDisk = new MenuItem(localizationManager.getString("menu.disk.insert", "Insert Disk..."));
+        insertDisk.setOnAction(event -> onInsertDisk(driveIdx));
+        MenuItem ejectDisk = new MenuItem(localizationManager.getString("menu.disk.eject", "Eject Disk"));
+        ejectDisk.setOnAction(event -> onEjectDisk(driveIdx));
+        contextMenu.getItems().addAll(insertDisk, ejectDisk);
+        return contextMenu;
+    }
+
+    private void onInsertDisk(int driveIdx) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(localizationManager.getString("filechooser.disk.title", "Select Disk Image"));
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter(localizationManager.getString("filechooser.disk", "Disk Images"), "*.trd", "*.scl", "*.fdi")
+        );
+        File file = fileChooser.showOpenDialog(scene.getWindow());
+        if (file != null) {
+            try {
+                byte[] data = java.nio.file.Files.readAllBytes(file.toPath());
+                getEmulator().getDiskController().loadDisk(driveIdx, data);
+                log.info("Disk inserted into drive {}: {}", (char) ('A' + driveIdx), file.getName());
+            } catch (IOException e) {
+                log.error("Failed to load disk image", e);
+            }
+        }
+    }
+
+    private void onEjectDisk(int driveIdx) {
+        // DiskController doesn't seem to have an explicit eject, but we could pass null or empty array if supported
+        log.info("Eject disk from drive {}", (char) ('A' + driveIdx));
+    }
+
+    @FXML
+    protected void onDriveAClick(javafx.scene.input.MouseEvent event) {
+        if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+            driveContextMenus[0].show(driveAPane, event.getScreenX(), event.getScreenY());
+        }
+    }
+
+    @FXML
+    protected void onDriveBClick(javafx.scene.input.MouseEvent event) {
+        if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+            driveContextMenus[1].show(driveBPane, event.getScreenX(), event.getScreenY());
+        }
+    }
+
+    @FXML
+    protected void onDriveCClick(javafx.scene.input.MouseEvent event) {
+        if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+            driveContextMenus[2].show(driveCPane, event.getScreenX(), event.getScreenY());
+        }
+    }
+
+    @FXML
+    protected void onDriveDClick(javafx.scene.input.MouseEvent event) {
+        if (event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+            driveContextMenus[3].show(driveDPane, event.getScreenX(), event.getScreenY());
+        }
+    }
+
+    private void initDriveImages() {
+        try {
+            ledOff = new Image(getClass().getResourceAsStream("/gui/imgs/fdd/led-off.png"));
+            ledOn = new Image(getClass().getResourceAsStream("/gui/imgs/fdd/led-on.png"));
+
+            if (ledOff.isError()) {
+                log.error("Error loading led-off.png: {}",
+                    ledOff.getException() != null ? ledOff.getException().getMessage() : "unknown error");
+            }
+            if (ledOn.isError()) {
+                log.error("Error loading led-on.png: {}",
+                    ledOn.getException() != null ? ledOn.getException().getMessage() : "unknown error");
+            }
+        } catch (Exception e) {
+            log.error("Failed to load drive images", e);
+        }
+
+        for (ImageView imageView : driveImageViews) {
+            imageView.setImage(ledOff);
+        }
     }
 
     public void updateDiskToolBarVisibility() {
         if (diskToolBar != null) {
-            boolean enableDiskController = getEmulator() != null
-                    && getEmulator().getMachineSettings() != null
-                    && getEmulator().getMachineSettings().isEnableDiskController();
-            diskToolBar.setVisible(enableDiskController);
-            diskToolBar.setManaged(enableDiskController);
+            DiskController diskController = getEmulator().getDiskController();
+            int diskCount = 0;
+            if (diskController != null) {
+                diskCount = diskController.getDiskCount();
+            }
+
+            for (int i = 0; i < drivePanes.length; i++) {
+                boolean visible = i < diskCount;
+                drivePanes[i].setVisible(visible);
+                drivePanes[i].setManaged(visible);
+            }
+
+            if (diskController != null) {
+                diskController.setDriveStatusListener((driveIdx, isActive) -> Platform.runLater(() -> {
+                    Image image = isActive ? ledOn : ledOff;
+                    if (driveIdx >= 0 && driveIdx < driveImageViews.length) {
+                        driveImageViews[driveIdx].setImage(image);
+                    }
+                }));
+            }
         }
     }
 
@@ -473,6 +609,10 @@ public class MainController implements LocalizationChangeListener {
         saveButton.setFocusTraversable(false);
         settingsButton.setFocusTraversable(false);
         trdosButton.setFocusTraversable(false);
+
+        for (ImageView imageView : driveImageViews) {
+            imageView.setFocusTraversable(false);
+        }
     }
 
     private void updateLanguageSelection() {

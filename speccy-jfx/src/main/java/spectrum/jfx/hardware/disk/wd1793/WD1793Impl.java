@@ -123,6 +123,11 @@ public class WD1793Impl implements DiskController {
     private long drqSetTStates = 0;
 
     @Override
+    public int getDiskCount() {
+        return drives.length;
+    }
+
+    @Override
     public void ticks(long tStates, int delta) {
         this.currentTStates = tStates;
 

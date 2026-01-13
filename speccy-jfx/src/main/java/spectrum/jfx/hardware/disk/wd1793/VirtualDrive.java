@@ -4,6 +4,12 @@ public interface VirtualDrive {
 
     void setDirty(boolean dirty);
 
-    void insertNewDisk();
+    void insertBlankDisk();
+
+    void ejectDisk();
+
+    void loadDisk(String fileName);
+
+    void setReadOnly(boolean readOnly);
 
 }

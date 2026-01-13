@@ -13,7 +13,7 @@ public class VirtualDriveImpl implements VirtualDrive {
     String trdFileName;
 
     @Override
-    public void insertNewDisk() {
+    public void insertBlankDisk() {
         hasDisk = true;
         physicalTrack = 0;
         data = new byte[160 * 256 * 2];
@@ -21,4 +21,10 @@ public class VirtualDriveImpl implements VirtualDrive {
         trdFileName = null;
     }
 
+    @Override
+    public void ejectDisk() {
+        data = null;
+        hasDisk = false;
+        trdFileName = "";
+    }
 }
