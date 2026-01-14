@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.disk.DiskController;
 import spectrum.jfx.hardware.disk.DiskImageAdapter;
 import spectrum.jfx.hardware.disk.DriveStatusListener;
+import spectrum.jfx.hardware.disk.VirtualDrive;
 import spectrum.jfx.hardware.disk.trdos.TRDOSController;
 import spectrum.jfx.hardware.disk.trdos.TRDOSControllerImpl;
 import spectrum.jfx.hardware.machine.MachineSettings;
@@ -14,63 +15,59 @@ import spectrum.jfx.hardware.ula.InPortListener;
 import spectrum.jfx.hardware.ula.OutPortListener;
 import spectrum.jfx.hardware.ula.Ula;
 
+import static spectrum.jfx.hardware.disk.wd1793.WD1793Constants.*;
+
 /**
- * Implementation of the Western Digital WD1793 disk controller. (1818ВГ93 Soviet Union version)</br>
- * <a href="https://hansotten.file-hunter.com/technical-info/wd1793/">Data Sheet</a>
+ * Implementation of the Western Digital WD1793 Floppy Disk Controller.
+ * <p>
+ * This is the Soviet 1818ВГ93 variant used in Beta Disk Interface for ZX Spectrum.
+ *
+ * @see <a href="https://hansotten.file-hunter.com/technical-info/wd1793/">WD1793 Data Sheet</a>
  */
 @Slf4j
 public class WD1793Impl implements DiskController {
 
-    private static final int PORT_CMD_STATUS = 0x1F;
-    private static final int PORT_TRACK = 0x3F;
-    private static final int PORT_SECTOR = 0x5F;
-    private static final int PORT_DATA = 0x7F;
-    private static final int PORT_SYSTEM = 0xFF;
+    private static final int DRIVE_COUNT = 4;
 
-    private static final int S_BUSY = 0x01;
-    private static final int S_DRQ = 0x02;
-    private static final int S_INDEX = 0x02;
-    private static final int S_TRACK0 = 0x04;
-    private static final int S_LOST_DATA = 0x04;
-    private static final int S_CRC_ERR = 0x08;
-    private static final int S_RNF = 0x10;
-    private static final int S_HEAD_LOADED = 0x20;
-    private static final int S_RECORD_TYPE = 0x20;
-    private static final int S_WRITE_PROT = 0x40;
-    private static final int S_NOT_READY = 0x80;
+    // Hardware components
+    private final VirtualDrive[] drives = new VirtualDriveImpl[DRIVE_COUNT];
+    private final MachineSettings machineSettings;
 
+    // Drive selection and configuration
     @Getter
     private boolean active = false;
-    private final VirtualDrive[] drives = new VirtualDriveImpl[4];
-    private final MachineSettings machineSettings;
     private int selectedDriveIdx = 0;
     private int currentSide = 0;
+    private boolean motorOn = false;
+    private int lastSystemValue = 0x3C;
 
+    // WD1793 registers
     private int regTrack;
     private int regSector;
     private int regData;
     private int regStatus;
     private int commandReg;
-    private int lastSystemValue = 0x3C;
-    private boolean motorOn = false;
 
+    // Interrupt and data request signals
     private boolean intrq = false;
     private boolean drq = false;
+
+    // Timing state
     private long currentTStates;
     private long nextEventTStates = 0;
+    private long drqSetTStates = 0;
 
+    // Controller state
+    private ControllerState currentState = ControllerState.IDLE;
+    private StatusType currentStatusType = StatusType.TYPE_1;
+    private int dataPos = 0;
+    private int lastStepDir = STEP_OUT;
+
+    // Debug logging state
     private int lastSysAnswer = 0;
     private int sameAnswerCounter = 0;
 
-    private enum State {IDLE, SEARCHING, TRANSFERRING}
-
-    private enum StatusType {TYPE_1, TYPE_2}
-
-    private State currentState = State.IDLE;
-    private StatusType currentStatusType = StatusType.TYPE_1;
-    private int dataPos = 0;
-    private int lastStepDir = -1; // Default direction for Step is Out (towards 0)
-
+    // External components
     @Setter
     private DriveStatusListener driveStatusListener;
     @Setter
@@ -79,9 +76,17 @@ public class WD1793Impl implements DiskController {
 
     public WD1793Impl(MachineSettings machineSettings) {
         this.machineSettings = machineSettings;
-        for (int i = 0; i < 4; i++) drives[i] = new VirtualDriveImpl();
+        initializeDrives();
         reset();
     }
+
+    private void initializeDrives() {
+        for (int i = 0; i < DRIVE_COUNT; i++) {
+            drives[i] = new VirtualDriveImpl();
+        }
+    }
+
+    // ========== DiskController Interface ==========
 
     @Override
     public void setActive(boolean active) {
@@ -100,9 +105,9 @@ public class WD1793Impl implements DiskController {
 
     @Override
     public void loadDisk(int drive, byte[] data) {
-        if (drive >= 0 && drive < 4 && drives[drive] != null) {
+        if (isValidDriveIndex(drive)) {
             drives[drive].loadRawData(DiskImageAdapter.convertToTrd(data));
-            log.trace("BDI: Disk loaded drive {}. Size: {} bytes", (char) ('A' + drive), data.length);
+            log.trace("BDI: Disk loaded drive {}. Size: {} bytes", getDriveLetter(drive), data.length);
         } else {
             log.error("BDI: Invalid drive number: {}", drive);
         }
@@ -111,458 +116,17 @@ public class WD1793Impl implements DiskController {
     @Override
     public void reset() {
         regTrack = 0;
-        regSector = 1;
-        regStatus = S_TRACK0; // После сброса обычно голова на 0 треке
+        regSector = DEFAULT_SECTOR;
+        regStatus = STATUS_TRACK0;
         intrq = false;
         drq = false;
-        commandReg = 0; // Сбрасываем регистр команды
-        currentState = State.IDLE;
+        commandReg = 0;
+        currentState = ControllerState.IDLE;
     }
-
-    // Timeout для DRQ в тактах (~32 мкс для DD диска = ~112 тактов, но даём больше запаса)
-    private static final long DRQ_TIMEOUT_TSTATES = 50000; // ~14ms - достаточно для обработки
-    private long drqSetTStates = 0;
 
     @Override
     public int getDiskCount() {
         return drives.length;
-    }
-
-    @Override
-    public void ticks(long tStates, int delta) {
-        this.currentTStates = tStates;
-
-        if (currentState == State.SEARCHING && tStates >= nextEventTStates) {
-            if ((commandReg & 0x80) == 0 && (commandReg & 0xF0) != 0xD0) { // Type I (excluding Force Interrupt)
-                finalizeCommand(0);
-            } else { // Type II / III
-                log.trace("BDI: Start Transfer. Command: {}", Integer.toHexString(commandReg));
-                currentState = State.TRANSFERRING;
-                drq = true;
-                drqSetTStates = tStates;
-            }
-        }
-
-        // Timeout для DRQ - если данные не читаются/пишутся слишком долго,
-        // по спецификации WD1793 устанавливается Lost Data и команда завершается
-        if (currentState == State.TRANSFERRING && drq && (tStates - drqSetTStates) > DRQ_TIMEOUT_TSTATES) {
-            log.warn("BDI: DRQ timeout - Lost Data. Command: {}, dataPos: {}", Integer.toHexString(commandReg), dataPos);
-            finalizeCommand(S_LOST_DATA);
-        }
-    }
-
-    @Override
-    public int inPort(int port) {
-        int port8 = port & 0xFF;
-        switch (port8) {
-            case PORT_CMD_STATUS:
-                return commandStatus();
-            case PORT_TRACK:
-                log.trace("In port track. Track: {}", regTrack);
-                return regTrack;
-            case PORT_SECTOR:
-                log.trace("In port sector. Sector: {}", regTrack);
-                return regSector;
-            case PORT_DATA:
-                int data = readDataByte();
-                log.trace("BDI: Data IN: {}", Integer.toHexString(data));
-                return data;
-            case PORT_SYSTEM:
-                // ВГ93 System Port: Bit 7 = INTRQ, Bit 6 = DRQ (согласно beta.c)
-                int sys = 0;
-                if (intrq) sys |= 0x80;
-                if (drq) sys |= 0x40;
-                logSysAnswer(sys);
-                return sys;
-            default:
-                log.trace("Unexpected port {}", port8);
-        }
-        return 0xFF;
-    }
-
-    private void logSysAnswer(int sys) {
-        if (lastSysAnswer == sys) {
-            sameAnswerCounter++;
-            if (sameAnswerCounter >= 1000) {
-                log.trace("In port system. Answer: {}, Answered: {} times", lastSysAnswer, sameAnswerCounter);
-                sameAnswerCounter = 0;
-            }
-        } else {
-            if (sameAnswerCounter > 0) {
-                log.trace("In port system. Answer: {}, Answered: {} times", lastSysAnswer, sameAnswerCounter);
-            }
-            sameAnswerCounter = 0;
-            lastSysAnswer = sys;
-            log.trace("In port system. Answer: {}", sys);
-        }
-    }
-
-    private int commandStatus() {
-        log.trace("In port command status {}", PORT_CMD_STATUS);
-        intrq = false; // Reading status register clears INTRQ
-        int res = regStatus;
-
-        // ВГ93: Бит BUSY (0) всегда отражает текущее состояние контроллера
-        if (currentState != State.IDLE) {
-            res |= S_BUSY;
-        } else {
-            res &= ~S_BUSY;
-        }
-
-        // DRQ всегда отражает текущее состояние передачи
-        if (drq) {
-            res |= S_DRQ;
-        } else {
-            res &= ~S_DRQ;
-        }
-
-        // Index pulse simulation: в ВГ93 доступен в Idle и при командах Type I
-        // В Type II/III на этом месте бит DRQ, который в Idle всегда 0.
-        if (currentStatusType == StatusType.TYPE_1 || currentState == State.IDLE) {
-            if (currentTStates % 700000 < 14000) { // Impulse ~4ms
-                res |= S_INDEX;
-            }
-        }
-
-        // Специфичные биты для Type I (Track 0, Head Loaded)
-        if (currentStatusType == StatusType.TYPE_1) {
-            // Track 0
-            if (drives[selectedDriveIdx].getPhysicalTrack() == 0) {
-                res |= S_TRACK0;
-            } else {
-                res &= ~S_TRACK0;
-            }
-
-            // Head Loaded
-            if (motorOn) {
-                res |= S_HEAD_LOADED;
-            } else {
-                res &= ~S_HEAD_LOADED;
-            }
-        }
-
-        // Ready bit (7) - инвертированный READY сигнал с дисковода
-        if (!drives[selectedDriveIdx].isHasDisk() || !motorOn) {
-            res |= S_NOT_READY;
-        } else {
-            res &= ~S_NOT_READY;
-        }
-
-        log.trace("BDI: Status IN: {} (State:{}, StatusType:{}, Drive:{}, T:{})",
-                Integer.toHexString(res), currentState, currentStatusType, selectedDriveIdx, drives[selectedDriveIdx].getPhysicalTrack());
-        return res;
-    }
-
-    private int readDataByte() {
-        if (currentState == State.TRANSFERRING && drq) {
-            if ((commandReg & 0xF0) == 0xC0) { // Read Address
-                return readAddressByte();
-            }
-            if ((commandReg & 0xF0) == 0xE0) { // Read Track
-                return readTrackByte();
-            }
-
-            VirtualDrive drive = drives[selectedDriveIdx];
-            // TRD: Track 0 Side 0, then Track 0 Side 1...
-            // TR-DOS использует 16 секторов на трек
-            int trackOffset = (regTrack * 2 + currentSide) * 16 * 256;
-            int sectorOffset = (regSector - 1) * 256;
-            int offset = trackOffset + sectorOffset;
-
-            int b = 0;
-            if (drive.isHasDisk() && offset >= 0 && (offset + dataPos) < drive.dataSize()) {
-                b = drive.readByte(offset + dataPos) & 0xFF;
-                if (dataPos == 0 || dataPos == 255) {
-                    log.trace("BDI: Read byte at pos {}: {}", dataPos, Integer.toHexString(b));
-                }
-                if (regTrack == 0 && regSector == 9 && dataPos == 231) {
-                    log.trace("BDI: System sector ID byte (pos 231): {}", Integer.toHexString(b));
-                }
-            } else if (drive.isHasDisk()) {
-                log.warn("BDI: Read out of bounds! T:{}, S:{}, Side:{}, Offset:{}, Pos:{}", regTrack, regSector, currentSide, offset, dataPos);
-            }
-
-            dataPos++;
-            drq = false;
-
-            if (dataPos >= 256) {
-                log.trace("BDI: Sector Done. T:{}, S:{}, Side:{}", regTrack, regSector, currentSide);
-
-                // Multi-sector read support (bit 4 'm' is set)
-                if ((commandReg & 0x10) != 0) {
-                    regSector++;
-                    if (regSector <= 16) {
-                        dataPos = 0;
-                        nextEventTStates = currentTStates + 1000; // Delay before next sector
-                        currentState = State.SEARCHING;
-                        return b;
-                    }
-                }
-                finalizeCommand(0);
-            } else {
-                // Пауза перед следующим байтом (32 мкс для DD диска ~ 112 тактoв)
-                nextEventTStates = currentTStates + 112;
-                currentState = State.SEARCHING;
-            }
-            return b;
-        }
-        return regData;
-    }
-
-    private void writeDataByte(int b) {
-        if (currentState == State.TRANSFERRING && drq) {
-            drq = false;
-
-            if ((commandReg & 0xE0) == 0xA0) { // Write Sector
-                VirtualDrive drive = drives[selectedDriveIdx];
-                int trackOffset = (regTrack * 2 + currentSide) * 16 * 256;
-                int sectorOffset = (regSector - 1) * 256;
-                int offset = trackOffset + sectorOffset;
-
-                if (drive.isHasDisk() && offset >= 0 && (offset + dataPos) < drive.dataSize()) {
-                    // Write byte to disk
-                    if (!drive.writeByte(offset + dataPos, (byte) b)) {
-                        log.warn("BDI: Write failed! T:{}, S:{}, Side:{}, Offset:{}, Pos:{}", regTrack, regSector, currentSide, offset, dataPos);
-                    }
-                }
-
-                dataPos++;
-                if (dataPos >= 256) {
-                    log.trace("BDI: Write Sector Done. T:{}, S:{}, Side:{}", regTrack, regSector, currentSide);
-
-                    // Multi-sector write support (bit 4 'm' is set)
-                    if ((commandReg & 0x10) != 0) {
-                        regSector++;
-                        if (regSector <= 16) {
-                            dataPos = 0;
-                            nextEventTStates = currentTStates + 1000;
-                            currentState = State.SEARCHING;
-                            return;
-                        }
-                    }
-                    finalizeCommand(0);
-                } else {
-                    nextEventTStates = currentTStates + 112;
-                    currentState = State.SEARCHING;
-                }
-            } else if ((commandReg & 0xF0) == 0xF0) { // Write Track (Format)
-                // Write Track: данные просто принимаются и игнорируются (форматирование TRD не требуется)
-                // DRQ устанавливается сразу после каждого байта
-                dataPos++;
-                if (dataPos >= 6250) { // Approximate track size
-                    log.trace("BDI: Write Track Done. T:{}, Side:{}", regTrack, currentSide);
-                    finalizeCommand(0);
-                } else {
-                    // DRQ сразу готов для следующего байта (без задержки)
-                    drq = true;
-                }
-            }
-        }
-    }
-
-    private int readTrackByte() {
-        VirtualDrive drive = drives[selectedDriveIdx];
-        int trackOffset = (regTrack * 2 + currentSide) * 16 * 256;
-        int b = 0;
-        if (drive.isHasDisk() && (trackOffset + dataPos) < drive.dataSize()) {
-            b = drive.readByte(trackOffset + dataPos) & 0xFF;
-        }
-        dataPos++;
-        drq = false;
-        // 16 sectors * 256 bytes = 4096 bytes per track per side in TRD
-        if (dataPos >= 4096) {
-            finalizeCommand(0);
-        } else {
-            nextEventTStates = currentTStates + 112;
-            currentState = State.SEARCHING;
-        }
-        return b;
-    }
-
-    private int readAddressByte() {
-        int val;
-        switch (dataPos) {
-            case 0 -> val = regTrack;
-            case 1 -> val = currentSide;
-            case 2 -> val = regSector;
-            case 3 -> val = 1; // Sector length code (256 bytes)
-            case 4, 5 -> val = 0; // CRC
-            default -> val = 0;
-        }
-        log.trace("BDI: Read Address byte {}: {}", dataPos, Integer.toHexString(val & 0xFF));
-        dataPos++;
-        drq = false;
-        if (dataPos >= 6) {
-            // WD1793: At the completion of the Read Address command,
-            // the sector register contains the track number read from the ID field.
-            regSector = regTrack;
-            finalizeCommand(0);
-        } else {
-            nextEventTStates = currentTStates + 112;
-            currentState = State.SEARCHING;
-        }
-        return val & 0xFF;
-    }
-
-    @Override
-    public void outPort(int port, int value) {
-        int port8 = port & 0xFF;
-        log.trace("BDI: Port OUT: {} = {}", Integer.toHexString(port8), Integer.toHexString(value));
-        switch (port8) {
-            case PORT_CMD_STATUS:
-                startCommand(value);
-                break;
-            case PORT_TRACK:
-                regTrack = value;
-                break;
-            case PORT_SECTOR:
-                regSector = value;
-                break;
-            case PORT_DATA:
-                regData = value;
-                writeDataByte(value);
-                break;
-            case PORT_SYSTEM:
-                handleSystemPort(value);
-                break;
-            default:
-                log.warn("BDI: Unknown port OUT: {}", Integer.toHexString(port8));
-        }
-    }
-
-    private void handleSystemPort(int value) {
-        selectedDriveIdx = value & 0x03;
-        // В TR-DOS бит 4 системного порта выбирает сторону.
-        currentSide = (value & 0x10) != 0 ? 0 : 1;
-
-        // Бит 3 (0x08) - управление мотором
-        motorOn = (value & 0x08) != 0;
-
-        // Бит 2 (0x04) - сброс ВГ93 (активен низким уровнем)
-        if ((value & 0x04) == 0) {
-            reset();
-        } else if ((lastSystemValue & 0x04) == 0) {
-            // Выход из сброса (переход 0 -> 1)
-            // По спецификации ВГ93, при выходе из сброса выполняется команда RESTORE (0x03)
-            startCommand(0x03);
-        }
-
-        lastSystemValue = value;
-        log.trace("BDI: Select Drive:{}, Side:{}, Motor:{}, raw:{}", selectedDriveIdx, currentSide, motorOn, Integer.toHexString(value));
-    }
-
-    private void startCommand(int cmd) {
-        // Прерывание текущей команды (Type IV) - всегда обрабатывается
-        if ((cmd & 0xF0) == 0xD0) {
-            currentState = State.IDLE;
-            currentStatusType = StatusType.TYPE_1;
-            intrq = false;
-            drq = false;
-            // Immediate interrupt requested?
-            if ((cmd & 0x08) != 0) {
-                intrq = true;
-            }
-            log.trace("BDI: Command FORCE INTERRUPT. IRQ bit: {}", (cmd & 0x08) != 0);
-            return;
-        }
-
-        // По спецификации WD1793: команды игнорируются когда контроллер занят (кроме Force Interrupt)
-        if (currentState != State.IDLE) {
-            log.trace("BDI: Command {} ignored - controller busy", Integer.toHexString(cmd));
-            return;
-        }
-
-        commandReg = cmd;
-        intrq = false;
-        drq = false;
-        dataPos = 0;
-        regStatus = 0; // Clear status at command start (except bits calculated in inPort)
-
-        currentState = State.SEARCHING; // Сразу входим в состояние работы
-
-        if ((cmd & 0x80) == 0) { // Type I
-            currentStatusType = StatusType.TYPE_1;
-            int type = cmd & 0xF0;
-            switch (type) {
-                case 0x00 -> { // Restore
-                    log.trace("BDI: Command RESTORE");
-                    regTrack = 0;
-                    drives[selectedDriveIdx].setPhysicalTrack(0);
-                    lastStepDir = -1;
-                }
-                case 0x10 -> { // Seek
-                    log.trace("BDI: Command SEEK to T:{}", regData);
-                    // Seek always updates regTrack and moves physical head
-                    regTrack = regData;
-                    drives[selectedDriveIdx].setPhysicalTrack(regTrack);
-                }
-                case 0x20, 0x30 -> { // Step
-                    log.trace("BDI: Command STEP");
-                    if ((cmd & 0x10) != 0) regTrack += lastStepDir;
-                    drives[selectedDriveIdx].deltaPhysicalTrack(lastStepDir);
-                }
-                case 0x40, 0x50 -> { // Step In
-                    log.trace("BDI: Command STEP IN");
-                    lastStepDir = 1;
-                    if ((cmd & 0x10) != 0) regTrack += lastStepDir;
-                    drives[selectedDriveIdx].deltaPhysicalTrack(lastStepDir);
-                }
-                case 0x60, 0x70 -> { // Step Out
-                    log.trace("BDI: Command STEP OUT");
-                    lastStepDir = -1;
-                    if ((cmd & 0x10) != 0) regTrack += lastStepDir;
-                    drives[selectedDriveIdx].deltaPhysicalTrack(lastStepDir);
-                }
-            }
-            // Constraints
-            if (regTrack < 0) regTrack = 0;
-            if (regTrack > 160) regTrack = 160;
-            if (drives[selectedDriveIdx].getPhysicalTrack() < 0) drives[selectedDriveIdx].setPhysicalTrack(0);
-            if (drives[selectedDriveIdx].getPhysicalTrack() > 160) drives[selectedDriveIdx].setPhysicalTrack(160);
-
-            nextEventTStates = currentTStates + 5000; // Задержка на механику
-        } else { // Type II / III
-            currentStatusType = StatusType.TYPE_2;
-            if (!drives[selectedDriveIdx].isHasDisk() || !motorOn) {
-                log.warn("BDI: Command {} failed: Not Ready (Motor:{}, Disk:{})", Integer.toHexString(cmd), motorOn, drives[selectedDriveIdx].isHasDisk());
-                finalizeCommand(S_NOT_READY);
-                return;
-            }
-
-            if ((cmd & 0xE0) == 0x80) { // Read Sector
-                dataPos = 0;
-                nextEventTStates = currentTStates + 30000; // Имитация поиска сектора (~8.5мс)
-                log.trace("BDI: Command READ SECTOR T:{}, S:{}, Side:{}", regTrack, regSector, currentSide);
-            } else if ((cmd & 0xE0) == 0xA0) { // Write Sector
-                dataPos = 0;
-                nextEventTStates = currentTStates + 30000;
-                log.trace("BDI: Command WRITE SECTOR T:{}, S:{}, Side:{}", regTrack, regSector, currentSide);
-            } else if ((cmd & 0xF0) == 0xC0) { // Read Address
-                dataPos = 0;
-                nextEventTStates = currentTStates + 15000;
-                log.trace("BDI: Command READ ADDRESS");
-            } else if ((cmd & 0xF0) == 0xE0) { // Read Track
-                dataPos = 0;
-                nextEventTStates = currentTStates + 50000;
-                log.trace("BDI: Command READ TRACK");
-            } else if ((cmd & 0xF0) == 0xF0) { // Write Track (Format)
-                // Для TRD образов форматирование не требуется - они уже предформатированы.
-                // Завершаем команду сразу с успехом, как делают многие эмуляторы.
-                log.trace("BDI: Command WRITE TRACK (Format) - completing immediately (TRD pre-formatted)");
-                finalizeCommand(0);
-            } else {
-                nextEventTStates = currentTStates + 5000;
-                log.trace("BDI: Command UNKNOWN: {}", Integer.toHexString(cmd));
-            }
-        }
-    }
-
-    private void finalizeCommand(int statusFlags) {
-        log.trace("BDI: Finalize Command: {}, Status: {}", Integer.toHexString(commandReg), Integer.toHexString(statusFlags));
-        regStatus = statusFlags;
-        intrq = true;
-        drq = false;
-        currentState = State.IDLE;
     }
 
     @Override
@@ -586,10 +150,607 @@ public class WD1793Impl implements DiskController {
     public void triggerNMI() {
     }
 
+    // ========== Clock Listener ==========
+
+    @Override
+    public void ticks(long tStates, int delta) {
+        this.currentTStates = tStates;
+        processSearchingState(tStates);
+        checkDrqTimeout(tStates);
+    }
+
+    private void processSearchingState(long tStates) {
+        if (currentState != ControllerState.SEARCHING || tStates < nextEventTStates) {
+            return;
+        }
+
+        CommandType cmdType = CommandType.fromCommand(commandReg);
+        if (cmdType.isTypeI()) {
+            finalizeCommand(0);
+        } else {
+            startDataTransfer(tStates);
+        }
+    }
+
+    private void startDataTransfer(long tStates) {
+        log.trace("BDI: Start Transfer. Command: {}", Integer.toHexString(commandReg));
+        currentState = ControllerState.TRANSFERRING;
+        drq = true;
+        drqSetTStates = tStates;
+    }
+
+    private void checkDrqTimeout(long tStates) {
+        if (currentState != ControllerState.TRANSFERRING || !drq) {
+            return;
+        }
+
+        if ((tStates - drqSetTStates) > TIMING_DRQ_TIMEOUT) {
+            log.warn("BDI: DRQ timeout - Lost Data. Command: {}, dataPos: {}",
+                    Integer.toHexString(commandReg), dataPos);
+            finalizeCommand(STATUS_LOST_DATA);
+        }
+    }
+
+    // ========== Port I/O ==========
+
+    @Override
+    public int inPort(int port) {
+        int port8 = port & 0xFF;
+        return switch (port8) {
+            case PORT_CMD_STATUS -> readStatusRegister();
+            case PORT_TRACK -> readTrackRegister();
+            case PORT_SECTOR -> readSectorRegister();
+            case PORT_DATA -> readDataRegister();
+            case PORT_SYSTEM -> readSystemPort();
+            default -> handleUnknownPortRead(port8);
+        };
+    }
+
+    @Override
+    public void outPort(int port, int value) {
+        int port8 = port & 0xFF;
+        log.trace("BDI: Port OUT: {} = {}", Integer.toHexString(port8), Integer.toHexString(value));
+
+        switch (port8) {
+            case PORT_CMD_STATUS -> startCommand(value);
+            case PORT_TRACK -> regTrack = value;
+            case PORT_SECTOR -> regSector = value;
+            case PORT_DATA -> writeDataRegister(value);
+            case PORT_SYSTEM -> handleSystemPort(value);
+            default -> log.warn("BDI: Unknown port OUT: {}", Integer.toHexString(port8));
+        }
+    }
+
+    // ========== Register Read Operations ==========
+
+    private int readStatusRegister() {
+        log.trace("In port command status {}", PORT_CMD_STATUS);
+        intrq = false; // Reading status register clears INTRQ
+        return calculateStatus();
+    }
+
+    private int readTrackRegister() {
+        log.trace("In port track. Track: {}", regTrack);
+        return regTrack;
+    }
+
+    private int readSectorRegister() {
+        log.trace("In port sector. Sector: {}", regSector);
+        return regSector;
+    }
+
+    private int readDataRegister() {
+        int data = readDataByte();
+        log.trace("BDI: Data IN: {}", Integer.toHexString(data));
+        return data;
+    }
+
+    private int readSystemPort() {
+        int sys = buildSystemPortValue();
+        logSystemPortAnswer(sys);
+        return sys;
+    }
+
+    private int buildSystemPortValue() {
+        int sys = 0;
+        if (intrq) sys |= SYS_INTRQ;
+        if (drq) sys |= SYS_DRQ;
+        return sys;
+    }
+
+    private int handleUnknownPortRead(int port8) {
+        log.warn("Unexpected port {}", port8);
+        return 0xFF;
+    }
+
+    // ========== Status Register Calculation ==========
+
+    private int calculateStatus() {
+        int status = regStatus;
+        status = applyBusyFlag(status);
+        status = applyDrqFlag(status);
+        status = applyIndexPulse(status);
+        status = applyType1StatusBits(status);
+        status = applyReadyFlag(status);
+
+        logStatus(status);
+        return status;
+    }
+
+    private int applyBusyFlag(int status) {
+        if (currentState != ControllerState.IDLE) {
+            return status | STATUS_BUSY;
+        }
+        return status & ~STATUS_BUSY;
+    }
+
+    private int applyDrqFlag(int status) {
+        if (drq) {
+            return status | STATUS_DRQ;
+        }
+        return status & ~STATUS_DRQ;
+    }
+
+    private int applyIndexPulse(int status) {
+        // Index pulse available in IDLE state and for Type I commands
+        if (currentStatusType == StatusType.TYPE_1 || currentState == ControllerState.IDLE) {
+            if (isIndexPulseActive()) {
+                return status | STATUS_INDEX;
+            }
+        }
+        return status;
+    }
+
+    private boolean isIndexPulseActive() {
+        return currentTStates % TIMING_INDEX_PERIOD < TIMING_INDEX_PULSE;
+    }
+
+    private int applyType1StatusBits(int status) {
+        if (currentStatusType != StatusType.TYPE_1) {
+            return status;
+        }
+
+        // Track 0 indicator
+        if (getSelectedDrive().getPhysicalTrack() == 0) {
+            status |= STATUS_TRACK0;
+        } else {
+            status &= ~STATUS_TRACK0;
+        }
+
+        // Head loaded indicator
+        if (motorOn) {
+            status |= STATUS_HEAD_LOADED;
+        } else {
+            status &= ~STATUS_HEAD_LOADED;
+        }
+
+        return status;
+    }
+
+    private int applyReadyFlag(int status) {
+        // Ready bit (7) - inverted READY signal from drive
+        if (!getSelectedDrive().isHasDisk() || !motorOn) {
+            return status | STATUS_NOT_READY;
+        }
+        return status & ~STATUS_NOT_READY;
+    }
+
+    private void logStatus(int status) {
+        log.trace("BDI: Status IN: {} (State:{}, StatusType:{}, Drive:{}, T:{})",
+                Integer.toHexString(status), currentState, currentStatusType,
+                selectedDriveIdx, getSelectedDrive().getPhysicalTrack());
+    }
+
+    // ========== Data Read Operations ==========
+
+    private int readDataByte() {
+        if (currentState != ControllerState.TRANSFERRING || !drq) {
+            return regData;
+        }
+
+        CommandType cmdType = CommandType.fromCommand(commandReg);
+        return switch (cmdType) {
+            case READ_ADDRESS -> readAddressByte();
+            case READ_TRACK -> readTrackDataByte();
+            default -> readSectorDataByte();
+        };
+    }
+
+    private int readSectorDataByte() {
+        VirtualDrive drive = getSelectedDrive();
+        int offset = TrdDiskGeometry.calculateOffset(regTrack, currentSide, regSector);
+
+        int byteValue = 0;
+        if (drive.isHasDisk() && isValidOffset(offset + dataPos, drive)) {
+            byteValue = drive.readByte(offset + dataPos) & 0xFF;
+            logSectorRead(byteValue);
+        } else if (drive.isHasDisk()) {
+            logOutOfBoundsRead(offset);
+        }
+
+        advanceDataPosition();
+        return checkSectorComplete(byteValue);
+    }
+
+    private void logSectorRead(int byteValue) {
+        if (dataPos == 0 || dataPos == TrdDiskGeometry.BYTES_PER_SECTOR - 1) {
+            log.trace("BDI: Read byte at pos {}: {}", dataPos, Integer.toHexString(byteValue));
+        }
+        // System sector identification check
+        if (regTrack == 0 && regSector == 9 && dataPos == 231) {
+            log.trace("BDI: System sector ID byte (pos 231): {}", Integer.toHexString(byteValue));
+        }
+    }
+
+    private void logOutOfBoundsRead(int offset) {
+        log.warn("BDI: Read out of bounds! T:{}, S:{}, Side:{}, Offset:{}, Pos:{}",
+                regTrack, regSector, currentSide, offset, dataPos);
+    }
+
+    private void advanceDataPosition() {
+        dataPos++;
+        drq = false;
+    }
+
+    private int checkSectorComplete(int byteValue) {
+        if (dataPos >= TrdDiskGeometry.BYTES_PER_SECTOR) {
+            log.trace("BDI: Sector Done. T:{}, S:{}, Side:{}", regTrack, regSector, currentSide);
+            return handleSectorComplete(byteValue);
+        }
+
+        scheduleNextByte();
+        return byteValue;
+    }
+
+    private int handleSectorComplete(int byteValue) {
+        // Multi-sector read support (bit 4 'm' is set)
+        if (isMultiSectorCommand()) {
+            regSector++;
+            if (regSector <= TrdDiskGeometry.MAX_SECTOR) {
+                dataPos = 0;
+                scheduleNextSector();
+                return byteValue;
+            }
+        }
+        finalizeCommand(0);
+        return byteValue;
+    }
+
+    private boolean isMultiSectorCommand() {
+        return (commandReg & CMD_MULTI_SECTOR) != 0;
+    }
+
+    private void scheduleNextByte() {
+        nextEventTStates = currentTStates + TIMING_BYTE_INTERVAL;
+        currentState = ControllerState.SEARCHING;
+    }
+
+    private void scheduleNextSector() {
+        nextEventTStates = currentTStates + TIMING_INTER_SECTOR;
+        currentState = ControllerState.SEARCHING;
+    }
+
+    private int readTrackDataByte() {
+        VirtualDrive drive = getSelectedDrive();
+        int trackOffset = TrdDiskGeometry.calculateTrackOffset(regTrack, currentSide);
+
+        int byteValue = 0;
+        if (drive.isHasDisk() && isValidOffset(trackOffset + dataPos, drive)) {
+            byteValue = drive.readByte(trackOffset + dataPos) & 0xFF;
+        }
+
+        advanceDataPosition();
+
+        if (dataPos >= TrdDiskGeometry.BYTES_PER_TRACK) {
+            finalizeCommand(0);
+        } else {
+            scheduleNextByte();
+        }
+        return byteValue;
+    }
+
+    private int readAddressByte() {
+        int value = switch (dataPos) {
+            case 0 -> regTrack;
+            case 1 -> currentSide;
+            case 2 -> regSector;
+            case 3 -> TrdDiskGeometry.SECTOR_SIZE_CODE;
+            case 4, 5 -> 0; // CRC bytes
+            default -> 0;
+        };
+
+        log.trace("BDI: Read Address byte {}: {}", dataPos, Integer.toHexString(value & 0xFF));
+        advanceDataPosition();
+
+        if (dataPos >= TrdDiskGeometry.ADDRESS_FIELD_SIZE) {
+            // Per WD1793 spec: sector register receives track number from ID field
+            regSector = regTrack;
+            finalizeCommand(0);
+        } else {
+            scheduleNextByte();
+        }
+        return value & 0xFF;
+    }
+
+    // ========== Data Write Operations ==========
+
+    private void writeDataRegister(int value) {
+        regData = value;
+        writeDataByte(value);
+    }
+
+    private void writeDataByte(int byteValue) {
+        if (currentState != ControllerState.TRANSFERRING || !drq) {
+            return;
+        }
+
+        drq = false;
+        CommandType cmdType = CommandType.fromCommand(commandReg);
+
+        switch (cmdType) {
+            case WRITE_SECTOR -> writeSectorDataByte(byteValue);
+            case WRITE_TRACK -> writeTrackDataByte();
+            default -> { }
+        }
+    }
+
+    private void writeSectorDataByte(int byteValue) {
+        VirtualDrive drive = getSelectedDrive();
+        int offset = TrdDiskGeometry.calculateOffset(regTrack, currentSide, regSector);
+
+        if (drive.isHasDisk() && isValidOffset(offset + dataPos, drive)) {
+            if (!drive.writeByte(offset + dataPos, (byte) byteValue)) {
+                log.warn("BDI: Write failed! T:{}, S:{}, Side:{}, Offset:{}, Pos:{}",
+                        regTrack, regSector, currentSide, offset, dataPos);
+            }
+        }
+
+        dataPos++;
+        if (dataPos >= TrdDiskGeometry.BYTES_PER_SECTOR) {
+            log.trace("BDI: Write Sector Done. T:{}, S:{}, Side:{}", regTrack, regSector, currentSide);
+            handleWriteSectorComplete();
+        } else {
+            scheduleNextByte();
+        }
+    }
+
+    private void handleWriteSectorComplete() {
+        if (isMultiSectorCommand()) {
+            regSector++;
+            if (regSector <= TrdDiskGeometry.MAX_SECTOR) {
+                dataPos = 0;
+                scheduleNextSector();
+                return;
+            }
+        }
+        finalizeCommand(0);
+    }
+
+    private void writeTrackDataByte() {
+        // Write Track (Format): data is accepted but ignored for TRD images
+        // TRD images are pre-formatted, actual formatting is not needed
+        dataPos++;
+        if (dataPos >= TrdDiskGeometry.RAW_TRACK_SIZE) {
+            log.trace("BDI: Write Track Done. T:{}, Side:{}", regTrack, currentSide);
+            finalizeCommand(0);
+        } else {
+            // DRQ immediately ready for next byte (no delay)
+            drq = true;
+        }
+    }
+
+    // ========== System Port Handling ==========
+
+    private void handleSystemPort(int value) {
+        selectedDriveIdx = value & SYS_DRIVE_MASK;
+
+        // Bit 4 selects side (active low = side 1)
+        currentSide = (value & SYS_SIDE) != 0 ? 0 : 1;
+
+        // Bit 3 controls motor
+        motorOn = (value & SYS_MOTOR) != 0;
+
+        handleResetLogic(value);
+
+        lastSystemValue = value;
+        log.trace("BDI: Select Drive:{}, Side:{}, Motor:{}, raw:{}",
+                selectedDriveIdx, currentSide, motorOn, Integer.toHexString(value));
+    }
+
+    private void handleResetLogic(int value) {
+        // Bit 2 (0x04) - controller reset (active low)
+        if ((value & SYS_RESET) == 0) {
+            reset();
+        } else if ((lastSystemValue & SYS_RESET) == 0) {
+            // Exiting reset (0 -> 1 transition)
+            // Per WD1793 spec: RESTORE command (0x03) is executed on reset exit
+            startCommand(0x03);
+        }
+    }
+
+    // ========== Command Execution ==========
+
+    private void startCommand(int cmd) {
+        CommandType cmdType = CommandType.fromCommand(cmd);
+
+        // Force Interrupt is always processed, even when busy
+        if (cmdType == CommandType.FORCE_INTERRUPT) {
+            executeForceInterrupt(cmd);
+            return;
+        }
+
+        // Per WD1793 spec: commands are ignored when controller is busy
+        if (currentState != ControllerState.IDLE) {
+            log.trace("BDI: Command {} ignored - controller busy", Integer.toHexString(cmd));
+            return;
+        }
+
+        initializeCommand(cmd, cmdType);
+
+        if (cmdType.isTypeI()) {
+            executeTypeICommand(cmd, cmdType);
+        } else {
+            executeTypeIIOrIIICommand(cmd, cmdType);
+        }
+    }
+
+    private void initializeCommand(int cmd, CommandType cmdType) {
+        commandReg = cmd;
+        intrq = false;
+        drq = false;
+        dataPos = 0;
+        regStatus = 0;
+        currentState = ControllerState.SEARCHING;
+        currentStatusType = cmdType.getStatusType();
+    }
+
+    private void executeForceInterrupt(int cmd) {
+        currentState = ControllerState.IDLE;
+        currentStatusType = StatusType.TYPE_1;
+        intrq = false;
+        drq = false;
+
+        // Check if immediate interrupt is requested
+        if ((cmd & CMD_IMMEDIATE_IRQ) != 0) {
+            intrq = true;
+        }
+        log.trace("BDI: Command FORCE INTERRUPT. IRQ bit: {}", (cmd & CMD_IMMEDIATE_IRQ) != 0);
+    }
+
+    private void executeTypeICommand(int cmd, CommandType cmdType) {
+        switch (cmdType) {
+            case RESTORE -> executeRestore();
+            case SEEK -> executeSeek();
+            case STEP -> executeStep(cmd);
+            case STEP_IN -> executeStepIn(cmd);
+            case STEP_OUT -> executeStepOut(cmd);
+            default -> log.trace("BDI: Unknown Type I command: {}", Integer.toHexString(cmd));
+        }
+
+        constrainTrackValues();
+        nextEventTStates = currentTStates + TIMING_STEP_DELAY;
+    }
+
+    private void executeRestore() {
+        log.trace("BDI: Command RESTORE");
+        regTrack = 0;
+        getSelectedDrive().setPhysicalTrack(0);
+        lastStepDir = STEP_OUT;
+    }
+
+    private void executeSeek() {
+        log.trace("BDI: Command SEEK to T:{}", regData);
+        regTrack = regData;
+        getSelectedDrive().setPhysicalTrack(regTrack);
+    }
+
+    private void executeStep(int cmd) {
+        log.trace("BDI: Command STEP");
+        if ((cmd & CMD_UPDATE_TRACK) != 0) {
+            regTrack += lastStepDir;
+        }
+        getSelectedDrive().deltaPhysicalTrack(lastStepDir);
+    }
+
+    private void executeStepIn(int cmd) {
+        log.trace("BDI: Command STEP IN");
+        lastStepDir = STEP_IN;
+        if ((cmd & CMD_UPDATE_TRACK) != 0) {
+            regTrack += lastStepDir;
+        }
+        getSelectedDrive().deltaPhysicalTrack(lastStepDir);
+    }
+
+    private void executeStepOut(int cmd) {
+        log.trace("BDI: Command STEP OUT");
+        lastStepDir = STEP_OUT;
+        if ((cmd & CMD_UPDATE_TRACK) != 0) {
+            regTrack += lastStepDir;
+        }
+        getSelectedDrive().deltaPhysicalTrack(lastStepDir);
+    }
+
+    private void constrainTrackValues() {
+        regTrack = Math.max(TRACK_MIN, Math.min(TRACK_MAX, regTrack));
+
+        VirtualDrive drive = getSelectedDrive();
+        int physicalTrack = drive.getPhysicalTrack();
+        physicalTrack = Math.max(TRACK_MIN, Math.min(TRACK_MAX, physicalTrack));
+        drive.setPhysicalTrack(physicalTrack);
+    }
+
+    private void executeTypeIIOrIIICommand(int cmd, CommandType cmdType) {
+        if (cmdType.requiresDiskReady() && !isDiskReady()) {
+            log.warn("BDI: Command {} failed: Not Ready (Motor:{}, Disk:{})",
+                    Integer.toHexString(cmd), motorOn, getSelectedDrive().isHasDisk());
+            finalizeCommand(STATUS_NOT_READY);
+            return;
+        }
+
+        switch (cmdType) {
+            case READ_SECTOR -> executeReadSector();
+            case WRITE_SECTOR -> executeWriteSector();
+            case READ_ADDRESS -> executeReadAddress();
+            case READ_TRACK -> executeReadTrack();
+            case WRITE_TRACK -> executeWriteTrack();
+            default -> executeUnknownCommand(cmd);
+        }
+    }
+
+    private void executeReadSector() {
+        dataPos = 0;
+        nextEventTStates = currentTStates + TIMING_SECTOR_SEARCH;
+        log.trace("BDI: Command READ SECTOR T:{}, S:{}, Side:{}", regTrack, regSector, currentSide);
+    }
+
+    private void executeWriteSector() {
+        dataPos = 0;
+        nextEventTStates = currentTStates + TIMING_SECTOR_SEARCH;
+        log.trace("BDI: Command WRITE SECTOR T:{}, S:{}, Side:{}", regTrack, regSector, currentSide);
+    }
+
+    private void executeReadAddress() {
+        dataPos = 0;
+        nextEventTStates = currentTStates + TIMING_READ_ADDRESS;
+        log.trace("BDI: Command READ ADDRESS");
+    }
+
+    private void executeReadTrack() {
+        dataPos = 0;
+        nextEventTStates = currentTStates + TIMING_READ_TRACK;
+        log.trace("BDI: Command READ TRACK");
+    }
+
+    private void executeWriteTrack() {
+        // For TRD images formatting is not required - they are pre-formatted
+        // Complete immediately as many emulators do
+        log.trace("BDI: Command WRITE TRACK (Format) - completing immediately (TRD pre-formatted)");
+        finalizeCommand(0);
+    }
+
+    private void executeUnknownCommand(int cmd) {
+        nextEventTStates = currentTStates + TIMING_STEP_DELAY;
+        log.trace("BDI: Command UNKNOWN: {}", Integer.toHexString(cmd));
+    }
+
+    private boolean isDiskReady() {
+        return getSelectedDrive().isHasDisk() && motorOn;
+    }
+
+    private void finalizeCommand(int statusFlags) {
+        log.trace("BDI: Finalize Command: {}, Status: {}",
+                Integer.toHexString(commandReg), Integer.toHexString(statusFlags));
+        regStatus = statusFlags;
+        intrq = true;
+        drq = false;
+        currentState = ControllerState.IDLE;
+    }
+
+    // ========== ULA Integration ==========
+
     @Override
     public boolean initWithULA(Ula ula) {
         initTRDOS(ula);
-        assignClock(ula);
         return true;
     }
 
@@ -605,18 +766,14 @@ public class WD1793Impl implements DiskController {
     }
 
     private void assignPorts(Ula ula) {
-        /*
-         * InPorts 0x1F, 0x3F,0x5F,0x7F,0xFF
-         */
+        // Register input ports
         ula.addPortListener(PORT_CMD_STATUS, (InPortListener) this);
         ula.addPortListener(PORT_TRACK, (InPortListener) this);
         ula.addPortListener(PORT_SECTOR, (InPortListener) this);
         ula.addPortListener(PORT_DATA, (InPortListener) this);
         ula.addPortListener(PORT_SYSTEM, (InPortListener) this);
 
-        /*
-         * OutPorts 0x1F,0x3F,0x5F,0x7F,0xFF
-         */
+        // Register output ports
         ula.addPortListener(PORT_CMD_STATUS, (OutPortListener) this);
         ula.addPortListener(PORT_TRACK, (OutPortListener) this);
         ula.addPortListener(PORT_SECTOR, (OutPortListener) this);
@@ -624,4 +781,38 @@ public class WD1793Impl implements DiskController {
         ula.addPortListener(PORT_SYSTEM, (OutPortListener) this);
     }
 
+    // ========== Utility Methods ==========
+
+    private VirtualDrive getSelectedDrive() {
+        return drives[selectedDriveIdx];
+    }
+
+    private boolean isValidDriveIndex(int drive) {
+        return drive >= 0 && drive < DRIVE_COUNT && drives[drive] != null;
+    }
+
+    private boolean isValidOffset(int offset, VirtualDrive drive) {
+        return offset >= 0 && offset < drive.dataSize();
+    }
+
+    private char getDriveLetter(int drive) {
+        return (char) ('A' + drive);
+    }
+
+    private void logSystemPortAnswer(int sys) {
+        if (lastSysAnswer == sys) {
+            sameAnswerCounter++;
+            if (sameAnswerCounter >= 1000) {
+                log.trace("In port system. Answer: {}, Answered: {} times", lastSysAnswer, sameAnswerCounter);
+                sameAnswerCounter = 0;
+            }
+        } else {
+            if (sameAnswerCounter > 0) {
+                log.trace("In port system. Answer: {}, Answered: {} times", lastSysAnswer, sameAnswerCounter);
+            }
+            sameAnswerCounter = 0;
+            lastSysAnswer = sys;
+            log.trace("In port system. Answer: {}", sys);
+        }
+    }
 }

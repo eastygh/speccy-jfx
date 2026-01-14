@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.disk.wd1793;
+package spectrum.jfx.hardware.disk;
 
 public interface VirtualDrive {
 

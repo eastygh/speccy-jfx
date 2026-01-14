@@ -1,6 +1,7 @@
 package spectrum.jfx.hardware.disk.wd1793;
 
 import lombok.Data;
+import spectrum.jfx.hardware.disk.VirtualDrive;
 
 @Data
 public class VirtualDriveImpl implements VirtualDrive {
