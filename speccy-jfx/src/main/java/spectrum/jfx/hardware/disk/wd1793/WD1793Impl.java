@@ -41,7 +41,7 @@ public class WD1793Impl implements DiskController {
 
     @Getter
     private boolean active = false;
-    private final VirtualDriveImpl[] drives = new VirtualDriveImpl[4];
+    private final VirtualDrive[] drives = new VirtualDriveImpl[4];
     private final MachineSettings machineSettings;
     private int selectedDriveIdx = 0;
     private int currentSide = 0;
@@ -100,10 +100,11 @@ public class WD1793Impl implements DiskController {
 
     @Override
     public void loadDisk(int drive, byte[] data) {
-        if (drive >= 0 && drive < 4) {
-            drives[drive].data = DiskImageAdapter.convertToTrd(data);
-            drives[drive].hasDisk = (drives[drive].data != null);
-            log.trace("BDI: Disk loaded drive {}. Size: {} bytes", (char) ('A' + drive), drives[drive].data != null ? drives[drive].data.length : 0);
+        if (drive >= 0 && drive < 4 && drives[drive] != null) {
+            drives[drive].loadRawData(DiskImageAdapter.convertToTrd(data));
+            log.trace("BDI: Disk loaded drive {}. Size: {} bytes", (char) ('A' + drive), data.length);
+        } else {
+            log.error("BDI: Invalid drive number: {}", drive);
         }
     }
 
@@ -226,7 +227,7 @@ public class WD1793Impl implements DiskController {
         // Специфичные биты для Type I (Track 0, Head Loaded)
         if (currentStatusType == StatusType.TYPE_1) {
             // Track 0
-            if (drives[selectedDriveIdx].physicalTrack == 0) {
+            if (drives[selectedDriveIdx].getPhysicalTrack() == 0) {
                 res |= S_TRACK0;
             } else {
                 res &= ~S_TRACK0;
@@ -241,14 +242,14 @@ public class WD1793Impl implements DiskController {
         }
 
         // Ready bit (7) - инвертированный READY сигнал с дисковода
-        if (!drives[selectedDriveIdx].hasDisk || !motorOn) {
+        if (!drives[selectedDriveIdx].isHasDisk() || !motorOn) {
             res |= S_NOT_READY;
         } else {
             res &= ~S_NOT_READY;
         }
 
         log.trace("BDI: Status IN: {} (State:{}, StatusType:{}, Drive:{}, T:{})",
-                Integer.toHexString(res), currentState, currentStatusType, selectedDriveIdx, drives[selectedDriveIdx].physicalTrack);
+                Integer.toHexString(res), currentState, currentStatusType, selectedDriveIdx, drives[selectedDriveIdx].getPhysicalTrack());
         return res;
     }
 
@@ -261,7 +262,7 @@ public class WD1793Impl implements DiskController {
                 return readTrackByte();
             }
 
-            VirtualDriveImpl drive = drives[selectedDriveIdx];
+            VirtualDrive drive = drives[selectedDriveIdx];
             // TRD: Track 0 Side 0, then Track 0 Side 1...
             // TR-DOS использует 16 секторов на трек
             int trackOffset = (regTrack * 2 + currentSide) * 16 * 256;
@@ -269,15 +270,15 @@ public class WD1793Impl implements DiskController {
             int offset = trackOffset + sectorOffset;
 
             int b = 0;
-            if (drive.hasDisk && offset >= 0 && (offset + dataPos) < drive.data.length) {
-                b = drive.data[offset + dataPos] & 0xFF;
+            if (drive.isHasDisk() && offset >= 0 && (offset + dataPos) < drive.dataSize()) {
+                b = drive.readByte(offset + dataPos) & 0xFF;
                 if (dataPos == 0 || dataPos == 255) {
                     log.trace("BDI: Read byte at pos {}: {}", dataPos, Integer.toHexString(b));
                 }
                 if (regTrack == 0 && regSector == 9 && dataPos == 231) {
                     log.trace("BDI: System sector ID byte (pos 231): {}", Integer.toHexString(b));
                 }
-            } else if (drive.hasDisk) {
+            } else if (drive.isHasDisk()) {
                 log.warn("BDI: Read out of bounds! T:{}, S:{}, Side:{}, Offset:{}, Pos:{}", regTrack, regSector, currentSide, offset, dataPos);
             }
 
@@ -313,15 +314,16 @@ public class WD1793Impl implements DiskController {
             drq = false;
 
             if ((commandReg & 0xE0) == 0xA0) { // Write Sector
-                VirtualDriveImpl drive = drives[selectedDriveIdx];
+                VirtualDrive drive = drives[selectedDriveIdx];
                 int trackOffset = (regTrack * 2 + currentSide) * 16 * 256;
                 int sectorOffset = (regSector - 1) * 256;
                 int offset = trackOffset + sectorOffset;
 
-                if (drive.hasDisk && drive.data != null && offset >= 0 && (offset + dataPos) < drive.data.length) {
+                if (drive.isHasDisk() && offset >= 0 && (offset + dataPos) < drive.dataSize()) {
                     // Write byte to disk
-                    drive.data[offset + dataPos] = (byte) b;
-                    drive.setDirty(true);
+                    if (!drive.writeByte(offset + dataPos, (byte) b)) {
+                        log.warn("BDI: Write failed! T:{}, S:{}, Side:{}, Offset:{}, Pos:{}", regTrack, regSector, currentSide, offset, dataPos);
+                    }
                 }
 
                 dataPos++;
@@ -359,11 +361,11 @@ public class WD1793Impl implements DiskController {
     }
 
     private int readTrackByte() {
-        VirtualDriveImpl drive = drives[selectedDriveIdx];
+        VirtualDrive drive = drives[selectedDriveIdx];
         int trackOffset = (regTrack * 2 + currentSide) * 16 * 256;
         int b = 0;
-        if (drive.hasDisk && (trackOffset + dataPos) < drive.data.length) {
-            b = drive.data[trackOffset + dataPos] & 0xFF;
+        if (drive.isHasDisk() && (trackOffset + dataPos) < drive.dataSize()) {
+            b = drive.readByte(trackOffset + dataPos) & 0xFF;
         }
         dataPos++;
         drq = false;
@@ -485,44 +487,44 @@ public class WD1793Impl implements DiskController {
                 case 0x00 -> { // Restore
                     log.trace("BDI: Command RESTORE");
                     regTrack = 0;
-                    drives[selectedDriveIdx].physicalTrack = 0;
+                    drives[selectedDriveIdx].setPhysicalTrack(0);
                     lastStepDir = -1;
                 }
                 case 0x10 -> { // Seek
                     log.trace("BDI: Command SEEK to T:{}", regData);
                     // Seek always updates regTrack and moves physical head
                     regTrack = regData;
-                    drives[selectedDriveIdx].physicalTrack = regTrack;
+                    drives[selectedDriveIdx].setPhysicalTrack(regTrack);
                 }
                 case 0x20, 0x30 -> { // Step
                     log.trace("BDI: Command STEP");
                     if ((cmd & 0x10) != 0) regTrack += lastStepDir;
-                    drives[selectedDriveIdx].physicalTrack += lastStepDir;
+                    drives[selectedDriveIdx].deltaPhysicalTrack(lastStepDir);
                 }
                 case 0x40, 0x50 -> { // Step In
                     log.trace("BDI: Command STEP IN");
                     lastStepDir = 1;
                     if ((cmd & 0x10) != 0) regTrack += lastStepDir;
-                    drives[selectedDriveIdx].physicalTrack += lastStepDir;
+                    drives[selectedDriveIdx].deltaPhysicalTrack(lastStepDir);
                 }
                 case 0x60, 0x70 -> { // Step Out
                     log.trace("BDI: Command STEP OUT");
                     lastStepDir = -1;
                     if ((cmd & 0x10) != 0) regTrack += lastStepDir;
-                    drives[selectedDriveIdx].physicalTrack += lastStepDir;
+                    drives[selectedDriveIdx].deltaPhysicalTrack(lastStepDir);
                 }
             }
             // Constraints
             if (regTrack < 0) regTrack = 0;
             if (regTrack > 160) regTrack = 160;
-            if (drives[selectedDriveIdx].physicalTrack < 0) drives[selectedDriveIdx].physicalTrack = 0;
-            if (drives[selectedDriveIdx].physicalTrack > 160) drives[selectedDriveIdx].physicalTrack = 160;
+            if (drives[selectedDriveIdx].getPhysicalTrack() < 0) drives[selectedDriveIdx].setPhysicalTrack(0);
+            if (drives[selectedDriveIdx].getPhysicalTrack() > 160) drives[selectedDriveIdx].setPhysicalTrack(160);
 
             nextEventTStates = currentTStates + 5000; // Задержка на механику
         } else { // Type II / III
             currentStatusType = StatusType.TYPE_2;
-            if (!drives[selectedDriveIdx].hasDisk || !motorOn) {
-                log.warn("BDI: Command {} failed: Not Ready (Motor:{}, Disk:{})", Integer.toHexString(cmd), motorOn, drives[selectedDriveIdx].hasDisk);
+            if (!drives[selectedDriveIdx].isHasDisk() || !motorOn) {
+                log.warn("BDI: Command {} failed: Not Ready (Motor:{}, Disk:{})", Integer.toHexString(cmd), motorOn, drives[selectedDriveIdx].isHasDisk());
                 finalizeCommand(S_NOT_READY);
                 return;
             }
