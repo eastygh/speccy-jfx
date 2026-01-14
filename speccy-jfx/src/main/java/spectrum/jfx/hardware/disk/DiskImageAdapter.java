@@ -1,8 +1,10 @@
 package spectrum.jfx.hardware.disk;
 
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@UtilityClass
 public class DiskImageAdapter {
 
     private static final String SCL_SIGNATURE = "SINCLAIR";
