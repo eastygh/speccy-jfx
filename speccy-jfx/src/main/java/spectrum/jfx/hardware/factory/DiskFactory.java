@@ -6,9 +6,6 @@ import spectrum.jfx.hardware.disk.DiskController;
 import spectrum.jfx.hardware.disk.wd1793.WD1793Impl;
 import spectrum.jfx.hardware.machine.MachineSettings;
 import spectrum.jfx.hardware.ula.Ula;
-import spectrum.jfx.hardware.util.EmulatorUtils;
-
-import java.io.IOException;
 
 @Slf4j
 @UtilityClass
@@ -29,18 +26,9 @@ public class DiskFactory {
             throw new IllegalArgumentException("Unsupported disk controller type: " + machineSettings.getDiskControllerType());
         }
 
-        byte[] diskData = null;
-        byte[] diskData2 = null;
-        try {
-            diskData2 = EmulatorUtils.loadFile("disk/38_exolon.scl");
-            diskData = EmulatorUtils.loadFile("disk/BubLand2.trd");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        diskController.loadDisk(0, diskData);
-        diskController.loadDisk(1, new byte[655360]);
-        diskController.loadDisk(2, diskData2);
+        diskController.getDrive(0).loadDisk("disk/BubLand2.trd");
+        diskController.getDrive(1).loadDisk("disk/38_exolon.scl");
+        diskController.getDrive(2).insertBlankDisk();
 
         return diskController;
     }

@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.disk.DiskController;
-import spectrum.jfx.hardware.disk.DiskImageAdapter;
 import spectrum.jfx.hardware.disk.DriveStatusListener;
 import spectrum.jfx.hardware.disk.VirtualDrive;
 import spectrum.jfx.hardware.disk.trdos.TRDOSController;
@@ -104,16 +103,6 @@ public class WD1793Impl implements DiskController {
     }
 
     @Override
-    public void loadDisk(int drive, byte[] data) {
-        if (isValidDriveIndex(drive)) {
-            drives[drive].loadRawData(DiskImageAdapter.convertToTrd(data));
-            log.trace("BDI: Disk loaded drive {}. Size: {} bytes", getDriveLetter(drive), data.length);
-        } else {
-            log.error("BDI: Invalid drive number: {}", drive);
-        }
-    }
-
-    @Override
     public void reset() {
         regTrack = 0;
         regSector = DEFAULT_SECTOR;
@@ -148,6 +137,11 @@ public class WD1793Impl implements DiskController {
 
     @Override
     public void triggerNMI() {
+    }
+
+    @Override
+    public VirtualDrive getDrive(int driveIdx) {
+        return drives[driveIdx];
     }
 
     // ========== Clock Listener ==========
@@ -490,7 +484,8 @@ public class WD1793Impl implements DiskController {
         switch (cmdType) {
             case WRITE_SECTOR -> writeSectorDataByte(byteValue);
             case WRITE_TRACK -> writeTrackDataByte();
-            default -> { }
+            default -> {
+            }
         }
     }
 

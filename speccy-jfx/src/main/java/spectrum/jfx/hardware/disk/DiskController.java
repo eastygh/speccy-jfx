@@ -12,9 +12,11 @@ import spectrum.jfx.hardware.ula.Ula;
 public interface DiskController extends Device, ClockListener, InPortListener, OutPortListener {
 
     /**
-     * Loads disk image data (supports TRD, SCL, etc.)
+     * Gets a specific drive by index.
+     * @param driveIdx - index of the drive (0-based A,B,C,D)
+     * @return the VirtualDrive instance for the specified drive or null if not available
      */
-    void loadDisk(int drive, byte[] data);
+    VirtualDrive getDrive(int driveIdx);
 
     /**
      * Sets the listener for drive activity events (LEDs for UI)

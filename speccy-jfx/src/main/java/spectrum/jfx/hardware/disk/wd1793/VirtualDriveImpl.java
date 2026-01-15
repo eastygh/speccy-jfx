@@ -1,7 +1,12 @@
 package spectrum.jfx.hardware.disk.wd1793;
 
 import lombok.Data;
+import lombok.SneakyThrows;
+import spectrum.jfx.hardware.disk.DiskImageAdapter;
 import spectrum.jfx.hardware.disk.VirtualDrive;
+import spectrum.jfx.hardware.util.EmulatorUtils;
+
+import java.io.File;
 
 @Data
 public class VirtualDriveImpl implements VirtualDrive {
@@ -12,7 +17,13 @@ public class VirtualDriveImpl implements VirtualDrive {
 
     private boolean readOnly;
     private boolean dirty;
-    String trdFileName;
+    private String trdFileName;
+    private boolean scl;
+
+    @Override
+    public String getFileName() {
+        return trdFileName;
+    }
 
     @Override
     public void insertBlankDisk() {
@@ -28,11 +39,33 @@ public class VirtualDriveImpl implements VirtualDrive {
         data = null;
         hasDisk = false;
         trdFileName = "";
+        physicalTrack = 0;
+        dirty = false;
+        scl = false;
+        readOnly = false;
     }
 
     @Override
+    @SneakyThrows
     public void loadDisk(String fileName) {
+        this.trdFileName = fileName;
+        byte[] trdData = EmulatorUtils.loadFile(fileName);
+        if (DiskImageAdapter.isScl(trdData)) {
+            this.scl = true;
+            this.data = DiskImageAdapter.convertToTrd(trdData);
+        } else {
+            this.scl = false;
+            this.data = trdData;
+        }
+        this.hasDisk = true;
+        this.physicalTrack = 0;
+        this.dirty = false;
+    }
 
+    @Override
+    @SneakyThrows
+    public void loadDisk(File file) {
+        loadDisk(file.getAbsolutePath());
     }
 
     @Override
@@ -55,6 +88,7 @@ public class VirtualDriveImpl implements VirtualDrive {
             return false;
         }
         data[offset] = value;
+        dirty = true;
         return true;
     }
 
@@ -66,6 +100,20 @@ public class VirtualDriveImpl implements VirtualDrive {
     @Override
     public void deltaPhysicalTrack(int delta) {
         this.physicalTrack += delta;
+    }
+
+    @Override
+    @SneakyThrows
+    public void flush() {
+        if (!readOnly && dirty) {
+            if (scl) {
+                byte[] trdData = DiskImageAdapter.convertToScl(data);
+                EmulatorUtils.saveFile(trdFileName, trdData);
+            } else {
+                EmulatorUtils.saveFile(trdFileName, data);
+            }
+            dirty = false;
+        }
     }
 
 }

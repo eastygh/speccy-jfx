@@ -1,5 +1,7 @@
 package spectrum.jfx.hardware.disk;
 
+import java.io.File;
+
 public interface VirtualDrive {
 
     void setDirty(boolean dirty);
@@ -10,9 +12,22 @@ public interface VirtualDrive {
 
     void loadDisk(String fileName);
 
+    void loadDisk(File file);
+
     void loadRawData(byte[] data);
 
     void setReadOnly(boolean readOnly);
+
+    /**
+     * Checks if the drive is read-only.
+     */
+    void isReadOnly();
+
+    /**
+     * Get the file name of the disk loaded from
+     * @return the file name of the disk loaded from
+     */
+    String getFileName();
 
     byte readByte(int offset);
 
@@ -29,6 +44,7 @@ public interface VirtualDrive {
 
     /**
      * Change the physical track by delta. (+ or -)
+     *
      * @param delta - delta to change the physical track
      */
     void deltaPhysicalTrack(int delta);
@@ -38,5 +54,10 @@ public interface VirtualDrive {
     boolean isHasDisk();
 
     int dataSize();
+
+    /**
+     * Flush the drive data to the file if supported.
+     */
+    void flush();
 
 }

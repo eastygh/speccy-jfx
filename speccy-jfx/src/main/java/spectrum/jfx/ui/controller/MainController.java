@@ -190,10 +190,9 @@ public class MainController implements LocalizationChangeListener {
         File file = fileChooser.showOpenDialog(scene.getWindow());
         if (file != null) {
             try {
-                byte[] data = java.nio.file.Files.readAllBytes(file.toPath());
-                getEmulator().getDiskController().loadDisk(driveIdx, data);
+                getEmulator().getDiskController().getDrive(driveIdx).loadDisk(file.toPath().toString());
                 log.info("Disk inserted into drive {}: {}", (char) ('A' + driveIdx), file.getName());
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.error("Failed to load disk image", e);
             }
         }
@@ -239,11 +238,11 @@ public class MainController implements LocalizationChangeListener {
 
             if (ledOff.isError()) {
                 log.error("Error loading led-off.png: {}",
-                    ledOff.getException() != null ? ledOff.getException().getMessage() : "unknown error");
+                        ledOff.getException() != null ? ledOff.getException().getMessage() : "unknown error");
             }
             if (ledOn.isError()) {
                 log.error("Error loading led-on.png: {}",
-                    ledOn.getException() != null ? ledOn.getException().getMessage() : "unknown error");
+                        ledOn.getException() != null ? ledOn.getException().getMessage() : "unknown error");
             }
         } catch (Exception e) {
             log.error("Failed to load drive images", e);
