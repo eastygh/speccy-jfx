@@ -52,7 +52,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
     Video<?> video;
     Keyboard keyboard;
     Sound sound;
-    AY38912 ay38912;
+    Sound ay38912;
     Ula ula;
     CassetteDeckImpl cassetteDeck;
     Kempston kempston;
@@ -110,7 +110,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
         this.ay38912 = new AY38912(machineSettings); // Sound AY-3-8912
         devices.add(ay38912);
-        this.ula.addPortListener(0xfd, (OutPortListener) ay38912);
+        this.ula.addPortListener(0xfd, ay38912);
         this.ula.addPortListener(0xfd, (InPortListener) ay38912);
         this.ula.addClockListener(ay38912);
 
