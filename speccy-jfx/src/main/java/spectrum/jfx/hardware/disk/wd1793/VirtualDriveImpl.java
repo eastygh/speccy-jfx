@@ -8,17 +8,25 @@ import spectrum.jfx.hardware.util.EmulatorUtils;
 
 import java.io.File;
 
+import static spectrum.jfx.hardware.disk.wd1793.TrdDiskGeometry.*;
+import static spectrum.jfx.hardware.util.EmulatorUtils.isFileReadable;
+
 @Data
 public class VirtualDriveImpl implements VirtualDrive {
 
     byte[] data;
     boolean hasDisk;
     int physicalTrack;
+    int index;
 
     private boolean readOnly;
     private boolean dirty;
     private String trdFileName;
     private boolean scl;
+
+    public VirtualDriveImpl(int index) {
+        this.index = index;
+    }
 
     @Override
     public String getFileName() {
@@ -29,9 +37,14 @@ public class VirtualDriveImpl implements VirtualDrive {
     public void insertBlankDisk() {
         hasDisk = true;
         physicalTrack = 0;
-        data = new byte[160 * 256 * 2];
+        readOnly = false;
         dirty = false;
-        trdFileName = null;
+        trdFileName = "BLANK-DSK-" + index + ".trd";
+        if (isFileReadable(trdFileName)) {
+            loadDisk(trdFileName);
+        } else {
+            data = new byte[BYTES_PER_TRACK * TRACKS * SIDES];
+        }
     }
 
     @Override

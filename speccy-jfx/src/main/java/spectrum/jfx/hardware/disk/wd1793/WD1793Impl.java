@@ -81,7 +81,7 @@ public class WD1793Impl implements DiskController {
 
     private void initializeDrives() {
         for (int i = 0; i < DRIVE_COUNT; i++) {
-            drives[i] = new VirtualDriveImpl();
+            drives[i] = new VirtualDriveImpl(i);
         }
     }
 
@@ -151,6 +151,15 @@ public class WD1793Impl implements DiskController {
         this.currentTStates = tStates;
         processSearchingState(tStates);
         checkDrqTimeout(tStates);
+        if (currentState == ControllerState.IDLE) {
+            processIdleState(tStates);
+        }
+    }
+
+    private void processIdleState(long tStates) {
+        for (VirtualDrive drive : drives) {
+            drive.flush();
+        }
     }
 
     private void processSearchingState(long tStates) {

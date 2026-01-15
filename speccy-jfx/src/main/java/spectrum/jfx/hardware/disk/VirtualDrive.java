@@ -21,7 +21,7 @@ public interface VirtualDrive {
     /**
      * Checks if the drive is read-only.
      */
-    void isReadOnly();
+    boolean isReadOnly();
 
     /**
      * Get the file name of the disk loaded from

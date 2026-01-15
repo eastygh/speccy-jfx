@@ -24,6 +24,11 @@ public final class TrdDiskGeometry {
     public static final int SIDES = 2;
 
     /**
+     * Number of tracks per side
+     */
+    public static final int TRACKS = 80;
+
+    /**
      * Number of sectors per track
      */
     public static final int SECTORS_PER_TRACK = 16;
