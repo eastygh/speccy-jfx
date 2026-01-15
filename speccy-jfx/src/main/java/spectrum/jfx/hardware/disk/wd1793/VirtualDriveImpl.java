@@ -107,8 +107,8 @@ public class VirtualDriveImpl implements VirtualDrive {
     public void flush() {
         if (!readOnly && dirty) {
             if (scl) {
-                byte[] trdData = DiskImageAdapter.convertToScl(data);
-                EmulatorUtils.saveFile(trdFileName, trdData);
+                byte[] sclData = DiskImageAdapter.convertToScl(data);
+                EmulatorUtils.saveFile(trdFileName, sclData);
             } else {
                 EmulatorUtils.saveFile(trdFileName, data);
             }
