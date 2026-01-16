@@ -1,5 +1,8 @@
 package spectrum.jfx.ui.controller;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -9,13 +12,20 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.tape.events.CassetteDeckEvent;
 import spectrum.jfx.hardware.tape.flash.FlashTapLoader;
+import spectrum.jfx.hardware.tape.record.RecordingState;
+import spectrum.jfx.hardware.tape.record.TapeRecordListener;
+import spectrum.jfx.hardware.tape.tap.TapBlock;
 import spectrum.jfx.machine.Machine;
 import spectrum.jfx.model.TapeFile;
 import spectrum.jfx.model.TapeSection;
@@ -33,13 +43,17 @@ import static spectrum.jfx.hardware.tape.flash.FlashTapLoader.triggerLoadCommand
 import static spectrum.jfx.ui.util.TapeFileParser.parseTapeFile;
 
 @Slf4j
-public class TapeLibraryController implements Initializable, LocalizationChangeListener, CassetteDeckEvent {
+public class TapeLibraryController implements Initializable, LocalizationChangeListener, CassetteDeckEvent, TapeRecordListener {
 
     // Toolbar controls
     @FXML
     private Button playButton;
     @FXML
     private Button stopButton;
+    @FXML
+    private Button recordButton;
+    @FXML
+    private Button saveRecordingButton;
     @FXML
     private Button flashLoad;
     @FXML
@@ -81,21 +95,44 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
     @FXML
     private Label playbackStatusLabel;
     @FXML
+    private HBox recordingIndicatorBox;
+    @FXML
+    private Circle recordingCircle;
+    @FXML
+    private Label recordingStatusLabel;
+    @FXML
+    private Separator recordingSeparator;
+    @FXML
     private Label currentFileLabel;
     @FXML
     private Label currentSectionLabel;
     @FXML
+    private Label recordedBlocksLabel;
+    @FXML
     private ProgressBar playbackProgressBar;
+
+    // Recording panel
+    @FXML
+    private VBox sectionsPanel;
+    @FXML
+    private VBox recordingPanel;
+    @FXML
+    private ListView<TapBlock> recordedBlocksListView;
+    @FXML
+    private Button clearRecordingButton;
 
     private TapeCollection tapeCollection;
     private ObservableList<TapeFile> fileObservableList;
     private ObservableList<TapeSection> sectionObservableList;
+    private ObservableList<TapBlock> recordedBlocksObservableList;
 
     @Setter
     private Stage stage;
 
     private LocalizationManager localizationManager;
     private boolean isPlaying = false;
+    private boolean isRecording = false;
+    private Timeline recordingBlinkAnimation;
     private TapeFile currentFile = null;
     private TapeSection currentSection = null;
 
@@ -197,11 +234,54 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
         // Изначально отключаем кнопки воспроизведения
         updatePlaybackControls(false);
 
+        // Initialize recorded blocks list
+        recordedBlocksObservableList = FXCollections.observableArrayList();
+        recordedBlocksListView.setItems(recordedBlocksObservableList);
+        recordedBlocksListView.setCellFactory(listView -> new ListCell<TapBlock>() {
+            @Override
+            protected void updateItem(TapBlock block, boolean empty) {
+                super.updateItem(block, empty);
+                if (empty || block == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    int index = getIndex() + 1;
+                    String type = block.isHeader()
+                            ? localizationManager.getString("recording.headerBlock")
+                            : localizationManager.getString("recording.dataBlock");
+                    String checksum = block.isChecksumValid()
+                            ? localizationManager.getString("recording.checksumOk")
+                            : localizationManager.getString("recording.checksumFail");
+
+                    String name = block.getFilename();
+                    String displayType = name != null ? type + ": " + name : type;
+
+                    setText(localizationManager.getString("recording.blockInfo",
+                            index, displayType, block.getBlockLength(), checksum));
+
+                    if (!block.isChecksumValid()) {
+                        setStyle("-fx-text-fill: red;");
+                    } else {
+                        setStyle("");
+                    }
+                }
+            }
+        });
+
+        // Initialize blinking animation for recording indicator
+        recordingBlinkAnimation = new Timeline(
+                new KeyFrame(Duration.millis(500), e -> {
+                    recordingCircle.setVisible(!recordingCircle.isVisible());
+                })
+        );
+        recordingBlinkAnimation.setCycleCount(Animation.INDEFINITE);
+
         // Обновляем информацию о коллекции
         updateCollectionInfo();
 
         Machine.withCassetteDeck((cd, hp) -> {
             cd.addCassetteDeckEventListener(this);
+            cd.addRecordListener(this);
             cd.setSoundPushBack(settings.isEmulateTapeSound());
             toggleTapeSound.setSelected(settings.isEmulateTapeSound());
         });
@@ -257,14 +337,78 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
 
     private void updatePlaybackControls(boolean playing) {
         isPlaying = playing;
-        playButton.setDisable(playing);
-        stopButton.setDisable(!playing);
+        playButton.setDisable(playing || isRecording);
+        stopButton.setDisable(!playing && !isRecording);
+        recordButton.setDisable(playing || isRecording);
 
-        fastLoad.setDisable(playing);
-        flashLoad.setDisable(playing);
+        fastLoad.setDisable(playing || isRecording);
+        flashLoad.setDisable(playing || isRecording);
+
+        // Disable collection management during playback/recording
+        addFileButton.setDisable(isRecording);
+        removeFileButton.setDisable(isRecording);
+        clearAllButton.setDisable(isRecording);
+
+        // Disable file/section lists during recording
+        fileListView.setDisable(isRecording);
+        sectionListView.setDisable(isRecording);
 
         playbackStatusLabel.setText(playing ? localizationManager.getString("playback.playing") : localizationManager.getString("playback.stopped"));
         playbackProgressBar.setVisible(playing);
+    }
+
+    private void updateRecordingControls(boolean recording) {
+        isRecording = recording;
+        playButton.setDisable(isPlaying || recording);
+        stopButton.setDisable(!isPlaying && !recording);
+        recordButton.setDisable(isPlaying || recording);
+
+        fastLoad.setDisable(isPlaying || recording);
+        flashLoad.setDisable(isPlaying || recording);
+
+        // Disable collection management during recording
+        addFileButton.setDisable(recording);
+        removeFileButton.setDisable(recording);
+        clearAllButton.setDisable(recording);
+
+        // Disable file/section lists during recording
+        fileListView.setDisable(recording);
+
+        // Update recording status indicator with blinking
+        recordingIndicatorBox.setVisible(recording);
+        recordingIndicatorBox.setManaged(recording);
+        recordingSeparator.setVisible(recording);
+        recordingSeparator.setManaged(recording);
+
+        // Switch between sections panel and recording panel
+        sectionsPanel.setVisible(!recording);
+        sectionsPanel.setManaged(!recording);
+        recordingPanel.setVisible(recording || recordedBlocksObservableList.size() > 0);
+        recordingPanel.setManaged(recording || recordedBlocksObservableList.size() > 0);
+
+        if (recording) {
+            // Start blinking animation
+            recordingCircle.setVisible(true);
+            recordingBlinkAnimation.play();
+            statusLabel.setText(localizationManager.getString("recording.started"));
+        } else {
+            // Stop blinking animation
+            recordingBlinkAnimation.stop();
+            recordingCircle.setVisible(true);
+            statusLabel.setText(localizationManager.getString("recording.stopped"));
+        }
+    }
+
+    private void updateRecordedBlocksDisplay(int blockCount) {
+        Platform.runLater(() -> {
+            if (blockCount > 0) {
+                recordedBlocksLabel.setText(localizationManager.getString("recording.blocks", blockCount));
+                saveRecordingButton.setDisable(false);
+            } else {
+                recordedBlocksLabel.setText("");
+                saveRecordingButton.setDisable(true);
+            }
+        });
     }
 
     // Normal tape playback
@@ -307,6 +451,17 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
 
     @FXML
     private void onStop() {
+        if (isRecording) {
+            Machine.withCassetteDeck((cassetteDeck, hardwareProvider) -> {
+                if (cassetteDeck != null) {
+                    cassetteDeck.stopRecording();
+                }
+            });
+            Platform.runLater(() -> updateRecordingControls(false));
+            log.info("Stopping recording");
+            return;
+        }
+
         setSpeedUpMode(false);
         updatePlaybackControls(false);
         currentFileLabel.setText("");
@@ -318,6 +473,93 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
             }
         });
         log.info("Stopping playback");
+    }
+
+    @FXML
+    private void onRecord() {
+        Machine.withCassetteDeck((cassetteDeck, hardwareProvider) -> {
+            if (cassetteDeck != null) {
+                // Check if there are already recorded blocks
+                if (cassetteDeck.getRecordedBlockCount() > 0) {
+                    Platform.runLater(() -> {
+                        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+                        confirmation.setTitle(localizationManager.getString("confirm.clearRecording.title"));
+                        confirmation.setHeaderText(localizationManager.getString("confirm.clearRecording.header"));
+                        confirmation.setContentText(localizationManager.getString("confirm.clearRecording.content",
+                                cassetteDeck.getRecordedBlockCount()));
+                        ThemeManager.applyThemeToDialog(confirmation);
+
+                        confirmation.showAndWait().ifPresent(response -> {
+                            if (response == ButtonType.OK) {
+                                Machine.withCassetteDeck((cd, hp) -> {
+                                    cd.clearRecording();
+                                    cd.startRecording();
+                                });
+                                recordedBlocksObservableList.clear();
+                                updateRecordingControls(true);
+                                updateRecordedBlocksDisplay(0);
+                            }
+                        });
+                    });
+                } else {
+                    cassetteDeck.startRecording();
+                    Platform.runLater(() -> {
+                        recordedBlocksObservableList.clear();
+                        updateRecordingControls(true);
+                        updateRecordedBlocksDisplay(0);
+                    });
+                }
+            }
+        });
+        log.info("Starting recording");
+    }
+
+    @FXML
+    private void onSaveRecording() {
+        Machine.withCassetteDeck((cassetteDeck, hardwareProvider) -> {
+            if (cassetteDeck == null || cassetteDeck.getRecordedBlockCount() == 0) {
+                Platform.runLater(() -> showWarning(localizationManager.getString("recording.noBlocks")));
+                return;
+            }
+
+            Platform.runLater(() -> {
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle(localizationManager.getString("recording.saveTitle"));
+                fileChooser.getExtensionFilters().add(
+                        new FileChooser.ExtensionFilter(localizationManager.getString("filechooser.tap"), "*.tap")
+                );
+                fileChooser.setInitialFileName("recording.tap");
+
+                AppSettings settings = AppSettings.getInstance();
+                if (!settings.getLastSnapshotPath().isEmpty()) {
+                    File lastDir = new File(settings.getLastSnapshotPath()).getParentFile();
+                    if (lastDir != null && lastDir.exists()) {
+                        fileChooser.setInitialDirectory(lastDir);
+                    }
+                }
+
+                File file = fileChooser.showSaveDialog(stage);
+                if (file != null) {
+                    try {
+                        Machine.withCassetteDeck((cd, hp) -> {
+                            try {
+                                cd.saveRecordedTape(file.getAbsolutePath());
+                                Platform.runLater(() -> {
+                                    statusLabel.setText(localizationManager.getString("recording.saved", file.getName()));
+                                    // Optionally add to collection
+                                    addFileToCollection(file);
+                                });
+                            } catch (Exception e) {
+                                Platform.runLater(() -> showError(localizationManager.getString("error.message", e.getMessage())));
+                            }
+                        });
+                        settings.saveLastSnapshotPath(file.getAbsolutePath());
+                    } catch (Exception e) {
+                        showError(localizationManager.getString("error.message", e.getMessage()));
+                    }
+                }
+            });
+        });
     }
 
     @FXML
@@ -661,5 +903,87 @@ public class TapeLibraryController implements Initializable, LocalizationChangeL
         Machine.withHardwareProvider(
                 hardwareProvider -> hardwareProvider.getEmulator().setSpeedUpMode(speedUpMode)
         );
+    }
+
+    // ========== TapeRecordListener Implementation ==========
+
+    @Override
+    public void onPilotDetected(int pilotCount) {
+        log.debug("Pilot detected: {} pulses", pilotCount);
+    }
+
+    @Override
+    public void onByteRecorded(int byteValue, int byteIndex) {
+        // Called frequently during recording, no UI update needed
+    }
+
+    @Override
+    public void onBlockRecorded(int flagByte, byte[] data, boolean valid) {
+        log.info("Block recorded: flag=0x{}, size={}, valid={}",
+                Integer.toHexString(flagByte), data.length, valid);
+        Machine.withCassetteDeck((cd, hp) -> {
+            Platform.runLater(() -> {
+                // Add the new block to the list
+                var blocks = cd.getRecordedBlocks();
+                if (!blocks.isEmpty()) {
+                    TapBlock lastBlock = blocks.get(blocks.size() - 1);
+                    if (!recordedBlocksObservableList.contains(lastBlock)) {
+                        recordedBlocksObservableList.add(lastBlock);
+                    }
+                }
+                updateRecordedBlocksDisplay(cd.getRecordedBlockCount());
+            });
+        });
+    }
+
+    @Override
+    public void onRecordingError(RecordingState state, String message) {
+        log.warn("Recording error in state {}: {}", state, message);
+    }
+
+    @Override
+    public void onRecordingStopped(int blocksRecorded) {
+        log.info("Recording stopped, {} blocks recorded", blocksRecorded);
+        Platform.runLater(() -> {
+            updateRecordingControls(false);
+            updateRecordedBlocksDisplay(blocksRecorded);
+            // Show recording panel if there are recorded blocks
+            if (blocksRecorded > 0) {
+                sectionsPanel.setVisible(false);
+                sectionsPanel.setManaged(false);
+                recordingPanel.setVisible(true);
+                recordingPanel.setManaged(true);
+            }
+        });
+    }
+
+    @FXML
+    private void onClearRecording() {
+        int blockCount = recordedBlocksObservableList.size();
+        if (blockCount == 0) {
+            return;
+        }
+
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle(localizationManager.getString("confirm.clearRecording.title"));
+        confirmation.setHeaderText(localizationManager.getString("confirm.clearRecording.header"));
+        confirmation.setContentText(localizationManager.getString("confirm.clearRecording.content", blockCount));
+        ThemeManager.applyThemeToDialog(confirmation);
+
+        confirmation.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                Machine.withCassetteDeck((cd, hp) -> cd.clearRecording());
+                recordedBlocksObservableList.clear();
+                updateRecordedBlocksDisplay(0);
+
+                // Switch back to sections panel
+                sectionsPanel.setVisible(true);
+                sectionsPanel.setManaged(true);
+                recordingPanel.setVisible(false);
+                recordingPanel.setManaged(false);
+
+                statusLabel.setText(localizationManager.getString("tape.ready"));
+            }
+        });
     }
 }

@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="spectrum.jfx.ui.controller.TapeLibraryController"
             prefWidth="800" prefHeight="600">
 
@@ -19,6 +20,18 @@
                     <Tooltip text="%tooltip.stop"/>
                 </tooltip>
             </Button>
+            <Separator/>
+            <Button text="%btn.record" fx:id="recordButton" onAction="#onRecord" styleClass="record-button">
+                <tooltip>
+                    <Tooltip text="%tooltip.record"/>
+                </tooltip>
+            </Button>
+            <Button text="%btn.saveRecording" fx:id="saveRecordingButton" onAction="#onSaveRecording" disable="true">
+                <tooltip>
+                    <Tooltip text="%tooltip.saveRecording"/>
+                </tooltip>
+            </Button>
+            <Separator/>
             <Button text="%btn.flashLoad" fx:id="flashLoad" onAction="#onFlashLoad">
                 <tooltip>
                     <Tooltip text="%tooltip.flashLoad"/>
@@ -101,16 +114,37 @@
 
                 <Separator/>
 
-                <!-- File sections -->
+                <!-- File sections / Recording panel (switchable) -->
                 <VBox VBox.vgrow="ALWAYS" spacing="5">
-                    <Label text="%tape.fileSections" styleClass="section-header"/>
+                    <!-- Normal sections view -->
+                    <VBox fx:id="sectionsPanel" VBox.vgrow="ALWAYS" spacing="5">
+                        <Label text="%tape.fileSections" styleClass="section-header"/>
+                        <ListView fx:id="sectionListView" VBox.vgrow="ALWAYS">
+                            <placeholder>
+                                <Label text="%tape.noSectionsAvailable"
+                                       textAlignment="CENTER" styleClass="placeholder-text"/>
+                            </placeholder>
+                        </ListView>
+                    </VBox>
 
-                    <ListView fx:id="sectionListView" VBox.vgrow="ALWAYS">
-                        <placeholder>
-                            <Label text="%tape.noSectionsAvailable"
-                                   textAlignment="CENTER" styleClass="placeholder-text"/>
-                        </placeholder>
-                    </ListView>
+                    <!-- Recording panel (shown during/after recording) -->
+                    <VBox fx:id="recordingPanel" VBox.vgrow="ALWAYS" spacing="5" visible="false" managed="false">
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="%recording.recordedBlocks" styleClass="section-header"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button text="%btn.clearRecording" fx:id="clearRecordingButton" onAction="#onClearRecording">
+                                <tooltip>
+                                    <Tooltip text="%tooltip.clearRecording"/>
+                                </tooltip>
+                            </Button>
+                        </HBox>
+                        <ListView fx:id="recordedBlocksListView" VBox.vgrow="ALWAYS">
+                            <placeholder>
+                                <Label text="%recording.noBlocksYet"
+                                       textAlignment="CENTER" styleClass="placeholder-text"/>
+                            </placeholder>
+                        </ListView>
+                    </VBox>
                 </VBox>
 
                 <!-- Section controls -->
@@ -135,10 +169,17 @@
             </padding>
             <Label fx:id="playbackStatusLabel" text="%tape.stopped"/>
             <Separator orientation="VERTICAL"/>
+            <!-- Recording indicator with red circle -->
+            <HBox fx:id="recordingIndicatorBox" spacing="5" alignment="CENTER_LEFT" visible="false" managed="false">
+                <Circle fx:id="recordingCircle" radius="6" fill="RED" styleClass="recording-circle"/>
+                <Label fx:id="recordingStatusLabel" text="REC" styleClass="recording-label"/>
+            </HBox>
+            <Separator fx:id="recordingSeparator" orientation="VERTICAL" visible="false" managed="false"/>
             <Label fx:id="currentFileLabel" text=""/>
             <Separator orientation="VERTICAL"/>
             <Label fx:id="currentSectionLabel" text=""/>
             <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="recordedBlocksLabel" text="" styleClass="info-text"/>
             <ProgressBar fx:id="playbackProgressBar" visible="false" prefWidth="150"/>
         </HBox>
     </bottom>
