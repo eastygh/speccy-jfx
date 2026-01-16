@@ -96,7 +96,7 @@ public class CassetteDeckImpl
         if (tapeRecorder.isRecording()) {
             if (pushBack && sound != null && pushBackEnabled) {
                 boolean mic = (value & MIC_MASK) != 0;
-                sound.pushBackTape(mic);
+                //sound.pushBackTape(mic);
             }
             tapeRecorder.processOutput(value, tStates);
         }
@@ -151,6 +151,7 @@ public class CassetteDeckImpl
             log.warn("Already recording");
             return;
         }
+        pushBack = true;
         tapeRecorder.startRecording();
         log.info("Recording started");
     }
@@ -160,6 +161,7 @@ public class CassetteDeckImpl
         if (!tapeRecorder.isRecording()) {
             return;
         }
+        pushBack = false;
         tapeRecorder.stopRecording();
         log.info("Recording stopped, {} blocks", tapeRecorder.getBlocksRecorded());
     }
