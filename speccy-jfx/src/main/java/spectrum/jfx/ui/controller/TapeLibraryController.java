@@ -14,8 +14,8 @@ import javafx.stage.Stage;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import spectrum.jfx.hardware.tape.CassetteDeckEvent;
-import spectrum.jfx.hardware.tape.FlashTapLoader;
+import spectrum.jfx.hardware.tape.events.CassetteDeckEvent;
+import spectrum.jfx.hardware.tape.flash.FlashTapLoader;
 import spectrum.jfx.machine.Machine;
 import spectrum.jfx.model.TapeFile;
 import spectrum.jfx.model.TapeSection;
@@ -29,7 +29,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import static spectrum.jfx.hardware.tape.FlashTapLoader.triggerLoadCommand;
+import static spectrum.jfx.hardware.tape.flash.FlashTapLoader.triggerLoadCommand;
 import static spectrum.jfx.ui.util.TapeFileParser.parseTapeFile;
 
 @Slf4j

@@ -1,21 +1,42 @@
 package spectrum.jfx.hardware.tape;
 
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.sound.Sound;
+import spectrum.jfx.hardware.tape.events.CassetteDeckEvent;
+import spectrum.jfx.hardware.tape.events.TapFilePlaybackEvent;
+import spectrum.jfx.hardware.tape.playback.PilotToneSignal;
+import spectrum.jfx.hardware.tape.playback.SilentToneSignal;
+import spectrum.jfx.hardware.tape.playback.TapFilePlayback;
+import spectrum.jfx.hardware.tape.record.TapeRecordListener;
+import spectrum.jfx.hardware.tape.record.TapeRecorder;
+import spectrum.jfx.hardware.tape.tap.TapBlock;
 import spectrum.jfx.hardware.ula.ClockListener;
 import spectrum.jfx.hardware.ula.InPortListener;
 import spectrum.jfx.hardware.ula.OutPortListener;
 import spectrum.jfx.model.TapeFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static spectrum.jfx.hardware.tape.TapeConstants.EAR_MASK;
+import static spectrum.jfx.hardware.tape.TapeConstants.MIC_MASK;
+
+/**
+ * Implementation of the cassette deck for tape playback and recording.
+ * <p>
+ * Handles both:
+ * - EAR (bit 6 of port 0xFE): Reading from tape
+ * - MIC (bit 3 of port 0xFE): Writing to tape
+ */
+@Slf4j
 public class CassetteDeckImpl
         implements InPortListener, OutPortListener, CassetteDeck, ClockListener, TapFilePlaybackEvent {
 
     private final List<CassetteDeckEvent> eventsReceivers = new CopyOnWriteArrayList<>();
-    private final PilotToneSignal pilotToneSignal = new PilotToneSignal(2168, true);
+    private final PilotToneSignal pilotToneSignal = new PilotToneSignal(TapeConstants.PILOT_PULSE, true);
     private final SilentToneSignal silentToneSignal = new SilentToneSignal();
 
     @Setter
@@ -24,11 +45,13 @@ public class CassetteDeckImpl
     private boolean pushBackEnabled = true;
 
     private final AtomicReference<TapeSignal> tapeFilePlayback;
+    private final TapeRecorder tapeRecorder;
 
     private volatile long tStates;
 
     public CassetteDeckImpl() {
         this.tapeFilePlayback = new AtomicReference<>(silentToneSignal);
+        this.tapeRecorder = new TapeRecorder();
     }
 
     @Override
@@ -36,9 +59,20 @@ public class CassetteDeckImpl
         this.eventsReceivers.add(listener);
     }
 
+    @Override
+    public void addRecordListener(TapeRecordListener listener) {
+        tapeRecorder.addListener(listener);
+    }
+
+    @Override
+    public void removeRecordListener(TapeRecordListener listener) {
+        tapeRecorder.removeListener(listener);
+    }
+
     /**
+     * Reads from port 0xFE - returns EAR level in bit 6.
      *
-     * @param port - 0xFE
+     * @param port Port address (0xFE)
      * @return D6 - 1 high, 0 low
      */
     @Override
@@ -47,13 +81,25 @@ public class CassetteDeckImpl
         if (pushBack && sound != null && pushBackEnabled) {
             sound.pushBackTape(ear);
         }
-        int value = ear ? 0b0100_0000 : 0b0000_0000;
-        return value & 0xff;
+        int value = ear ? EAR_MASK : 0;
+        return value & 0xFF;
     }
 
+    /**
+     * Writes to port 0xFE - processes MIC level from bit 3.
+     *
+     * @param port  Port address (0xFE)
+     * @param value Value written
+     */
     @Override
     public void outPort(int port, int value) {
-
+        if (tapeRecorder.isRecording()) {
+            if (pushBack && sound != null && pushBackEnabled) {
+                boolean mic = (value & MIC_MASK) != 0;
+                sound.pushBackTape(mic);
+            }
+            tapeRecorder.processOutput(value, tStates);
+        }
     }
 
     @Override
@@ -61,10 +107,13 @@ public class CassetteDeckImpl
         this.tStates = tStates;
     }
 
+    // ========== Playback ==========
+
     @Override
     public void setMotor(boolean on) {
         withTapeFile().setMotor(on, tStates);
         pushBack = on;
+        eventsReceivers.forEach(l -> l.onTapeMotorChanged(on));
     }
 
     @Override
@@ -76,6 +125,8 @@ public class CassetteDeckImpl
                 pushBack = false;
             }
             tapeFilePlayback.set(new TapFilePlayback(true, tape, this));
+            eventsReceivers.forEach(l -> l.onTapeChanged(tape));
+            log.info("Tape inserted: {} sections", tape.getSections().size());
         }
     }
 
@@ -92,6 +143,56 @@ public class CassetteDeckImpl
         return tapeSignal == null ? pilotToneSignal : tapeSignal;
     }
 
+    // ========== Recording ==========
+
+    @Override
+    public void startRecording() {
+        if (tapeRecorder.isRecording()) {
+            log.warn("Already recording");
+            return;
+        }
+        tapeRecorder.startRecording();
+        log.info("Recording started");
+    }
+
+    @Override
+    public void stopRecording() {
+        if (!tapeRecorder.isRecording()) {
+            return;
+        }
+        tapeRecorder.stopRecording();
+        log.info("Recording stopped, {} blocks", tapeRecorder.getBlocksRecorded());
+    }
+
+    @Override
+    public boolean isRecording() {
+        return tapeRecorder.isRecording();
+    }
+
+    @Override
+    public int getRecordedBlockCount() {
+        return tapeRecorder.getBlocksRecorded();
+    }
+
+    @Override
+    public List<TapBlock> getRecordedBlocks() {
+        return tapeRecorder.getRecordedBlocks();
+    }
+
+    @Override
+    public void saveRecordedTape(String filePath) throws IOException {
+        tapeRecorder.getFileWriter().writeToFile(filePath);
+        log.info("Saved {} blocks to {}", tapeRecorder.getBlocksRecorded(), filePath);
+    }
+
+    @Override
+    public void clearRecording() {
+        tapeRecorder.reset();
+        log.info("Recording cleared");
+    }
+
+    // ========== Playback Events ==========
+
     @Override
     public void onSectionChanged(int index, TapeFile tape) {
         eventsReceivers.forEach(listener -> listener.onTapeSectionChanged(index, tape));
@@ -103,6 +204,8 @@ public class CassetteDeckImpl
         eventsReceivers.forEach(listener -> listener.onTapeFinished(success));
     }
 
+    // ========== Device Lifecycle ==========
+
     @Override
     public void init() {
         reset();
@@ -113,6 +216,9 @@ public class CassetteDeckImpl
         setMotor(false);
         tapeFilePlayback.set(silentToneSignal);
         tStates = 0;
+        if (tapeRecorder.isRecording()) {
+            tapeRecorder.stopRecording();
+        }
     }
 
     @Override
@@ -129,5 +235,4 @@ public class CassetteDeckImpl
     public void setSoundPushBack(boolean pushBack) {
         this.pushBackEnabled = pushBack;
     }
-
 }

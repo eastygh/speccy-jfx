@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.tape;
+package spectrum.jfx.hardware.tape.flash;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -13,6 +13,10 @@ import spectrum.jfx.model.TapeSection;
 
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
+/**
+ * Fast tape loader that bypasses actual tape timing.
+ * Injects tape data directly into memory via ROM hooks.
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class FlashTapLoader {
@@ -47,7 +51,8 @@ public class FlashTapLoader {
     @SneakyThrows
     private void loadThread(HardwareProvider hv) {
         int timeout = 0;
-        AddressHookListener currentListener = hv.getEmulator().addBreakPointListener(LOAD_PROC_ADDRESS, this::processLoadCommand);
+        AddressHookListener currentListener = hv.getEmulator().addBreakPointListener(
+                LOAD_PROC_ADDRESS, this::processLoadCommand);
         try {
             triggerLoadCommand(hardwareProvider.getMemory(), null);
             while (!finished && timeout < 1000) {
@@ -81,14 +86,14 @@ public class FlashTapLoader {
 
     private void flashTap() {
         TapeSection currentSection = tapeFile.getSections().get(currentSectionIndex);
-        log.info("Loading section type={} {}/{}", currentSection.getType(), currentSectionIndex, currentSection.getLength());
+        log.info("Loading section type={} {}/{}",
+                currentSection.getType(), currentSectionIndex, currentSection.getLength());
         CPU cpu = hardwareProvider.getCPU();
         Memory memory = hardwareProvider.getMemory();
 
         log.info("Needed data type (regA): {}", cpu.getRegA());
 
-        // Simple TAP file
-        int addr = cpu.getRegIX();    // Address start
+        int addr = cpu.getRegIX();
         int nBytes = cpu.getRegDE();
         int dataType = currentSection.getData()[0] & 0xFF;
         if (cpu.getRegA() != dataType) {
@@ -102,12 +107,6 @@ public class FlashTapLoader {
         cpu.setCarryFlag(true);
         cpu.setRegIX(addr + nBytes + 1);
         cpu.setRegDE(0);
-
-//        if (currentSectionIndex > 1) {
-//            currentSectionIndex = 10;
-//            finished = true;
-//        }
-
     }
 
     private int xorData(int start, byte[] data) {
@@ -121,19 +120,17 @@ public class FlashTapLoader {
 
     @SneakyThrows
     public static void triggerLoadCommand(Memory memory, CPU cpu) {
-        memory.writeByte(LAST_KEY, 0xEF); // LOAD keyword
-        memory.writeByte(FLAGS, memory.readByte(FLAGS) | 0x20); // flag that a key was pressed
-        Thread.sleep(30);
-        memory.writeByte(LAST_KEY, 0x22); // "
+        memory.writeByte(LAST_KEY, 0xEF);
         memory.writeByte(FLAGS, memory.readByte(FLAGS) | 0x20);
         Thread.sleep(30);
-        memory.writeByte(LAST_KEY, 0x22); // "
+        memory.writeByte(LAST_KEY, 0x22);
         memory.writeByte(FLAGS, memory.readByte(FLAGS) | 0x20);
         Thread.sleep(30);
-        memory.writeByte(LAST_KEY, 0x0D); // ENTER
+        memory.writeByte(LAST_KEY, 0x22);
+        memory.writeByte(FLAGS, memory.readByte(FLAGS) | 0x20);
+        Thread.sleep(30);
+        memory.writeByte(LAST_KEY, 0x0D);
         memory.writeByte(FLAGS, memory.readByte(FLAGS) | 0x20);
         Thread.sleep(30);
     }
-
-
 }
