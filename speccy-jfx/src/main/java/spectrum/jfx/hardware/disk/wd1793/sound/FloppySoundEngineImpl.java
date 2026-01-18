@@ -3,6 +3,9 @@ package spectrum.jfx.hardware.disk.wd1793.sound;
 import spectrum.jfx.hardware.disk.wd1793.ControllerState;
 import spectrum.jfx.hardware.sound.Sound;
 
+import java.io.File;
+import java.util.Objects;
+
 public final class FloppySoundEngineImpl implements FloppySoundEngine {
 
     private static final int SAMPLE_RATE = 44100;
@@ -37,11 +40,16 @@ public final class FloppySoundEngineImpl implements FloppySoundEngine {
 
     private boolean writeMode;
 
+    private LoopPlayer loopPlayer;
+
     public FloppySoundEngineImpl(Sound sound) {
         this.sound = sound;
         // Генерируем тяжелые данные один раз
         this.motorLoop = FloppyPcm.createMotorLoop();
         this.motorPos = 0;
+        this.loopPlayer = new WavLoopPlayer(
+                new File(Objects.requireNonNull(FloppyPcm.class.getResource("/sound/floppy-disk-drive-read-16.wav")).getFile())
+        );
     }
 
     @Override
@@ -59,37 +67,45 @@ public final class FloppySoundEngineImpl implements FloppySoundEngine {
     }
 
     @Override
-    public void init() {}
+    public void init() {
+    }
 
     @Override
-    public void open() {}
+    public void open() {
+    }
 
     @Override
-    public void close() {}
+    public void close() {
+    }
 
     public void ticks(long tStates, ControllerState state, boolean writeMode) {
         this.writeMode = writeMode;
-
-        // 1. Управление мотором (Spindown logic)
-        if (state != ControllerState.IDLE) {
-            isMotorOn = true;
-            motorTimer = MOTOR_TIMEOUT_TSTATES; // Сброс таймера автовыключения
-        } else if (isMotorOn) {
-            if (motorTimer > 0) {
-                motorTimer -= tStates;
-            } else {
-                isMotorOn = false; // Время вышло, мотор глохнет
-            }
+        if (state == ControllerState.IDLE) {
+            loopPlayer.stop();
+        } else {
+            loopPlayer.play(0);
         }
 
-        // 2. Обработка времени
-        accumulateTime(tStates);
-
-        // 3. Триггеры событий
-        handleStateChange(state);
-
-        // 4. Генерация аудио
-        render();
+//        // 1. Управление мотором (Spindown logic)
+//        if (state != ControllerState.IDLE) {
+//            isMotorOn = true;
+//            motorTimer = MOTOR_TIMEOUT_TSTATES; // Сброс таймера автовыключения
+//        } else if (isMotorOn) {
+//            if (motorTimer > 0) {
+//                motorTimer -= tStates;
+//            } else {
+//                isMotorOn = false; // Время вышло, мотор глохнет
+//            }
+//        }
+//
+//        // 2. Обработка времени
+//        accumulateTime(tStates);
+//
+//        // 3. Триггеры событий
+//        handleStateChange(state);
+//
+//        // 4. Генерация аудио
+//        render();
     }
 
     private void accumulateTime(long tStates) {
@@ -112,15 +128,13 @@ public final class FloppySoundEngineImpl implements FloppySoundEngine {
         if (state == ControllerState.SEARCHING) {
             // При поиске чтение отключаем
             transferLoop = null;
-        }
-        else if (state == ControllerState.TRANSFERRING) {
+        } else if (state == ControllerState.TRANSFERRING) {
             // Если начали передачу данных
             if (transferLoop == null) {
                 transferLoop = FloppyPcm.createTransferLoop(writeMode);
                 transferPos = 0;
             }
-        }
-        else if (state == ControllerState.IDLE) {
+        } else if (state == ControllerState.IDLE) {
             transferLoop = null;
         }
 

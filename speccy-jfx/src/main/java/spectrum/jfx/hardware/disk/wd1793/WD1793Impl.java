@@ -167,7 +167,7 @@ public class WD1793Impl implements DiskController {
     @Override
     public void setSound(Sound sound) {
         if (sound != null) {
-            fse = new FloppySoundWav(sound, FloppyPcm.floppyRead);
+            fse = new FloppySoundEngineImpl(sound);
         } else {
             fse = null;
         }
