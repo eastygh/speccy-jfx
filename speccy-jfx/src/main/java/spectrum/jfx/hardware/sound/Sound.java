@@ -33,4 +33,22 @@ public interface Sound extends OutPortListener, ClockListener, Device {
      */
     void endFrame();
 
+    /**
+     * Write PCM data to the sound output, from an external thread.
+     *
+     * @param data PCM data array
+     */
+    default void write(short[] data) {
+        // no-op
+    }
+
+    /**
+     * Write PCM data to the sound output, from an external thread.
+     *
+     * @param value PCM sample value
+     */
+    default void write(short value) {
+        // no-op
+    }
+
 }

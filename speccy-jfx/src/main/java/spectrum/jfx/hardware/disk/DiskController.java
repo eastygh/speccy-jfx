@@ -1,6 +1,7 @@
 package spectrum.jfx.hardware.disk;
 
 import spectrum.jfx.hardware.machine.Device;
+import spectrum.jfx.hardware.sound.Sound;
 import spectrum.jfx.hardware.ula.ClockListener;
 import spectrum.jfx.hardware.ula.InPortListener;
 import spectrum.jfx.hardware.ula.OutPortListener;
@@ -13,6 +14,7 @@ public interface DiskController extends Device, ClockListener, InPortListener, O
 
     /**
      * Gets a specific drive by index.
+     *
      * @param driveIdx - index of the drive (0-based A,B,C,D)
      * @return the VirtualDrive instance for the specified drive or null if not available
      */
@@ -49,5 +51,14 @@ public interface DiskController extends Device, ClockListener, InPortListener, O
      * Retrieves the number of disk drives supported by the controller
      */
     int getDiskCount();
+
+    /**
+     * Sets the sound output for the sound emulation of FDD/HDD
+     *
+     * @param sound Sound instance
+     */
+    default void setSound(Sound sound) {
+        // no-op
+    }
 
 }

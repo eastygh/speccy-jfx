@@ -17,8 +17,8 @@ import spectrum.jfx.hardware.input.KempstonImpl;
 import spectrum.jfx.hardware.input.Keyboard;
 import spectrum.jfx.hardware.machine.*;
 import spectrum.jfx.hardware.memory.Memory;
+import spectrum.jfx.hardware.sound.BeeperImpl;
 import spectrum.jfx.hardware.sound.Sound;
-import spectrum.jfx.hardware.sound.SoundImpl;
 import spectrum.jfx.hardware.sound.ay.AY38912;
 import spectrum.jfx.hardware.tape.CassetteDeckImpl;
 import spectrum.jfx.hardware.ula.*;
@@ -103,7 +103,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         this.ula.addPortListener(0xfe, keyboard); // keyboard
         this.ula.addPortListener(0xfe, (OutPortListener) video); // Border color
 
-        this.sound = new SoundImpl(machineSettings); // Sound Beeper
+        this.sound = new BeeperImpl(machineSettings); // Sound Beeper
         devices.add(sound);
         this.ula.addPortListener(0xfe, sound); // Sound
         this.ula.addClockListener(sound);
@@ -135,6 +135,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         // Disk controller
         diskController = createDiskController(machineSettings, ula);
         if (diskController != null) {
+            diskController.setSound(sound);
             devices.add(diskController);
         }
 

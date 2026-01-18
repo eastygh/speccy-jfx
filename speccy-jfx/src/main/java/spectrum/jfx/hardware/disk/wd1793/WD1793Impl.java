@@ -8,7 +8,12 @@ import spectrum.jfx.hardware.disk.DriveStatusListener;
 import spectrum.jfx.hardware.disk.VirtualDrive;
 import spectrum.jfx.hardware.disk.trdos.TRDOSController;
 import spectrum.jfx.hardware.disk.trdos.TRDOSControllerImpl;
+import spectrum.jfx.hardware.disk.wd1793.sound.FloppyPcm;
+import spectrum.jfx.hardware.disk.wd1793.sound.FloppySoundEngine;
+import spectrum.jfx.hardware.disk.wd1793.sound.FloppySoundEngineImpl;
+import spectrum.jfx.hardware.disk.wd1793.sound.FloppySoundWav;
 import spectrum.jfx.hardware.machine.MachineSettings;
+import spectrum.jfx.hardware.sound.Sound;
 import spectrum.jfx.hardware.ula.AddressHookController;
 import spectrum.jfx.hardware.ula.InPortListener;
 import spectrum.jfx.hardware.ula.OutPortListener;
@@ -67,11 +72,19 @@ public class WD1793Impl implements DiskController {
     private int sameAnswerCounter = 0;
 
     // External components
-    @Setter
     private DriveStatusListener driveStatusListener;
+    private FloppySoundEngine fse;
     @Setter
     @Getter
     private TRDOSController trdosController;
+
+    private boolean fastLoadMode = false;
+
+    @Override
+    public void setDriveStatusListener(DriveStatusListener driveStatusListener) {
+        this.driveStatusListener = driveStatusListener;
+        notifyDriveStatusChanged();
+    }
 
     public WD1793Impl(MachineSettings machineSettings) {
         this.machineSettings = machineSettings;
@@ -89,7 +102,10 @@ public class WD1793Impl implements DiskController {
 
     @Override
     public void setActive(boolean active) {
-        this.active = active;
+        if (this.active != active) {
+            this.active = active;
+            notifyDriveStatusChanged();
+        }
     }
 
     @Override
@@ -111,6 +127,10 @@ public class WD1793Impl implements DiskController {
         drq = false;
         commandReg = 0;
         currentState = ControllerState.IDLE;
+        if (fse != null) {
+            fse.reset();
+        }
+        notifyDriveStatusChanged();
     }
 
     @Override
@@ -120,7 +140,7 @@ public class WD1793Impl implements DiskController {
 
     @Override
     public boolean isDriveLedOn(int d) {
-        return active && selectedDriveIdx == d;
+        return active && selectedDriveIdx == d && motorOn;
     }
 
     @Override
@@ -144,6 +164,20 @@ public class WD1793Impl implements DiskController {
         return drives[driveIdx];
     }
 
+    @Override
+    public void setSound(Sound sound) {
+        if (sound != null) {
+            fse = new FloppySoundWav(sound, FloppyPcm.floppyRead);
+        } else {
+            fse = null;
+        }
+    }
+
+    @Override
+    public void setSpeedUpMode(boolean speedUpMode) {
+        fastLoadMode = speedUpMode;
+    }
+
     // ========== Clock Listener ==========
 
     @Override
@@ -153,6 +187,9 @@ public class WD1793Impl implements DiskController {
         checkDrqTimeout(tStates);
         if (currentState == ControllerState.IDLE) {
             processIdleState(tStates);
+        }
+        if (fse != null && !fastLoadMode) {
+            fse.ticks(tStates, currentState, true);
         }
     }
 
@@ -546,6 +583,9 @@ public class WD1793Impl implements DiskController {
     // ========== System Port Handling ==========
 
     private void handleSystemPort(int value) {
+        int oldDriveIdx = selectedDriveIdx;
+        boolean oldMotorOn = motorOn;
+
         selectedDriveIdx = value & SYS_DRIVE_MASK;
 
         // Bit 4 selects side (active low = side 1)
@@ -557,6 +597,11 @@ public class WD1793Impl implements DiskController {
         handleResetLogic(value);
 
         lastSystemValue = value;
+
+        if (oldDriveIdx != selectedDriveIdx || oldMotorOn != motorOn) {
+            notifyDriveStatusChanged();
+        }
+
         log.trace("BDI: Select Drive:{}, Side:{}, Motor:{}, raw:{}",
                 selectedDriveIdx, currentSide, motorOn, Integer.toHexString(value));
     }
@@ -622,6 +667,8 @@ public class WD1793Impl implements DiskController {
     }
 
     private void executeTypeICommand(int cmd, CommandType cmdType) {
+        int prevTrack = getSelectedDrive().getPhysicalTrack();
+
         switch (cmdType) {
             case RESTORE -> executeRestore();
             case SEEK -> executeSeek();
@@ -632,6 +679,11 @@ public class WD1793Impl implements DiskController {
         }
 
         constrainTrackValues();
+
+        if (fse != null && getSelectedDrive().getPhysicalTrack() != prevTrack) {
+            fse.step(Math.abs(getSelectedDrive().getPhysicalTrack() - prevTrack));
+        }
+
         nextEventTStates = currentTStates + TIMING_STEP_DELAY;
     }
 
@@ -786,6 +838,14 @@ public class WD1793Impl implements DiskController {
     }
 
     // ========== Utility Methods ==========
+
+    private void notifyDriveStatusChanged() {
+        if (driveStatusListener != null) {
+            for (int i = 0; i < DRIVE_COUNT; i++) {
+                driveStatusListener.onActiveStateChanged(i, isDriveLedOn(i));
+            }
+        }
+    }
 
     private VirtualDrive getSelectedDrive() {
         return drives[selectedDriveIdx];
