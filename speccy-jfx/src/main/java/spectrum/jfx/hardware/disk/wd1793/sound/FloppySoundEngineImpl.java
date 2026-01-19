@@ -1,11 +1,12 @@
 package spectrum.jfx.hardware.disk.wd1793.sound;
 
+import lombok.extern.slf4j.Slf4j;
 import spectrum.jfx.hardware.disk.wd1793.ControllerState;
 import spectrum.jfx.hardware.sound.Sound;
 
-import java.io.File;
-import java.util.Objects;
+import java.net.URL;
 
+@Slf4j
 public final class FloppySoundEngineImpl implements FloppySoundEngine {
 
     private static final int SAMPLE_RATE = 44100;
@@ -40,16 +41,22 @@ public final class FloppySoundEngineImpl implements FloppySoundEngine {
 
     private boolean writeMode;
 
-    private LoopPlayer loopPlayer;
+    private WavLoopPlayer loopPlayer;
 
     public FloppySoundEngineImpl(Sound sound) {
         this.sound = sound;
         // Генерируем тяжелые данные один раз
         this.motorLoop = FloppyPcm.createMotorLoop();
         this.motorPos = 0;
-        this.loopPlayer = new WavLoopPlayer(
-                new File(Objects.requireNonNull(FloppyPcm.class.getResource("/sound/floppy-disk-drive-read-16.wav")).getFile())
-        );
+
+        URL wavUrl = FloppyPcm.class.getResource("/sound/floppy-disk-drive-read-16.wav");
+        if (wavUrl != null) {
+            this.loopPlayer = new WavLoopPlayer(wavUrl);
+            log.info("Floppy sound initialized: {}", wavUrl);
+        } else {
+            log.warn("Floppy sound wav not found: /sound/floppy-disk-drive-read-16.wav");
+            this.loopPlayer = null;
+        }
     }
 
     @Override
@@ -80,11 +87,24 @@ public final class FloppySoundEngineImpl implements FloppySoundEngine {
 
     public void ticks(long tStates, ControllerState state, boolean writeMode) {
         this.writeMode = writeMode;
-        if (state == ControllerState.IDLE) {
-            loopPlayer.stop();
-        } else {
-            loopPlayer.play(0);
+
+        if (loopPlayer == null) {
+            return;
         }
+
+        if (state == ControllerState.IDLE) {
+            if (lastState != ControllerState.IDLE) {
+                loopPlayer.pause();
+                log.trace("Floppy sound paused");
+            }
+        } else {
+            if (lastState == ControllerState.IDLE) {
+                loopPlayer.play(0);
+                log.trace("Floppy sound playing");
+            }
+        }
+
+        lastState = state;
 
 //        // 1. Управление мотором (Spindown logic)
 //        if (state != ControllerState.IDLE) {

@@ -1,15 +1,20 @@
 package spectrum.jfx.hardware.disk.wd1793.sound;
 
-import javax.sound.sampled.*;
-import java.io.File;
+import lombok.extern.slf4j.Slf4j;
 
+import javax.sound.sampled.*;
+import java.io.BufferedInputStream;
+import java.io.InputStream;
+import java.net.URL;
+
+@Slf4j
 public final class WavLoopPlayer implements LoopPlayer, Runnable {
 
-    private final File[] wavs;
+    private final URL[] wavUrls;
     private final Thread thread;
 
     private volatile boolean running = true;
-    private volatile boolean paused = true;
+    private volatile boolean playing = false;
 
     private int currentIndex = -1;
 
@@ -18,8 +23,8 @@ public final class WavLoopPlayer implements LoopPlayer, Runnable {
 
     private final Object lock = new Object();
 
-    public WavLoopPlayer(File... wavs) {
-        this.wavs = wavs;
+    public WavLoopPlayer(URL... wavUrls) {
+        this.wavUrls = wavUrls;
         this.thread = new Thread(this, "wav-loop-player");
         this.thread.setDaemon(true);
         this.thread.start();
@@ -27,32 +32,46 @@ public final class WavLoopPlayer implements LoopPlayer, Runnable {
 
     @Override
     public void play(int index) {
-        if (index < 0 || index >= wavs.length) {
-            throw new IllegalArgumentException("bad wav index: " + index);
-        }
-        if (!paused) {
+        if (index < 0 || index >= wavUrls.length) {
+            log.warn("Bad wav index: {}", index);
             return;
+        }
+        if (playing && currentIndex == index) {
+            return; // Already playing this track
         }
 
         synchronized (lock) {
             if (currentIndex != index) {
                 closeLine();
                 currentIndex = index;
-                openLine(wavs[index]);
+                openLine(wavUrls[index]);
             }
 
-            paused = false;
+            playing = true;
             lock.notifyAll();
         }
     }
 
     @Override
     public void pause() {
-        paused = true;
+        playing = false;
     }
 
     @Override
     public void stop() {
+        // Just stop playback, don't terminate the thread
+        synchronized (lock) {
+            playing = false;
+            closeLine();
+            currentIndex = -1;
+        }
+    }
+
+    /**
+     * Shuts down the player completely.
+     * After this call, the player cannot be used anymore.
+     */
+    public void shutdown() {
         running = false;
         synchronized (lock) {
             lock.notifyAll();
@@ -66,10 +85,12 @@ public final class WavLoopPlayer implements LoopPlayer, Runnable {
 
         while (running) {
             synchronized (lock) {
-                while (paused && running) {
+                while (!playing && running) {
                     try {
                         lock.wait();
                     } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
+                        return;
                     }
                 }
             }
@@ -81,38 +102,52 @@ public final class WavLoopPlayer implements LoopPlayer, Runnable {
             try {
                 int read = stream.read(buffer, 0, buffer.length);
                 if (read == -1) {
-                    // зацикливаем
+                    // Loop back to the beginning
                     reopenStream();
                     continue;
                 }
-                line.write(buffer, 0, read);
+                if (playing) {
+                    line.write(buffer, 0, read);
+                }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Error playing wav", e);
                 pause();
             }
         }
     }
 
-    private void openLine(File wav) {
+    private void openLine(URL wavUrl) {
         try {
-            stream = AudioSystem.getAudioInputStream(wav);
+            InputStream is = wavUrl.openStream();
+            BufferedInputStream bis = new BufferedInputStream(is);
+            stream = AudioSystem.getAudioInputStream(bis);
             AudioFormat format = stream.getFormat();
 
             DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
             line = (SourceDataLine) AudioSystem.getLine(info);
             line.open(format);
             line.start();
+            log.debug("Opened audio line for: {}", wavUrl);
         } catch (Exception e) {
-            throw new RuntimeException("cannot open wav: " + wav, e);
+            log.error("Cannot open wav: {}", wavUrl, e);
+            line = null;
+            stream = null;
         }
     }
 
     private void reopenStream() {
+        if (currentIndex < 0 || currentIndex >= wavUrls.length) {
+            return;
+        }
         try {
-            stream.close();
-            stream = AudioSystem.getAudioInputStream(wavs[currentIndex]);
+            if (stream != null) {
+                stream.close();
+            }
+            InputStream is = wavUrls[currentIndex].openStream();
+            BufferedInputStream bis = new BufferedInputStream(is);
+            stream = AudioSystem.getAudioInputStream(bis);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error reopening stream", e);
             pause();
         }
     }
@@ -120,14 +155,14 @@ public final class WavLoopPlayer implements LoopPlayer, Runnable {
     private void closeLine() {
         try {
             if (line != null) {
-                line.drain();
                 line.stop();
                 line.close();
             }
             if (stream != null) {
                 stream.close();
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.trace("Error closing line", e);
         } finally {
             line = null;
             stream = null;
