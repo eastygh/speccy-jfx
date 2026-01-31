@@ -1,0 +1,19 @@
+package spectrum.hardware.tape;
+
+public interface TapeSignal {
+
+    boolean earLevelAt(long tstates);
+
+    void setMotor(boolean on, long currentTStates);
+
+    void setSectionIndex(int index);
+
+    default boolean isStarted() {
+        return false;
+    }
+
+    default boolean isFinished() {
+        return false;
+    }
+
+}
