@@ -28,4 +28,5 @@ module speccy.hardware {
     opens spectrum.hardware.tape.model to com.fasterxml.jackson.databind;
     exports spectrum.hardware.disk.wd1793;
     exports spectrum.hardware.disk.wd1793.sound;
+    exports spectrum.hardware.factory;
 }
