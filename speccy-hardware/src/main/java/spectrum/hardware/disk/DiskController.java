@@ -1,7 +1,7 @@
 package spectrum.hardware.disk;
 
+import spectrum.hardware.disk.wd1793.sound.FloppySoundEngine;
 import spectrum.hardware.machine.Device;
-import spectrum.hardware.sound.Sound;
 import spectrum.hardware.ula.ClockListener;
 import spectrum.hardware.ula.InPortListener;
 import spectrum.hardware.ula.OutPortListener;
@@ -55,9 +55,9 @@ public interface DiskController extends Device, ClockListener, InPortListener, O
     /**
      * Sets the sound output for the sound emulation of FDD/HDD
      *
-     * @param sound Sound instance
+     * @param soundFloppyEngine Sound Engine instance
      */
-    default void setSound(Sound sound) {
+    default void setFloppySoundEngine(FloppySoundEngine soundFloppyEngine) {
         // no-op
     }
 

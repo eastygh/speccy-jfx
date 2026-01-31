@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.disk.wd1793;
+package spectrum.hardware.disk.wd1793;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -6,18 +6,16 @@ import lombok.extern.slf4j.Slf4j;
 import spectrum.hardware.disk.DiskController;
 import spectrum.hardware.disk.DriveStatusListener;
 import spectrum.hardware.disk.VirtualDrive;
-import spectrum.jfx.hardware.disk.trdos.TRDOSController;
-import spectrum.jfx.hardware.disk.trdos.TRDOSControllerImpl;
-import spectrum.jfx.hardware.disk.wd1793.sound.FloppySoundEngine;
-import spectrum.jfx.hardware.disk.wd1793.sound.FloppySoundEngineImpl;
+import spectrum.hardware.disk.trdos.TRDOSController;
+import spectrum.hardware.disk.trdos.TRDOSControllerImpl;
+import spectrum.hardware.disk.wd1793.sound.FloppySoundEngine;
 import spectrum.hardware.machine.MachineSettings;
-import spectrum.hardware.sound.Sound;
 import spectrum.hardware.ula.AddressHookController;
 import spectrum.hardware.ula.InPortListener;
 import spectrum.hardware.ula.OutPortListener;
 import spectrum.hardware.ula.Ula;
 
-import static spectrum.jfx.hardware.disk.wd1793.WD1793Constants.*;
+import static spectrum.hardware.disk.wd1793.WD1793Constants.*;
 
 /**
  * Implementation of the Western Digital WD1793 Floppy Disk Controller.
@@ -71,7 +69,9 @@ public class WD1793Impl implements DiskController {
 
     // External components
     private DriveStatusListener driveStatusListener;
-    private FloppySoundEngine fse;
+    @Setter
+    @Getter
+    private FloppySoundEngine floppySoundEngine;
     @Setter
     @Getter
     private TRDOSController trdosController;
@@ -125,8 +125,8 @@ public class WD1793Impl implements DiskController {
         drq = false;
         commandReg = 0;
         currentState = ControllerState.IDLE;
-        if (fse != null) {
-            fse.reset();
+        if (floppySoundEngine != null) {
+            floppySoundEngine.reset();
         }
         notifyDriveStatusChanged();
     }
@@ -163,15 +163,6 @@ public class WD1793Impl implements DiskController {
     }
 
     @Override
-    public void setSound(Sound sound) {
-        if (sound != null) {
-            fse = new FloppySoundEngineImpl(sound);
-        } else {
-            fse = null;
-        }
-    }
-
-    @Override
     public void setSpeedUpMode(boolean speedUpMode) {
         fastLoadMode = speedUpMode;
     }
@@ -186,8 +177,8 @@ public class WD1793Impl implements DiskController {
         if (currentState == ControllerState.IDLE) {
             processIdleState(tStates);
         }
-        if (fse != null && !fastLoadMode) {
-            fse.ticks(tStates, currentState, true);
+        if (floppySoundEngine != null && !fastLoadMode) {
+            floppySoundEngine.ticks(tStates, currentState, true);
         }
     }
 
@@ -678,8 +669,8 @@ public class WD1793Impl implements DiskController {
 
         constrainTrackValues();
 
-        if (fse != null && getSelectedDrive().getPhysicalTrack() != prevTrack) {
-            fse.step(Math.abs(getSelectedDrive().getPhysicalTrack() - prevTrack));
+        if (floppySoundEngine != null && getSelectedDrive().getPhysicalTrack() != prevTrack) {
+            floppySoundEngine.step(Math.abs(getSelectedDrive().getPhysicalTrack() - prevTrack));
         }
 
         nextEventTStates = currentTStates + TIMING_STEP_DELAY;

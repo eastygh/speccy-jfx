@@ -1,10 +1,10 @@
-package spectrum.jfx.hardware.cpu;
+package spectrum.hardware.cpu;
 
 import com.codingrodent.microprocessor.z80.Z80Core;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.hardware.machine.CpuImplementation;
+import spectrum.hardware.snapshot.CPUSnapShot;
 import spectrum.hardware.ula.Ula;
-import spectrum.jfx.snapshot.CPUSnapShot;
 import z80core.NotifyOps;
 
 import java.util.BitSet;

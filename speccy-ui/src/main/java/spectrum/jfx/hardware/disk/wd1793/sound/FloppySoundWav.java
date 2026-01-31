@@ -1,6 +1,7 @@
 package spectrum.jfx.hardware.disk.wd1793.sound;
 
-import spectrum.jfx.hardware.disk.wd1793.ControllerState;
+import spectrum.hardware.disk.wd1793.ControllerState;
+import spectrum.hardware.disk.wd1793.sound.FloppySoundEngine;
 import spectrum.hardware.sound.Sound;
 
 public final class FloppySoundWav implements FloppySoundEngine {

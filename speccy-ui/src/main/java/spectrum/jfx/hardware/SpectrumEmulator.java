@@ -5,33 +5,30 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import machine.MachineTypes;
 import machine.SpectrumClock;
+import spectrum.hardware.cpu.AddressHookListener;
+import spectrum.hardware.cpu.CPU;
 import spectrum.hardware.debug.DebugListener;
 import spectrum.hardware.debug.DebugManager;
 import spectrum.hardware.debug.DebugManagerImpl;
-import spectrum.hardware.cpu.AddressHookListener;
-import spectrum.hardware.cpu.CPU;
 import spectrum.hardware.disk.DiskController;
-import spectrum.hardware.machine.CpuImplementation;
-import spectrum.hardware.machine.Device;
-import spectrum.hardware.machine.Emulator;
-import spectrum.hardware.machine.HardwareProvider;
+import spectrum.hardware.input.Kempston;
+import spectrum.hardware.machine.*;
+import spectrum.hardware.memory.Memory;
+import spectrum.hardware.sound.Sound;
 import spectrum.hardware.ula.ClockListener;
 import spectrum.hardware.ula.InPortListener;
 import spectrum.hardware.ula.OutPortListener;
+import spectrum.hardware.util.EmulatorUtils;
+import spectrum.hardware.video.Video;
+import spectrum.jfx.hardware.disk.wd1793.sound.FloppySoundEngineImpl;
 import spectrum.jfx.hardware.input.GamePadGLFWImpl;
-import spectrum.hardware.input.Kempston;
 import spectrum.jfx.hardware.input.KempstonImpl;
 import spectrum.jfx.hardware.input.Keyboard;
-import spectrum.hardware.memory.Memory;
 import spectrum.jfx.hardware.sound.BeeperImpl;
-import spectrum.hardware.sound.Sound;
 import spectrum.jfx.hardware.sound.ay.AY38912;
 import spectrum.jfx.hardware.tape.CassetteDeckImpl;
-import spectrum.jfx.hardware.ula.*;
-import spectrum.hardware.util.EmulatorUtils;
+import spectrum.jfx.hardware.ula.UlaImpl;
 import spectrum.jfx.hardware.video.ScanlineVideoImpl;
-import spectrum.hardware.video.Video;
-import spectrum.hardware.machine.Machine;
 import z80core.NotifyOps;
 
 import java.io.IOException;
@@ -141,7 +138,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         // Disk controller
         diskController = createDiskController(machineSettings, ula);
         if (diskController != null) {
-            diskController.setSound(sound);
+            diskController.setFloppySoundEngine(new FloppySoundEngineImpl(sound));
             devices.add(diskController);
         }
 

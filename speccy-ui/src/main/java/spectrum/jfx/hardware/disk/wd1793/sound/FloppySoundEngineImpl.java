@@ -1,7 +1,8 @@
 package spectrum.jfx.hardware.disk.wd1793.sound;
 
 import lombok.extern.slf4j.Slf4j;
-import spectrum.jfx.hardware.disk.wd1793.ControllerState;
+import spectrum.hardware.disk.wd1793.ControllerState;
+import spectrum.hardware.disk.wd1793.sound.FloppySoundEngine;
 import spectrum.hardware.sound.Sound;
 
 import java.net.URL;

@@ -1,6 +1,7 @@
 package spectrum.jfx.hardware.disk.wd1793.sound;
 
 import lombok.extern.slf4j.Slf4j;
+import spectrum.hardware.disk.wd1793.sound.LoopPlayer;
 
 import javax.sound.sampled.*;
 import java.io.BufferedInputStream;

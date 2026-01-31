@@ -1,6 +1,6 @@
-package spectrum.jfx.hardware.disk.wd1793;
+package spectrum.hardware.disk.wd1793;
 
-import static spectrum.jfx.hardware.disk.wd1793.WD1793Constants.*;
+import static spectrum.hardware.disk.wd1793.WD1793Constants.*;
 
 /**
  * Enumerates all WD1793 command types with their identifying masks and properties.

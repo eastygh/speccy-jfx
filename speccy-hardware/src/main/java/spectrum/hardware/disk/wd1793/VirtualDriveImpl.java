@@ -1,14 +1,14 @@
-package spectrum.jfx.hardware.disk.wd1793;
+package spectrum.hardware.disk.wd1793;
 
 import lombok.Data;
 import lombok.SneakyThrows;
-import spectrum.jfx.hardware.disk.DiskImageAdapter;
+import spectrum.hardware.disk.DiskImageAdapter;
 import spectrum.hardware.disk.VirtualDrive;
 import spectrum.hardware.util.EmulatorUtils;
 
 import java.io.File;
 
-import static spectrum.jfx.hardware.disk.wd1793.TrdDiskGeometry.*;
+import static spectrum.hardware.disk.wd1793.TrdDiskGeometry.*;
 import static spectrum.hardware.util.EmulatorUtils.isFileReadable;
 
 @Data

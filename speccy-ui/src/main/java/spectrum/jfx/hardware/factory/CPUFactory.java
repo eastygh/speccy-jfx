@@ -2,8 +2,8 @@ package spectrum.jfx.hardware.factory;
 
 import lombok.experimental.UtilityClass;
 import spectrum.hardware.cpu.CPU;
-import spectrum.jfx.hardware.cpu.Z80CoreAdapter;
-import spectrum.jfx.hardware.cpu.Z80ProcessorAdapter;
+import spectrum.hardware.cpu.Z80CoreAdapter;
+import spectrum.hardware.cpu.Z80ProcessorAdapter;
 import spectrum.hardware.machine.CpuImplementation;
 import spectrum.hardware.machine.MachineSettings;
 import spectrum.hardware.ula.Ula;

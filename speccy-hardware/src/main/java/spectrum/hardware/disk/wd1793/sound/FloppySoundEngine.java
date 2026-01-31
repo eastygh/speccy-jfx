@@ -1,6 +1,6 @@
-package spectrum.jfx.hardware.disk.wd1793.sound;
+package spectrum.hardware.disk.wd1793.sound;
 
-import spectrum.jfx.hardware.disk.wd1793.ControllerState;
+import spectrum.hardware.disk.wd1793.ControllerState;
 import spectrum.hardware.machine.Device;
 
 public interface FloppySoundEngine extends Device {

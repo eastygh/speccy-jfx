@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.disk.wd1793;
+package spectrum.hardware.disk.wd1793;
 
 /**
  * Determines how the status register bits are interpreted.

@@ -1,10 +1,9 @@
-package spectrum.jfx.snapshot;
+package spectrum.hardware.snapshot;
 
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import spectrum.hardware.machine.CpuImplementation;
-import spectrum.hardware.snapshot.SnapShot;
 
 @Data
 @Builder

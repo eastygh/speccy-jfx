@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.disk.wd1793;
+package spectrum.hardware.disk.wd1793;
 
 /**
  * Represents the operational state of the WD1793 disk controller.

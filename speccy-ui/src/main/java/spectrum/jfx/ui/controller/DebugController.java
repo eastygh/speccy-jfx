@@ -24,7 +24,7 @@ import spectrum.hardware.cpu.CPU;
 import spectrum.hardware.machine.HardwareProvider;
 import spectrum.hardware.memory.Memory;
 import spectrum.hardware.machine.Machine;
-import spectrum.jfx.snapshot.CPUSnapShot;
+import spectrum.hardware.snapshot.CPUSnapShot;
 import spectrum.jfx.ui.theme.ThemeManager;
 
 import java.net.URL;

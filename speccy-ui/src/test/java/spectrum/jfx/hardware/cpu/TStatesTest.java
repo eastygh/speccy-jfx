@@ -5,6 +5,7 @@ import machine.MachineTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import spectrum.hardware.cpu.Z80CoreAdapter;
 import spectrum.hardware.machine.MachineSettings;
 import spectrum.hardware.memory.Memory;
 import spectrum.jfx.hardware.memory.Memory64KImpl;

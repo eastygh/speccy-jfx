@@ -1,8 +1,8 @@
-package spectrum.jfx.snapshot.mapper;
+package spectrum.hardware.snapshot.mapper;
 
 import lombok.experimental.UtilityClass;
 import snapshots.Z80State;
-import spectrum.jfx.snapshot.CPUSnapShot;
+import spectrum.hardware.snapshot.CPUSnapShot;
 import z80core.Z80.IntMode;
 
 @UtilityClass

@@ -2,12 +2,12 @@ package spectrum.jfx.hardware.disk;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import spectrum.jfx.hardware.disk.wd1793.WD1793Impl;
+import spectrum.hardware.disk.wd1793.WD1793Impl;
 import spectrum.hardware.machine.MachineSettings;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class WD1793ImplTest {
+class WD1793ImplTest {
 
     private WD1793Impl wd1793;
     private byte[] dummyDisk;

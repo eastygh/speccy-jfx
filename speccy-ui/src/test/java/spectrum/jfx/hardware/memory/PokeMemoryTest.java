@@ -4,7 +4,7 @@ import machine.MachineTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import spectrum.hardware.cpu.CPU;
-import spectrum.jfx.hardware.cpu.Z80CoreAdapter;
+import spectrum.hardware.cpu.Z80CoreAdapter;
 import spectrum.hardware.machine.MachineSettings;
 import spectrum.hardware.ula.Ula;
 import spectrum.jfx.hardware.ula.UlaImpl;

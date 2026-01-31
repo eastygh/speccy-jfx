@@ -26,4 +26,6 @@ module speccy.hardware {
     requires com.fasterxml.jackson.databind;
 
     opens spectrum.hardware.tape.model to com.fasterxml.jackson.databind;
+    exports spectrum.hardware.disk.wd1793;
+    exports spectrum.hardware.disk.wd1793.sound;
 }

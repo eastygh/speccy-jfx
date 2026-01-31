@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.disk.wd1793.sound;
+package spectrum.hardware.disk.wd1793.sound;
 
 public interface LoopPlayer {
 

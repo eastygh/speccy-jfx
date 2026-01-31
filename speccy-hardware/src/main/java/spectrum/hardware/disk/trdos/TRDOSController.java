@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.disk.trdos;
+package spectrum.hardware.disk.trdos;
 
 public interface TRDOSController {
 
