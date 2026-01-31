@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.cpu;
+package spectrum.hardware.cpu;
 
 import lombok.extern.slf4j.Slf4j;
 import machine.MachineTypes;

@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.disk;
+package spectrum.hardware.disk;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

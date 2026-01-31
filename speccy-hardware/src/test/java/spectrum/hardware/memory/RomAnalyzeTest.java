@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.memory;
+package spectrum.hardware.memory;
 
 import org.junit.jupiter.api.Test;
 
