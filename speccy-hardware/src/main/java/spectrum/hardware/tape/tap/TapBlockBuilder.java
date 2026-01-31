@@ -152,8 +152,8 @@ public class TapBlockBuilder {
     /**
      * Creates a standard CODE header.
      *
-     * @param filename    Code name (max 10 chars)
-     * @param dataLength  Length of the following data block
+     * @param filename     Code name (max 10 chars)
+     * @param dataLength   Length of the following data block
      * @param startAddress Load address
      * @return Header TapBlock
      */

@@ -1,7 +1,6 @@
-package spectrum.jfx.hardware.ula;
+package spectrum.hardware.ula;
 
 import lombok.extern.slf4j.Slf4j;
-import spectrum.hardware.ula.InPortListener;
 import spectrum.hardware.machine.MachineSettings;
 
 @Slf4j

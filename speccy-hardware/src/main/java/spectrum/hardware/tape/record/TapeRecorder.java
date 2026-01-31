@@ -17,7 +17,7 @@ import static spectrum.hardware.tape.TapeConstants.*;
  * <p>
  * Decodes the standard ZX Spectrum tape protocol:
  * IDLE → (pilot pulses) → PILOT → (sync1) → SYNC1 → (sync2) → SYNC2 → DATA
- *  → (block complete) → BLOCK_COMPLETE → (pilot) → PILOT
+ * → (block complete) → BLOCK_COMPLETE → (pilot) → PILOT
  */
 @Slf4j
 public class TapeRecorder implements PulseDetector.PulseListener, ByteAccumulator.ByteListener {

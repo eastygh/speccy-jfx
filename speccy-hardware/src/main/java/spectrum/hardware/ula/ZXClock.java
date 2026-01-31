@@ -1,8 +1,7 @@
-package spectrum.jfx.hardware.ula;
+package spectrum.hardware.ula;
 
 import lombok.Getter;
 import machine.SpectrumClock;
-import spectrum.hardware.ula.ClockListener;
 
 import java.util.HashSet;
 import java.util.Set;

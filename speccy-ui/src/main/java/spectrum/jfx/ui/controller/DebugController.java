@@ -17,13 +17,13 @@ import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import spectrum.hardware.cpu.CPU;
 import spectrum.hardware.debug.DebugListener;
 import spectrum.hardware.debug.SuspendType;
 import spectrum.hardware.debug.Z80Disassembler;
-import spectrum.hardware.cpu.CPU;
 import spectrum.hardware.machine.HardwareProvider;
-import spectrum.hardware.memory.Memory;
 import spectrum.hardware.machine.Machine;
+import spectrum.hardware.memory.Memory;
 import spectrum.hardware.snapshot.CPUSnapShot;
 import spectrum.jfx.ui.theme.ThemeManager;
 

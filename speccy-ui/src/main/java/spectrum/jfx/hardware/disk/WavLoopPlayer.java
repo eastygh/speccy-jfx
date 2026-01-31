@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.disk.wd1793.sound;
+package spectrum.jfx.hardware.disk;
 
 import lombok.extern.slf4j.Slf4j;
 import spectrum.hardware.disk.wd1793.sound.LoopPlayer;
@@ -12,7 +12,6 @@ import java.net.URL;
 public final class WavLoopPlayer implements LoopPlayer, Runnable {
 
     private final URL[] wavUrls;
-    private final Thread thread;
 
     private volatile boolean running = true;
     private volatile boolean playing = false;
@@ -26,9 +25,9 @@ public final class WavLoopPlayer implements LoopPlayer, Runnable {
 
     public WavLoopPlayer(URL... wavUrls) {
         this.wavUrls = wavUrls;
-        this.thread = new Thread(this, "wav-loop-player");
-        this.thread.setDaemon(true);
-        this.thread.start();
+        Thread thread = new Thread(this, "wav-loop-player");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @Override
@@ -169,5 +168,6 @@ public final class WavLoopPlayer implements LoopPlayer, Runnable {
             stream = null;
         }
     }
+
 }
 

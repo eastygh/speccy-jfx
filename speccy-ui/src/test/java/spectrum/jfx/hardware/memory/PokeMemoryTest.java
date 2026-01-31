@@ -6,8 +6,9 @@ import org.junit.jupiter.api.Test;
 import spectrum.hardware.cpu.CPU;
 import spectrum.hardware.cpu.Z80CoreAdapter;
 import spectrum.hardware.machine.MachineSettings;
+import spectrum.hardware.memory.Memory64KImpl;
 import spectrum.hardware.ula.Ula;
-import spectrum.jfx.hardware.ula.UlaImpl;
+import spectrum.hardware.ula.UlaImpl;
 import z80core.NotifyOps;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

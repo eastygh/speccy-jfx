@@ -1,9 +1,11 @@
-package spectrum.jfx.hardware.disk.wd1793.sound;
+package spectrum.jfx.hardware.disk;
 
 import lombok.SneakyThrows;
 
-import javax.sound.sampled.*;
-import java.io.*;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import java.io.File;
 import java.util.Arrays;
 
 public final class FloppyWav {
@@ -42,5 +44,6 @@ public final class FloppyWav {
 
         return Arrays.copyOfRange(in, s, e + 1);
     }
+
 }
 

@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.disk.wd1793.sound;
+package spectrum.jfx.hardware.disk;
 
 import java.io.File;
 import java.util.Objects;
@@ -34,7 +34,7 @@ public final class FloppyPcm {
             double low = Math.sin(2 * Math.PI * 150 * t);
             // Высокочастотный металлический щелчок
             double high = (rnd.nextDouble() * 2 - 1) * 0.5;
-            
+
             double val = (low * 0.6 + high * 0.4) * 28000 * env;
             buffer[i] = clip(val);
         }
@@ -53,10 +53,10 @@ public final class FloppyPcm {
             // Белый шум с полосовым фильтром (имитация)
             // Просто берем шум и ограничиваем его резкость
             double noise = (rnd.nextDouble() * 2 - 1);
-            
+
             // Модулируем амплитуду, чтобы был "стрекот"
-            double mod = 0.5 + 0.5 * Math.sin(2 * Math.PI * 1000 * ((double)i / SAMPLE_RATE));
-            
+            double mod = 0.5 + 0.5 * Math.sin(2 * Math.PI * 1000 * ((double) i / SAMPLE_RATE));
+
             double val = noise * mod * (write ? 4000 : 2500);
             buffer[i] = clip(val);
         }
@@ -76,10 +76,10 @@ public final class FloppyPcm {
 
             // Мягкий шум (основа шелеста)
             double noise = (rnd.nextDouble() * 2 - 1) * 0.3;
-            
+
             // Очень тихий низкий рокот (вибрация)
             double rumble = Math.sin(2 * Math.PI * 60 * t) * 0.2;
-            
+
             // Модуляция 5Гц (вращение 300 RPM)
             double rot = 0.8 + 0.2 * Math.sin(2 * Math.PI * 5 * t);
 
@@ -102,4 +102,5 @@ public final class FloppyPcm {
         if (val < -32768) return -32768;
         return (short) val;
     }
+
 }

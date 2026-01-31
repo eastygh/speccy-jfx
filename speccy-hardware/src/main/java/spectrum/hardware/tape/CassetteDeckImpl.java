@@ -1,11 +1,11 @@
-package spectrum.jfx.hardware.tape;
+package spectrum.hardware.tape;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import spectrum.hardware.tape.CassetteDeck;
 import spectrum.hardware.sound.Sound;
 import spectrum.hardware.tape.events.CassetteDeckEvent;
 import spectrum.hardware.tape.events.TapFilePlaybackEvent;
+import spectrum.hardware.tape.model.TapeFile;
 import spectrum.hardware.tape.playback.PilotToneSignal;
 import spectrum.hardware.tape.playback.SilentToneSignal;
 import spectrum.hardware.tape.playback.TapFilePlayback;
@@ -15,7 +15,6 @@ import spectrum.hardware.tape.tap.TapBlock;
 import spectrum.hardware.ula.ClockListener;
 import spectrum.hardware.ula.InPortListener;
 import spectrum.hardware.ula.OutPortListener;
-import spectrum.hardware.tape.model.TapeFile;
 
 import java.io.IOException;
 import java.util.List;

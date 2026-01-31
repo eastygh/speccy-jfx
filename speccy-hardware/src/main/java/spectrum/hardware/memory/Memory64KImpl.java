@@ -1,10 +1,9 @@
-package spectrum.jfx.hardware.memory;
+package spectrum.hardware.memory;
 
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import spectrum.hardware.machine.MachineSettings;
-import spectrum.hardware.memory.Memory;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;

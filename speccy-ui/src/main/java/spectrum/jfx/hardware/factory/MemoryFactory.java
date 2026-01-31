@@ -4,8 +4,8 @@ import lombok.experimental.UtilityClass;
 import machine.MachineTypes;
 import spectrum.hardware.machine.MachineSettings;
 import spectrum.hardware.memory.Memory;
-import spectrum.jfx.hardware.memory.Memory128KImpl;
-import spectrum.jfx.hardware.memory.Memory64KImpl;
+import spectrum.hardware.memory.Memory128KImpl;
+import spectrum.hardware.memory.Memory64KImpl;
 
 @UtilityClass
 public class MemoryFactory {

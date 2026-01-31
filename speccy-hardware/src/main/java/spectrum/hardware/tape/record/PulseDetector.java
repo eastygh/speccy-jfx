@@ -47,8 +47,8 @@ public class PulseDetector {
     /**
      * Processes an output port write to detect MIC level changes.
      *
-     * @param value    The value written to port 0xFE
-     * @param tStates  Current T-state counter
+     * @param value   The value written to port 0xFE
+     * @param tStates Current T-state counter
      */
     public void processOutput(int value, long tStates) {
         boolean newLevel = (value & MIC_MASK) != 0;

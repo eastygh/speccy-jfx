@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.tape;
+package spectrum.hardware.tape;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
