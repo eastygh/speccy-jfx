@@ -24,7 +24,7 @@ import spectrum.hardware.util.EmulatorUtils;
 import spectrum.hardware.video.Video;
 import spectrum.jfx.hardware.disk.FloppySoundEngineImpl;
 import spectrum.jfx.hardware.input.GamePadGLFWImpl;
-import spectrum.jfx.hardware.input.KempstonImpl;
+import spectrum.hardware.input.KempstonImpl;
 import spectrum.jfx.hardware.input.Keyboard;
 import spectrum.jfx.hardware.sound.BeeperImpl;
 import spectrum.jfx.hardware.sound.ay.AY38912;
@@ -39,9 +39,9 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static spectrum.jfx.hardware.factory.CPUFactory.createCPU;
-import static spectrum.jfx.hardware.factory.DiskFactory.createDiskController;
-import static spectrum.jfx.hardware.factory.MemoryFactory.createMemory;
+import static spectrum.hardware.factory.CPUFactory.createCPU;
+import static spectrum.hardware.factory.DiskFactory.createDiskController;
+import static spectrum.hardware.factory.MemoryFactory.createMemory;
 
 @Slf4j
 @Getter

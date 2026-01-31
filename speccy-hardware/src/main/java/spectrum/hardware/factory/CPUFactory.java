@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.factory;
+package spectrum.hardware.factory;
 
 import lombok.experimental.UtilityClass;
 import spectrum.hardware.cpu.CPU;

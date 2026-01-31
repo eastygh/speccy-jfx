@@ -1,11 +1,10 @@
-package spectrum.jfx.hardware.input;
+package spectrum.hardware.input;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import spectrum.hardware.input.GamePad;
 
 @Slf4j
-public class KempstonImpl implements spectrum.hardware.input.Kempston {
+public class KempstonImpl implements Kempston {
 
     @Getter
     GamePad gamePad;
