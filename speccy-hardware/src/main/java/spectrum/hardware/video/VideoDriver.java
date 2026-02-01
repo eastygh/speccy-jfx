@@ -1,5 +1,8 @@
 package spectrum.hardware.video;
 
+/**
+ * Interface for a physical video driver.
+ */
 public interface VideoDriver {
 
     void init();
