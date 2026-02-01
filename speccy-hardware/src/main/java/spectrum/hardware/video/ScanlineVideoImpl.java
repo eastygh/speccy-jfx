@@ -6,6 +6,8 @@ import machine.MachineTypes;
 import spectrum.hardware.machine.MachineSettings;
 import spectrum.hardware.memory.Memory;
 
+import java.util.Arrays;
+
 @Slf4j
 public class ScanlineVideoImpl implements Video {
 
@@ -51,7 +53,10 @@ public class ScanlineVideoImpl implements Video {
 
     @Override
     public void reset() {
-        // do nothing
+        clearScreen();
+        if (videoDriver != null) {
+            videoDriver.reset();
+        }
     }
 
     @Override
@@ -178,6 +183,12 @@ public class ScanlineVideoImpl implements Video {
             return;
         }
         videoDriver.drawPixel(x, y, color);
+    }
+
+    private void clearScreen() {
+        borderColor = 0;
+        Arrays.fill(pixels, 0);
+        dirtyScreen = false;
     }
 
 }

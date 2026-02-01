@@ -38,13 +38,13 @@ class WD1793ImplTest {
     void testRestoreCommand() {
         wd1793.outPort(0xFF, 0x08); // Select drive A, side 1, Motor ON (бит 3=1)
         wd1793.outPort(0x1F, 0x00); // Restore command
-        
+
         int status = wd1793.inPort(0x1F);
         assertTrue((status & 0x01) != 0, "Busy bit should be set");
         assertFalse((status & 0x80) != 0, "Not Ready bit should be 0 when Motor is ON and Disk is loaded");
-        
+
         advanceTime(10000); // Advance time
-        
+
         status = wd1793.inPort(0x1F);
         assertFalse((status & 0x01) != 0, "Busy bit should be cleared after completion");
         assertEquals(0, wd1793.inPort(0x3F), "Track register should be 0");
@@ -55,15 +55,15 @@ class WD1793ImplTest {
         wd1793.outPort(0xFF, 0x18); // Drive A, Side 0 (бит 4=1), Motor ON (бит 3=1)
         wd1793.outPort(0x3F, 0x00); // Track 0
         wd1793.outPort(0x5F, 0x09); // Sector 9
-        
+
         wd1793.outPort(0x1F, 0x80); // Read Sector command
-        
+
         // Wait for SEARCHING -> TRANSFERRING
         advanceTime(35000); // Задержка поиска теперь 30000
-        
+
         int status = wd1793.inPort(0x1F);
         assertTrue((status & 0x02) != 0, "DRQ bit should be set. Status was: " + Integer.toHexString(status));
-        
+
         int sysPort = wd1793.inPort(0xFF);
         assertTrue((sysPort & 0x40) != 0, "DRQ in system port should be 1 when DRQ is 1");
 
@@ -79,7 +79,7 @@ class WD1793ImplTest {
                 assertTrue((status & 0x02) != 0, "DRQ should be set again for next byte at " + i);
             }
         }
-        
+
         status = wd1793.inPort(0x1F);
         assertFalse((status & 0x01) != 0, "Busy should be cleared after sector read");
     }
@@ -89,22 +89,22 @@ class WD1793ImplTest {
         wd1793.outPort(0xFF, 0x18); // Motor ON, Side 0
         wd1793.outPort(0x3F, 0x00); // Track 0
         wd1793.outPort(0x5F, 0x01); // Sector 1
-        
+
         wd1793.outPort(0x1F, 0x80); // Read Sector (Type II)
         advanceTime(35000);
-        
+
         // Read all 256 bytes
         for (int i = 0; i < 256; i++) {
             wd1793.inPort(0x7F);
             advanceTime(200);
         }
-        
+
         // Now command is finished. Status should be Type II still.
         // In Type II, bit 2 is LOST DATA.
         // If we incorrectly switched to Type I, bit 2 would be TRACK0 (which is 1 on track 0).
         int status = wd1793.inPort(0x1F);
         assertFalse((status & 0x04) != 0, "Bit 2 should be 0 (No Lost Data) if status is Type II. If it's 1, it means we switched to Type I and see TRACK0");
-        
+
         // Now send Force Interrupt to switch to Type I
         wd1793.outPort(0x1F, 0xD0);
         status = wd1793.inPort(0x1F);
@@ -135,28 +135,28 @@ class WD1793ImplTest {
         wd1793.outPort(0xFF, 0x18); // Drive A, Side 0, Motor ON
         wd1793.outPort(0x3F, 0x05); // Track 5
         wd1793.outPort(0x5F, 0x0A); // Sector 10
-        
+
         wd1793.outPort(0x1F, 0xC0); // Read Address command
-        
+
         advanceTime(20000); // Задержка теперь 15000
-        
+
         assertTrue((wd1793.inPort(0x1F) & 0x02) != 0, "DRQ should be set");
         assertEquals(5, wd1793.inPort(0x7F), "Track mismatch");
-        
+
         advanceTime(200);
         assertEquals(0, wd1793.inPort(0x7F), "Side mismatch (0x10 is Side 0)");
-        
+
         advanceTime(200);
         assertEquals(10, wd1793.inPort(0x7F), "Sector mismatch");
-        
+
         advanceTime(200);
         assertEquals(1, wd1793.inPort(0x7F), "Length mismatch");
-        
+
         advanceTime(200);
         wd1793.inPort(0x7F); // CRC 1
         advanceTime(200);
         wd1793.inPort(0x7F); // CRC 2
-        
+
         assertFalse((wd1793.inPort(0x1F) & 0x01) != 0, "Busy should be cleared");
     }
 
@@ -164,16 +164,16 @@ class WD1793ImplTest {
     void testSystemReset() {
         wd1793.outPort(0x3F, 10); // Set track to 10
         assertEquals(10, wd1793.inPort(0x3F));
-        
+
         // Pulse Reset (Bit 2 = 0)
         wd1793.outPort(0xFF, 0x38); // 0x38 = 0011 1000 (Bit 2 = 0)
         assertEquals(0, wd1793.inPort(0x3F), "Track should be reset to 0");
         assertFalse((wd1793.inPort(0x1F) & 0x01) != 0, "Busy should be 0 during reset");
-        
+
         // Release Reset (Bit 2 = 1)
         wd1793.outPort(0xFF, 0x3C); // 0x3C = 0011 1100 (Bit 2 = 1)
         assertTrue((wd1793.inPort(0x1F) & 0x01) != 0, "Busy should be 1 after reset (Restore command)");
-        
+
         advanceTime(10000);
         assertFalse((wd1793.inPort(0x1F) & 0x01) != 0, "Busy should be 0 after Restore completes");
     }
@@ -183,7 +183,7 @@ class WD1793ImplTest {
         wd1793.outPort(0xFF, 0x00); // Motor OFF
         int status = wd1793.inPort(0x1F);
         assertTrue((status & 0x80) != 0, "Should be NOT READY when motor is OFF");
-        
+
         wd1793.outPort(0xFF, 0x08); // Motor ON
         status = wd1793.inPort(0x1F);
         assertFalse((status & 0x80) != 0, "Should be READY when motor is ON and disk inserted");
@@ -217,16 +217,16 @@ class WD1793ImplTest {
         wd1793.outPort(0xFF, 0x18); // Drive A, Side 0, Motor ON
         wd1793.outPort(0x3F, 0x05); // Track 5
         wd1793.outPort(0x5F, 0x0A); // Sector 10
-        
+
         wd1793.outPort(0x1F, 0xC0); // Read Address command
         advanceTime(20000);
-        
+
         // Read 6 bytes
         for (int i = 0; i < 6; i++) {
             wd1793.inPort(0x7F);
             advanceTime(200);
         }
-        
+
         assertEquals(5, wd1793.inPort(0x5F), "Sector register should be updated with track number (5) after Read Address");
     }
 
@@ -234,27 +234,27 @@ class WD1793ImplTest {
     void testStepCommands() {
         wd1793.outPort(0xFF, 0x08); // Motor ON
         wd1793.outPort(0x3F, 10);   // Track 10
-        
+
         // Step Out (towards 0) with update=1 (0x60 | 0x10 = 0x70)
         wd1793.outPort(0x1F, 0x70);
         advanceTime(10000);
         assertEquals(9, wd1793.inPort(0x3F), "Track should be 9 after Step Out with update");
-        
+
         // Step (same direction) with update=1 (0x20 | 0x10 = 0x30)
         wd1793.outPort(0x1F, 0x30);
         advanceTime(10000);
         assertEquals(8, wd1793.inPort(0x3F), "Track should be 8 after Step with update (continuing Out)");
-        
+
         // Step In (towards center) with update=1 (0x40 | 0x10 = 0x50)
         wd1793.outPort(0x1F, 0x50);
         advanceTime(10000);
         assertEquals(9, wd1793.inPort(0x3F), "Track should be 9 after Step In with update");
-        
+
         // Step (same direction) with update=0 (0x20)
         wd1793.outPort(0x1F, 0x20);
         advanceTime(10000);
         assertEquals(9, wd1793.inPort(0x3F), "Track should STILL be 9 after Step without update");
-        
+
         // But physical track should have moved to 10. Let's verify by checking TRACK0 bit later or just trust the logic.
         // Actually we can check S_TRACK0 if we go to 0.
     }

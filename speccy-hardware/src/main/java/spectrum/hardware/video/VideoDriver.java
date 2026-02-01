@@ -6,10 +6,13 @@ public interface VideoDriver {
 
     void refreshScreen();
 
+    void reset();
+
     /**
      * Draw a pixel on the physical screen.
-     * @param x - X coordinate of the pixel
-     * @param y - Y coordinate of the pixel
+     *
+     * @param x     - X coordinate of the pixel
+     * @param y     - Y coordinate of the pixel
      * @param color - Spectrum Color of the pixel
      */
     void drawPixel(int x, int y, int color);
@@ -31,7 +34,7 @@ public interface VideoDriver {
     }
 
     default int getScaledTotalWidth() {
-        return Video.SCREEN_WIDTH * getCurrentZoom().getScale();
+        return Video.TOTAL_WIDTH * getCurrentZoom().getScale();
     }
 
     default int getScaledTotalHeight() {

@@ -11,6 +11,7 @@ import spectrum.hardware.video.VideoDriver;
 import spectrum.hardware.video.ZoomLevel;
 
 import java.nio.IntBuffer;
+import java.util.Arrays;
 
 import static spectrum.jfx.hardware.video.SpectrumVideo.SPECTRUM_COLORS_ARGB;
 
@@ -45,6 +46,8 @@ public class JFXVideoDriver implements VideoDriver {
                 PixelFormat.getIntArgbPreInstance());
         screenImage = new WritableImage(pixelBuffer);
 
+        clearScreen();
+
         this.initialized = true;
     }
 
@@ -59,6 +62,11 @@ public class JFXVideoDriver implements VideoDriver {
             return;
         }
         setPixel(x, y, SPECTRUM_COLORS_ARGB[color]);
+    }
+
+    @Override
+    public void reset() {
+        clearScreen();
     }
 
     /**
@@ -93,6 +101,11 @@ public class JFXVideoDriver implements VideoDriver {
             pixelBuffer.updateBuffer(pb -> null);
             gc.drawImage(screenImage, 0, 0, canvas.getWidth(), canvas.getHeight());
         });
+    }
+
+    private void clearScreen() {
+        Arrays.fill(scaledPixels, SPECTRUM_COLORS_ARGB[0]);
+        drawSnapshot();
     }
 
 }
