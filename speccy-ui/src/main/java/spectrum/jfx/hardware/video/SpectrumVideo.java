@@ -32,7 +32,7 @@ public class SpectrumVideo {
 
     public static final int[] SPECTRUM_COLORS_ARGB = Arrays.stream(SPECTRUM_COLORS).mapToInt(SpectrumVideo::toARGB).toArray();
 
-    // Адреса видеопамяти
+    // Screen memory addresses
     public static final int BITMAP_START = 0x4000;
     public static final int BITMAP_SIZE = 6144;   // 256*192/8
     public static final int ATTR_START = 0x5800;

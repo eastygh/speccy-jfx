@@ -14,6 +14,9 @@ import spectrum.hardware.machine.MachineSettings;
 import spectrum.hardware.memory.Memory;
 import spectrum.hardware.ula.ClockListener;
 import spectrum.hardware.ula.OutPortListener;
+import spectrum.hardware.video.Video;
+import spectrum.hardware.video.VideoDriver;
+import spectrum.hardware.video.ZoomLevel;
 
 import java.nio.IntBuffer;
 import java.util.Arrays;
@@ -21,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static spectrum.jfx.hardware.video.SpectrumVideo.*;
 
-public class ScanlineVideoImpl implements spectrum.hardware.video.Video<Canvas>, OutPortListener, ClockListener {
+public class ScanlineVideoImpl implements Video, OutPortListener, ClockListener {
 
     private final Memory memory;
     private final MachineSettings machineSettings;
@@ -29,7 +32,7 @@ public class ScanlineVideoImpl implements spectrum.hardware.video.Video<Canvas>,
     @Getter
     private final Canvas canvas;
     private final GraphicsContext gc;
-    private spectrum.hardware.video.ZoomLevel currentZoom = spectrum.hardware.video.ZoomLevel.X2;
+    private ZoomLevel currentZoom = ZoomLevel.X2;
 
     private final WritableImage screenImage;
     private final PixelBuffer<IntBuffer> pixelBuffer;
@@ -78,38 +81,23 @@ public class ScanlineVideoImpl implements spectrum.hardware.video.Video<Canvas>,
         borderColor = value & 0x07;
     }
 
-    @Override
-    public void update(int cycles) {
 
-    }
-
-    @Override
-    public void render() {
-
-    }
-
-    @Override
-    public void markScreenDirty() {
-
-    }
-
-    @Override
     public void setZoomLevel(spectrum.hardware.video.ZoomLevel newZoom) {
         currentZoom = newZoom;
     }
 
-    @Override
+
     public void nextZoomLevel() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    @Override
+
     public void previousZoomLevel() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    @Override
-    public spectrum.hardware.video.ZoomLevel getCurrentZoom() {
+
+    public ZoomLevel getCurrentZoom() {
         return currentZoom;
     }
 
@@ -266,12 +254,10 @@ public class ScanlineVideoImpl implements spectrum.hardware.video.Video<Canvas>,
         });
     }
 
-    @Override
     public void start() {
 
     }
 
-    @Override
     public void stop() {
 
     }
@@ -303,4 +289,8 @@ public class ScanlineVideoImpl implements spectrum.hardware.video.Video<Canvas>,
         this.speedUpMode = speedUpMode;
     }
 
+    @Override
+    public void setVideoDriver(VideoDriver videoDriver) {
+        // do nothing
+    }
 }

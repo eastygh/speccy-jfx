@@ -2,11 +2,11 @@ package spectrum.jfx.ui;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import spectrum.jfx.hardware.SpectrumEmulator;
+import spectrum.jfx.hardware.video.JFXVideoDriver;
 import spectrum.jfx.ui.controller.MainController;
 import spectrum.jfx.ui.localization.LocalizationManager;
 import spectrum.jfx.ui.settings.AppSettings;
@@ -21,6 +21,8 @@ public class GUIApplication extends Application {
 
     private static final Logger logger = Logger.getLogger(GUIApplication.class.getName());
 
+    private JFXVideoDriver videoDriver;
+
     @Override
     public void start(Stage stage) throws IOException {
 
@@ -34,8 +36,10 @@ public class GUIApplication extends Application {
         BorderPane root = fxmlLoader.load();
 
         SpectrumEmulator emulator = new SpectrumEmulator();
+        videoDriver = new JFXVideoDriver();
+        videoDriver.setZoomLevel(X2);
+        videoDriver.init();
         emulator.init();
-        emulator.getVideo().setZoomLevel(X2);
 
         // Get controller and pass emulator reference to it
         MainController controller = fxmlLoader.getController();
@@ -45,8 +49,8 @@ public class GUIApplication extends Application {
 
         // Calculate window size considering all UI elements
         // Canvas includes full size: screen + two borders on each side
-        double videoWidth = (emulator.getVideo().getScaledScreenWidth() + 2 * emulator.getVideo().getScaledBorderSize());
-        double videoHeight = (emulator.getVideo().getScaledScreenHeight() + 2 * emulator.getVideo().getScaledBorderSize());
+        double videoWidth = (videoDriver.getScaledScreenWidth() + 2 * videoDriver.getScaledBorderSize());
+        double videoHeight = (videoDriver.getScaledScreenHeight() + 2 * videoDriver.getScaledBorderSize());
 
         // Use saved window dimensions or calculated defaults
         double width = settings.isWindowMaximized() ? settings.getWindowWidth() : videoWidth + 40.0;
@@ -132,11 +136,12 @@ public class GUIApplication extends Application {
         // Return focus to videoContainer on mouse click
         controller.getVideoContainer().setOnMouseClicked(event -> controller.getVideoContainer().requestFocus());
 
-        controller.getVideoContainer().getChildren().add((Node) emulator.getVideo().getCanvas());
+        controller.getVideoContainer().getChildren().add(videoDriver.getCanvas());
 
         // Set focus on videoContainer after adding canvas
         controller.getVideoContainer().requestFocus();
 
+        emulator.getVideo().setVideoDriver(videoDriver);
         emulator.start();
 
     }

@@ -4,6 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum ZoomLevel {
+
     X1(1, "1x"),
     X2(2, "2x"),
     X4(4, "4x");

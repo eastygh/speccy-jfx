@@ -12,6 +12,7 @@ import spectrum.hardware.debug.DebugManager;
 import spectrum.hardware.debug.DebugManagerImpl;
 import spectrum.hardware.disk.DiskController;
 import spectrum.hardware.input.Kempston;
+import spectrum.hardware.input.KempstonImpl;
 import spectrum.hardware.machine.*;
 import spectrum.hardware.memory.Memory;
 import spectrum.hardware.sound.Sound;
@@ -21,14 +22,13 @@ import spectrum.hardware.ula.InPortListener;
 import spectrum.hardware.ula.OutPortListener;
 import spectrum.hardware.ula.UlaImpl;
 import spectrum.hardware.util.EmulatorUtils;
+import spectrum.hardware.video.ScanlineVideoImpl;
 import spectrum.hardware.video.Video;
 import spectrum.jfx.hardware.disk.FloppySoundEngineImpl;
 import spectrum.jfx.hardware.input.GamePadGLFWImpl;
-import spectrum.hardware.input.KempstonImpl;
 import spectrum.jfx.hardware.input.Keyboard;
 import spectrum.jfx.hardware.sound.BeeperImpl;
 import spectrum.jfx.hardware.sound.ay.AY38912;
-import spectrum.jfx.hardware.video.ScanlineVideoImpl;
 import z80core.NotifyOps;
 
 import java.io.IOException;
@@ -52,7 +52,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
     CPU cpu;
     Memory memory;
-    Video<?> video;
+    Video video;
     Keyboard keyboard;
     Sound sound;
     Sound ay38912;
@@ -94,7 +94,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         SpectrumClock.INSTANCE.setSpectrumModel(machineSettings.getMachineType());
 
         this.memory = createMemory(machineSettings);
-        this.video = new ScanlineVideoImpl(memory, machineSettings);
+        this.video = new ScanlineVideoImpl(null, memory, machineSettings);
         devices.add(video);
         this.keyboard = new Keyboard();
         devices.add(keyboard);
@@ -104,7 +104,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
         this.ula.addPortListener(0xfd, memory); //  0x7ffd Bank switching
         this.ula.addPortListener(0xfe, keyboard); // keyboard
-        this.ula.addPortListener(0xfe, (OutPortListener) video); // Border color
+        this.ula.addPortListener(0xfe, video); // Border color
 
         this.sound = new BeeperImpl(machineSettings); // Sound Beeper
         devices.add(sound);
@@ -178,7 +178,8 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         // Загрузка ROM в память
         //loadROM();
 
-        video.start();
+        video.open();
+        video.reset();
 
         // Сброс процессора
         cpu.reset();
@@ -204,7 +205,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         pause();
         waitForHold();
         running = false;
-        video.stop();
+        video.close();
         ula.reset();
         sound.close();
         cassetteDeck.close();
@@ -300,15 +301,12 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
                 ula.addTStates(cycles);
             }
             executedCycles += cycles;
-
-            video.update(cycles);
-
             sound.play(cycles);
 
             debugManager.postExecuteCheck(this);
         }
         // Render frame by hardware
-        video.render();
+        video.endFrame();
         ula.requestInterrupt();
         clock.endFrame();
         if (!speedUpMode) {
