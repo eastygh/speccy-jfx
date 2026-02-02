@@ -12,6 +12,7 @@ import spectrum.hardware.video.ZoomLevel;
 
 import java.nio.IntBuffer;
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 import static spectrum.jfx.hardware.video.ColorsUtils.SPECTRUM_COLORS_ARGB;
 
@@ -29,6 +30,8 @@ public class JFXVideoDriver implements VideoDriver {
 
     private boolean initialized = false;
 
+    private Consumer<ZoomLevel> zoomChangeListener;
+
     @Override
     public void init() {
         if (initialized) {
@@ -39,21 +42,51 @@ public class JFXVideoDriver implements VideoDriver {
         this.canvas = new Canvas(scaledTotalWidth, scaledTotalHeight);
         this.gc = canvas.getGraphicsContext2D();
 
-        scaledPixels = new int[scaledTotalWidth * scaledTotalHeight];
-        IntBuffer buffer = IntBuffer.wrap(scaledPixels);
-
-        pixelBuffer = new PixelBuffer<>(scaledTotalWidth, scaledTotalHeight, buffer,
-                PixelFormat.getIntArgbPreInstance());
-        screenImage = new WritableImage(pixelBuffer);
+        createBuffers(scaledTotalWidth, scaledTotalHeight);
 
         clearScreen();
 
         this.initialized = true;
     }
 
+    private void createBuffers(int width, int height) {
+        scaledPixels = new int[width * height];
+        IntBuffer buffer = IntBuffer.wrap(scaledPixels);
+
+        pixelBuffer = new PixelBuffer<>(width, height, buffer,
+                PixelFormat.getIntArgbPreInstance());
+        screenImage = new WritableImage(pixelBuffer);
+    }
+
     @Override
     public void setZoomLevel(ZoomLevel zoomLevel) {
+        if (currentZoom == zoomLevel) {
+            return;
+        }
         currentZoom = zoomLevel;
+
+        if (initialized) {
+            Platform.runLater(this::resizeCanvas);
+        }
+    }
+
+    private void resizeCanvas() {
+        int scaledTotalWidth = getScaledTotalWidth();
+        int scaledTotalHeight = getScaledTotalHeight();
+
+        canvas.setWidth(scaledTotalWidth);
+        canvas.setHeight(scaledTotalHeight);
+
+        createBuffers(scaledTotalWidth, scaledTotalHeight);
+        clearScreen();
+
+        if (zoomChangeListener != null) {
+            zoomChangeListener.accept(currentZoom);
+        }
+    }
+
+    public void setZoomChangeListener(Consumer<ZoomLevel> listener) {
+        this.zoomChangeListener = listener;
     }
 
     @Override
@@ -83,7 +116,9 @@ public class JFXVideoDriver implements VideoDriver {
         for (int dy = 0; dy < currentZoom.getScale(); dy++) {
             for (int dx = 0; dx < currentZoom.getScale(); dx++) {
                 int index = (scaledY + dy) * scaledWidth + (scaledX + dx);
-                scaledPixels[index] = iARGB;
+                if (index >= 0 && index < scaledPixels.length) {
+                    scaledPixels[index] = iARGB;
+                }
             }
         }
     }
@@ -107,5 +142,4 @@ public class JFXVideoDriver implements VideoDriver {
         Arrays.fill(scaledPixels, SPECTRUM_COLORS_ARGB[0]);
         drawSnapshot();
     }
-
 }

@@ -47,20 +47,18 @@ public class GUIApplication extends Application {
         // Обновляем видимость тулбара диска после инициализации эмулятора
         controller.updateDiskToolBarVisibility();
 
-        // Calculate window size considering all UI elements
-        // Canvas includes full size: screen + two borders on each side
-        double videoWidth = (videoDriver.getScaledScreenWidth() + 2 * videoDriver.getScaledBorderSize());
-        double videoHeight = (videoDriver.getScaledScreenHeight() + 2 * videoDriver.getScaledBorderSize());
-
-        // Use saved window dimensions or calculated defaults
-        double width = settings.isWindowMaximized() ? settings.getWindowWidth() : videoWidth + 40.0;
-        double height = settings.isWindowMaximized() ? settings.getWindowHeight() : videoHeight + 40.0 + 100.0;
+        // Calculate window size - canvas size only, chrome will be added by stage
+        double videoWidth = videoDriver.getScaledTotalWidth();
+        double videoHeight = videoDriver.getScaledTotalHeight();
 
         // Debug output
         logger.info("Video canvas size: " + videoWidth + "x" + videoHeight);
-        logger.info("Window size: " + width + "x" + height);
 
-        Scene scene = new Scene(root, width, height);
+        // Set videoContainer preferred size
+        controller.getVideoContainer().setPrefWidth(videoWidth);
+        controller.getVideoContainer().setPrefHeight(videoHeight);
+
+        Scene scene = new Scene(root);
 
         // Apply saved theme
         ThemeManager.applyTheme(scene, settings.getTheme());
@@ -78,15 +76,14 @@ public class GUIApplication extends Application {
                 break;
         }
 
+        // Set default zoom radio button (X2)
+        controller.getZoom2MenuItem().setSelected(true);
+
         // Pass scene reference to controller for theme switching
         controller.setScene(scene);
 
         stage.setTitle(localizationManager.getString("app.title"));
         stage.setScene(scene);
-
-        // Set minimum window size
-        stage.setMinWidth(videoWidth + 40.0);
-        stage.setMinHeight(videoHeight + 40.0 + 100.0);
 
         // Allow window resizing
         stage.setResizable(true);
@@ -137,6 +134,15 @@ public class GUIApplication extends Application {
         controller.getVideoContainer().setOnMouseClicked(event -> controller.getVideoContainer().requestFocus());
 
         controller.getVideoContainer().getChildren().add(videoDriver.getCanvas());
+
+        // Initialize window chrome (difference between window and canvas size)
+        controller.initWindowChrome(videoDriver);
+
+        // Set up zoom change listener to resize window and redraw screen
+        videoDriver.setZoomChangeListener(zoomLevel -> {
+            controller.updateWindowSize(videoDriver);
+            emulator.getVideo().redrawScreen();
+        });
 
         // Set focus on videoContainer after adding canvas
         controller.getVideoContainer().requestFocus();

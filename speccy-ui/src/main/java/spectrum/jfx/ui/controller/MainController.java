@@ -22,6 +22,9 @@ import spectrum.hardware.machine.Emulator;
 import spectrum.hardware.machine.HardwareProvider;
 import spectrum.hardware.machine.Machine;
 import spectrum.hardware.memory.Memory;
+import spectrum.hardware.video.VideoDriver;
+import spectrum.hardware.video.ZoomLevel;
+import spectrum.jfx.hardware.video.JFXVideoDriver;
 import spectrum.jfx.ui.localization.LocalizationManager;
 import spectrum.jfx.ui.localization.LocalizationManager.LocalizationChangeListener;
 import spectrum.jfx.ui.settings.AppSettings;
@@ -37,6 +40,10 @@ public class MainController implements LocalizationChangeListener {
 
     @FXML
     public VBox videoContainer;
+
+    // Window chrome (decorations, menu, toolbars) - initialized on first zoom change
+    private double windowChromeWidth = -1;
+    private double windowChromeHeight = -1;
 
     @FXML
     private MenuBar menuBar;
@@ -495,25 +502,79 @@ public class MainController implements LocalizationChangeListener {
     // Обработчики меню настроек
     @FXML
     protected void onZoom1() {
-        if (getEmulator() != null) {
-            // TODO: Установить масштаб x1
-            log.info("Масштаб установлен: x1");
-        }
+        setZoomLevel(ZoomLevel.X1);
     }
 
     @FXML
     protected void onZoom2() {
-        if (getEmulator() != null) {
-            // TODO: Установить масштаб x2
-            log.info("Масштаб установлен: x2");
-        }
+        setZoomLevel(ZoomLevel.X2);
     }
 
     @FXML
     protected void onZoom3() {
-        if (getEmulator() != null) {
-            // TODO: Установить масштаб x3
-            log.info("Масштаб установлен: x3");
+        setZoomLevel(ZoomLevel.X3);
+    }
+
+    private void setZoomLevel(ZoomLevel zoomLevel) {
+        if (getEmulator() == null) {
+            return;
+        }
+        VideoDriver videoDriver = Machine.getHardwareProvider().getVideo().getVideoDriver();
+        if (videoDriver != null) {
+            videoDriver.setZoomLevel(zoomLevel);
+            log.info("Масштаб установлен: {}", zoomLevel.getDisplayName());
+        }
+    }
+
+    public void initWindowChrome(VideoDriver videoDriver) {
+        if (scene == null || videoDriver == null) {
+            return;
+        }
+        Stage stage = (Stage) scene.getWindow();
+        if (stage == null) {
+            return;
+        }
+        double canvasWidth = videoDriver.getScaledTotalWidth();
+        double canvasHeight = videoDriver.getScaledTotalHeight();
+        windowChromeWidth = stage.getWidth() - canvasWidth;
+        windowChromeHeight = stage.getHeight() - canvasHeight;
+        log.info("Initialized window chrome: {}x{}", windowChromeWidth, windowChromeHeight);
+    }
+
+    public void updateWindowSize(VideoDriver videoDriver) {
+        if (scene == null || videoDriver == null) {
+            return;
+        }
+        Stage stage = (Stage) scene.getWindow();
+        if (stage == null) {
+            return;
+        }
+
+        double newVideoWidth = videoDriver.getScaledTotalWidth();
+        double newVideoHeight = videoDriver.getScaledTotalHeight();
+
+        // Update videoContainer preferred size
+        videoContainer.setPrefWidth(newVideoWidth);
+        videoContainer.setPrefHeight(newVideoHeight);
+
+        // Calculate chrome on first call (difference between window and canvas size)
+        if (windowChromeWidth < 0) {
+            windowChromeWidth = stage.getWidth() - newVideoWidth;
+            windowChromeHeight = stage.getHeight() - newVideoHeight;
+            log.info("Calculated window chrome: {}x{}", windowChromeWidth, windowChromeHeight);
+        }
+
+        double newWindowWidth = newVideoWidth + windowChromeWidth;
+        double newWindowHeight = newVideoHeight + windowChromeHeight;
+
+        // Update minimum window size
+        stage.setMinWidth(newWindowWidth);
+        stage.setMinHeight(newWindowHeight);
+
+        // Resize window if not maximized
+        if (!stage.isMaximized()) {
+            stage.setWidth(newWindowWidth);
+            stage.setHeight(newWindowHeight);
         }
     }
 

@@ -7,6 +7,7 @@ import spectrum.hardware.input.Kempston;
 import spectrum.hardware.memory.Memory;
 import spectrum.hardware.sound.Sound;
 import spectrum.hardware.tape.CassetteDeck;
+import spectrum.hardware.video.Video;
 
 
 public interface HardwareProvider {
@@ -26,5 +27,7 @@ public interface HardwareProvider {
     DebugManager getDebugManager();
 
     void setDebugListener(DebugListener listener);
+
+    Video getVideo();
 
 }

@@ -19,6 +19,16 @@ public interface Video extends Device, ClockListener, OutPortListener {
 
     void setVideoDriver(VideoDriver videoDriver);
 
+    VideoDriver getVideoDriver();
+
+    /**
+     * Force redraw entire screen from internal pixel buffer.
+     * Used after zoom level change to repopulate video driver buffers.
+     */
+    default void redrawScreen() {
+        // default implementation does nothing
+    }
+
     /**
      * ================
      * SCREEN SIZES

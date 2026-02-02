@@ -1,5 +1,6 @@
 package spectrum.hardware.video;
 
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import machine.MachineTypes;
@@ -29,6 +30,7 @@ public class ScanlineVideoImpl implements Video {
     private boolean dirtyScreen = false;
 
     @Setter
+    @Getter
     private VideoDriver videoDriver;
 
     private final int[] pixels = new int[TOTAL_HEIGHT * TOTAL_WIDTH];
@@ -189,6 +191,22 @@ public class ScanlineVideoImpl implements Video {
         borderColor = 0;
         Arrays.fill(pixels, 0);
         dirtyScreen = false;
+    }
+
+    @Override
+    public void redrawScreen() {
+        if (videoDriver == null) {
+            return;
+        }
+        // Redraw all pixels from internal buffer
+        for (int y = 0; y < TOTAL_HEIGHT; y++) {
+            for (int x = 0; x < TOTAL_WIDTH; x++) {
+                int index = y * TOTAL_WIDTH + x;
+                int color = pixels[index];
+                videoDriver.drawPixel(x, y, color);
+            }
+        }
+        videoDriver.refreshScreen();
     }
 
 }
