@@ -6,10 +6,10 @@ import lombok.experimental.UtilityClass;
 import java.util.Arrays;
 
 @UtilityClass
-public class SpectrumVideo {
+public class ColorsUtils {
 
-    // Стандартная палитра ZX Spectrum
-    public static final Color[] SPECTRUM_COLORS = {
+    // Standard Spectrum colors
+    static final Color[] SPECTRUM_COLORS = {
             Color.rgb(0, 0, 0),       // 0: Black
             Color.rgb(0, 0, 215),     // 1: Blue
             Color.rgb(215, 0, 0),     // 2: Red
@@ -30,22 +30,7 @@ public class SpectrumVideo {
             Color.rgb(255, 255, 255)  // 15: Bright White
     };
 
-    public static final int[] SPECTRUM_COLORS_ARGB = Arrays.stream(SPECTRUM_COLORS).mapToInt(SpectrumVideo::toARGB).toArray();
-
-    // Screen memory addresses
-    public static final int BITMAP_START = 0x4000;
-    public static final int BITMAP_SIZE = 6144;   // 256*192/8
-    public static final int ATTR_START = 0x5800;
-    public static final int ATTR_SIZE = 768;      // 32*24
-
-    public static final int SCREEN_WIDTH = 256;
-    public static final int SCREEN_HEIGHT = 192;
-    public static final int SCREEN_SIZE = SCREEN_WIDTH * SCREEN_HEIGHT;
-
-    public static final int BORDER_V_SIZE = 48; // Vertical border size
-    public static final int BORDER_H_SIZE = 48; // Horizontal border size
-    public static final int TOTAL_WIDTH = SCREEN_WIDTH + BORDER_H_SIZE * 2;
-    public static final int TOTAL_HEIGHT = SCREEN_HEIGHT + BORDER_V_SIZE * 2;
+    static final int[] SPECTRUM_COLORS_ARGB = Arrays.stream(SPECTRUM_COLORS).mapToInt(ColorsUtils::toARGB).toArray();
 
     public static int toARGB(Color color) {
         // Convert double values (0.0-1.0) to int values (0-255)

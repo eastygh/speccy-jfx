@@ -13,7 +13,7 @@ import spectrum.hardware.video.ZoomLevel;
 import java.nio.IntBuffer;
 import java.util.Arrays;
 
-import static spectrum.jfx.hardware.video.SpectrumVideo.SPECTRUM_COLORS_ARGB;
+import static spectrum.jfx.hardware.video.ColorsUtils.SPECTRUM_COLORS_ARGB;
 
 public class JFXVideoDriver implements VideoDriver {
 

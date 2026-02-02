@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Set;
 
 @Slf4j
-public class UlaImpl implements spectrum.hardware.ula.Ula {
+public class UlaImpl implements Ula {
 
     @Getter
     private final Memory memory;
