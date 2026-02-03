@@ -1,12 +1,12 @@
 package spectrum.hardware.input;
 
+import spectrum.hardware.machine.Driver;
+
 /**
  * Interface for a physical keyboard driver.
  */
-public interface KeyboardDriver {
+public interface KeyboardDriver extends Driver {
 
-    void init();
-
-    void reset();
+    int readKeyboard(int port);
 
 }

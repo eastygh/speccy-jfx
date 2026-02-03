@@ -46,7 +46,10 @@ public class KeyboardImpl implements Keyboard {
 
     @Override
     public int inPort(int port) {
-        return 0;
+        if (keyboardDriver == null) {
+            return 0;
+        }
+        return keyboardDriver.readKeyboard(port);
     }
 
 }

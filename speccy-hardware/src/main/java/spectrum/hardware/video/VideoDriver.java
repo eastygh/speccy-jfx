@@ -1,15 +1,13 @@
 package spectrum.hardware.video;
 
+import spectrum.hardware.machine.Driver;
+
 /**
  * Interface for a physical video driver.
  */
-public interface VideoDriver {
-
-    void init();
+public interface VideoDriver extends Driver {
 
     void refreshScreen();
-
-    void reset();
 
     /**
      * Draw a pixel on the physical screen.
