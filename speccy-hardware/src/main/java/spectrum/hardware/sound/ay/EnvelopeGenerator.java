@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.sound.ay;
+package spectrum.hardware.sound.ay;
 
 /**
  * Envelope generator for AY-3-8912.

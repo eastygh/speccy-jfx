@@ -1,9 +1,9 @@
-package spectrum.jfx.hardware.sound.ay;
+package spectrum.hardware.sound.ay;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import static spectrum.jfx.hardware.sound.ay.AyConstants.ENVELOPE_SHAPE_MASK;
+import static spectrum.hardware.sound.ay.AyConstants.ENVELOPE_SHAPE_MASK;
 
 /**
  * Envelope shapes for AY-3-8912.

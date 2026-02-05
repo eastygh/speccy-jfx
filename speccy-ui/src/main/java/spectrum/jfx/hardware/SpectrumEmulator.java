@@ -17,6 +17,7 @@ import spectrum.hardware.input.Keyboard;
 import spectrum.hardware.input.KeyboardImpl;
 import spectrum.hardware.machine.*;
 import spectrum.hardware.memory.Memory;
+import spectrum.hardware.sound.BeeperImpl;
 import spectrum.hardware.sound.Sound;
 import spectrum.hardware.tape.CassetteDeckImpl;
 import spectrum.hardware.ula.ClockListener;
@@ -28,8 +29,7 @@ import spectrum.hardware.video.ScanlineVideoImpl;
 import spectrum.hardware.video.Video;
 import spectrum.jfx.hardware.disk.FloppySoundEngineImpl;
 import spectrum.jfx.hardware.input.GamePadGLFWImpl;
-import spectrum.jfx.hardware.sound.BeeperImpl;
-import spectrum.jfx.hardware.sound.ay.AY38912;
+import spectrum.hardware.sound.ay.AY38912;
 import z80core.NotifyOps;
 
 import java.io.IOException;

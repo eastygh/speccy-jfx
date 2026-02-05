@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.sound.ay;
+package spectrum.hardware.sound.ay;
 
 import lombok.extern.slf4j.Slf4j;
 

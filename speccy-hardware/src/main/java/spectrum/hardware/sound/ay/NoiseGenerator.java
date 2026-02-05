@@ -1,6 +1,6 @@
-package spectrum.jfx.hardware.sound.ay;
+package spectrum.hardware.sound.ay;
 
-import static spectrum.jfx.hardware.sound.ay.AyConstants.NOISE_LFSR_SEED;
+import static spectrum.hardware.sound.ay.AyConstants.NOISE_LFSR_SEED;
 
 /**
  * Noise generator for AY-3-8912.

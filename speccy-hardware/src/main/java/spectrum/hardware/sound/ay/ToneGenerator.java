@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.sound.ay;
+package spectrum.hardware.sound.ay;
 
 /**
  * Tone generator for a single AY-3-8912 channel.

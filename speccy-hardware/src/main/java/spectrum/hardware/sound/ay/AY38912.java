@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.sound.ay;
+package spectrum.hardware.sound.ay;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -8,7 +8,7 @@ import spectrum.hardware.sound.Sound;
 import spectrum.hardware.ula.InPortListener;
 import spectrum.hardware.ula.OutPortListener;
 
-import static spectrum.jfx.hardware.sound.ay.AyConstants.*;
+import static spectrum.hardware.sound.ay.AyConstants.*;
 
 /**
  * AY-3-8912 Programmable Sound Generator emulation.

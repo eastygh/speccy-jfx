@@ -1,6 +1,6 @@
-package spectrum.jfx.hardware.sound.ay;
+package spectrum.hardware.sound.ay;
 
-import static spectrum.jfx.hardware.sound.ay.AyConstants.*;
+import static spectrum.hardware.sound.ay.AyConstants.*;
 
 /**
  * Core emulation of AY-3-8912 Programmable Sound Generator.

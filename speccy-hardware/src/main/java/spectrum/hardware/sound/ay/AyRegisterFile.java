@@ -1,8 +1,8 @@
-package spectrum.jfx.hardware.sound.ay;
+package spectrum.hardware.sound.ay;
 
 import java.util.Arrays;
 
-import static spectrum.jfx.hardware.sound.ay.AyConstants.*;
+import static spectrum.hardware.sound.ay.AyConstants.*;
 
 /**
  * Register file for AY-3-8912.

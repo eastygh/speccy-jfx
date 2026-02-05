@@ -7,6 +7,7 @@ import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import lombok.Getter;
+import lombok.Setter;
 import spectrum.hardware.video.VideoDriver;
 import spectrum.hardware.video.ZoomLevel;
 
@@ -30,6 +31,7 @@ public class JFXVideoDriver implements VideoDriver {
 
     private boolean initialized = false;
 
+    @Setter
     private Consumer<ZoomLevel> zoomChangeListener;
 
     @Override
@@ -47,6 +49,11 @@ public class JFXVideoDriver implements VideoDriver {
         clearScreen();
 
         this.initialized = true;
+    }
+
+    @Override
+    public void close() {
+        // Nothing to do
     }
 
     private void createBuffers(int width, int height) {
@@ -83,10 +90,6 @@ public class JFXVideoDriver implements VideoDriver {
         if (zoomChangeListener != null) {
             zoomChangeListener.accept(currentZoom);
         }
-    }
-
-    public void setZoomChangeListener(Consumer<ZoomLevel> listener) {
-        this.zoomChangeListener = listener;
     }
 
     @Override

@@ -62,6 +62,11 @@ public class JFXKeyboardDriver implements KeyboardDriver {
         resetKeyboard();
     }
 
+    @Override
+    public void close() {
+        // Nothing to do
+    }
+
     public void resetKeyboard() {
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 5; col++) {

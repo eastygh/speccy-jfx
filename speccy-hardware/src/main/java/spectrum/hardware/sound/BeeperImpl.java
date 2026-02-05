@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.sound;
+package spectrum.hardware.sound;
 
 import lombok.extern.slf4j.Slf4j;
 import spectrum.hardware.machine.MachineSettings;
@@ -8,10 +8,10 @@ import javax.sound.sampled.SourceDataLine;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import static spectrum.jfx.hardware.sound.SoundUtils.initializeAudio;
+import static spectrum.hardware.sound.SoundUtils.initializeAudio;
 
 @Slf4j
-public class BeeperImpl implements spectrum.hardware.sound.Sound {
+public class BeeperImpl implements Sound {
 
     private final AudioFormat audioFormat;
     private final double cyclesPerSample;

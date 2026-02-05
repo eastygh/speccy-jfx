@@ -1,7 +1,7 @@
-package spectrum.jfx.hardware.sound.ay;
+package spectrum.hardware.sound.ay;
 
-import static spectrum.jfx.hardware.sound.ay.AyConstants.AY_GAIN;
-import static spectrum.jfx.hardware.sound.ay.AyConstants.CHANNEL_COUNT;
+import static spectrum.hardware.sound.ay.AyConstants.AY_GAIN;
+import static spectrum.hardware.sound.ay.AyConstants.CHANNEL_COUNT;
 
 /**
  * Mixer for AY-3-8912 channels.
