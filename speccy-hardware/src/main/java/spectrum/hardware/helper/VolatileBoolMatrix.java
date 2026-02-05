@@ -1,10 +1,10 @@
-package spectrum.jfx.helper;
+package spectrum.hardware.helper;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
 public class VolatileBoolMatrix {
-    // VarHandle для элемента массива byte[]
+    // VarHandle for volatile byte[]
     private static final VarHandle BYTE_ELEM =
             MethodHandles.arrayElementVarHandle(boolean[].class);
 

@@ -13,6 +13,8 @@ import spectrum.hardware.debug.DebugManagerImpl;
 import spectrum.hardware.disk.DiskController;
 import spectrum.hardware.input.Kempston;
 import spectrum.hardware.input.KempstonImpl;
+import spectrum.hardware.input.Keyboard;
+import spectrum.hardware.input.KeyboardImpl;
 import spectrum.hardware.machine.*;
 import spectrum.hardware.memory.Memory;
 import spectrum.hardware.sound.Sound;
@@ -26,7 +28,6 @@ import spectrum.hardware.video.ScanlineVideoImpl;
 import spectrum.hardware.video.Video;
 import spectrum.jfx.hardware.disk.FloppySoundEngineImpl;
 import spectrum.jfx.hardware.input.GamePadGLFWImpl;
-import spectrum.jfx.hardware.input.Keyboard;
 import spectrum.jfx.hardware.sound.BeeperImpl;
 import spectrum.jfx.hardware.sound.ay.AY38912;
 import z80core.NotifyOps;
@@ -96,9 +97,9 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         this.memory = createMemory(machineSettings);
         this.video = new ScanlineVideoImpl(null, memory, machineSettings);
         devices.add(video);
-        this.keyboard = new Keyboard();
+        this.keyboard = new KeyboardImpl();
         devices.add(keyboard);
-        this.keyboard.resetKeyboard();
+        this.keyboard.init();
 
         this.ula = new UlaImpl(memory, machineSettings);
 

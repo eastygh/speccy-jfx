@@ -16,6 +16,10 @@ import lombok.Setter;
  */
 public class KeyboardImpl implements Keyboard {
 
+    private static final int PORT_MASK_LOW = 0x00FF;
+    private static final int PORT_VALUE_LOW = 0x00FE;
+    private static final int PORT_MASK_HIGH = 0xFF00;
+
     @Getter
     @Setter
     private KeyboardDriver keyboardDriver;
@@ -46,10 +50,18 @@ public class KeyboardImpl implements Keyboard {
 
     @Override
     public int inPort(int port) {
-        if (keyboardDriver == null) {
-            return 0;
+        if (keyboardDriver == null || !isKeyboardPort(port)) {
+            // No keyboard driver or not a keyboard port
+            return 0xFF;
         }
-        return keyboardDriver.readKeyboard(port);
+        int lineMask = (port & 0xFF00) >> 8;
+        return keyboardDriver.readKeyboard(lineMask) & 0xFF;
+    }
+
+    private boolean isKeyboardPort(int port) {
+        // Check low byte is 0xFE and high byte has at least one zero bit
+        return (port & PORT_MASK_LOW) == PORT_VALUE_LOW &&
+                ((port & PORT_MASK_HIGH) >> 8) != 0xFF;
     }
 
 }

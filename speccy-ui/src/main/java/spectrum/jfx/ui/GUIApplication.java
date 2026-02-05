@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import spectrum.jfx.hardware.SpectrumEmulator;
+import spectrum.jfx.hardware.input.JFXKeyboardDriver;
 import spectrum.jfx.hardware.video.JFXVideoDriver;
 import spectrum.jfx.ui.controller.MainController;
 import spectrum.jfx.ui.localization.LocalizationManager;
@@ -22,6 +23,7 @@ public class GUIApplication extends Application {
     private static final Logger logger = Logger.getLogger(GUIApplication.class.getName());
 
     private JFXVideoDriver videoDriver;
+    private JFXKeyboardDriver keyboardDriver;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -40,6 +42,10 @@ public class GUIApplication extends Application {
         videoDriver.setZoomLevel(X2);
         videoDriver.init();
         emulator.init();
+
+        keyboardDriver = new JFXKeyboardDriver();
+        keyboardDriver.reset();
+        emulator.getKeyboard().setKeyboardDriver(keyboardDriver);
 
         // Get controller and pass emulator reference to it
         MainController controller = fxmlLoader.getController();
@@ -122,11 +128,11 @@ public class GUIApplication extends Application {
         // Configure videoContainer for keyboard events
         controller.getVideoContainer().setFocusTraversable(true);
         controller.getVideoContainer().setOnKeyPressed(event -> {
-            emulator.getKeyboard().keyPressed(event.getCode());
+            keyboardDriver.keyPressed(event.getCode());
             event.consume(); // Prevent further event processing
         });
         controller.getVideoContainer().setOnKeyReleased(event -> {
-            emulator.getKeyboard().keyReleased(event.getCode());
+            keyboardDriver.keyReleased(event.getCode());
             event.consume(); // Prevent further event processing
         });
 

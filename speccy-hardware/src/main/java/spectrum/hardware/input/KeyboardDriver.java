@@ -7,6 +7,12 @@ import spectrum.hardware.machine.Driver;
  */
 public interface KeyboardDriver extends Driver {
 
-    int readKeyboard(int port);
+    /**
+     * Read keyboard state.
+     *
+     * @param lineMask mask of lines to read
+     * @return keyboard state
+     */
+    int readKeyboard(int lineMask);
 
 }
