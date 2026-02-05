@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.video;
+package spectrum.jfx.driver.video;
 
 import javafx.scene.paint.Color;
 import lombok.experimental.UtilityClass;

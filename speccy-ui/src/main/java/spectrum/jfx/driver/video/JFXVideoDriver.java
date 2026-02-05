@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.video;
+package spectrum.jfx.driver.video;
 
 import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
@@ -15,7 +15,7 @@ import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
-import static spectrum.jfx.hardware.video.ColorsUtils.SPECTRUM_COLORS_ARGB;
+import static spectrum.jfx.driver.video.ColorsUtils.SPECTRUM_COLORS_ARGB;
 
 public class JFXVideoDriver implements VideoDriver {
 

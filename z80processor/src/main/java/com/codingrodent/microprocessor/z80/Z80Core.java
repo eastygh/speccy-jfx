@@ -80,7 +80,7 @@ public class Z80Core implements ICPUData {
     }
 
     /**
-     * Reset the processor to a known state. Equivalent to a hardware reset.
+     * Reset the processor to a known state. Equivalent to a driver reset.
      */
     private void processorReset() {
         halt = false;
@@ -100,7 +100,7 @@ public class Z80Core implements ICPUData {
     }
 
     /**
-     * Reset the processor to a known state. Equivalent to a hardware reset.
+     * Reset the processor to a known state. Equivalent to a driver reset.
      */
     public void reset() {
         processorReset();

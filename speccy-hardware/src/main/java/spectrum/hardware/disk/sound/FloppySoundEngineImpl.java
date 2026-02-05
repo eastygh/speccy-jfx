@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.disk;
+package spectrum.hardware.disk.sound;
 
 import lombok.extern.slf4j.Slf4j;
 import spectrum.hardware.disk.wd1793.ControllerState;

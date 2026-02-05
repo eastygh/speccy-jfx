@@ -6469,7 +6469,7 @@ L16DC:  LD      A,(HL)          ; fetch the first byte of pair
 ; --------------------------------
 ; The Channel and Streams Routines
 ; --------------------------------
-; A channel is an input/output route to a hardware device
+; A channel is an input/output route to a driver device
 ; and is identified to the system by a single letter e.g. 'K' for
 ; the keyboard. A channel can have an input and output route
 ; associated with it in which case it is bi-directional like

@@ -5,9 +5,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-import spectrum.jfx.hardware.SpectrumEmulator;
-import spectrum.jfx.hardware.input.JFXKeyboardDriver;
-import spectrum.jfx.hardware.video.JFXVideoDriver;
+import spectrum.hardware.SpectrumEmulator;
+import spectrum.jfx.driver.input.GamePadGLFWImpl;
+import spectrum.jfx.driver.input.JFXKeyboardDriver;
+import spectrum.jfx.driver.video.JFXVideoDriver;
 import spectrum.jfx.ui.controller.MainController;
 import spectrum.jfx.ui.localization.LocalizationManager;
 import spectrum.jfx.ui.settings.AppSettings;
@@ -24,6 +25,7 @@ public class GUIApplication extends Application {
 
     private JFXVideoDriver videoDriver;
     private JFXKeyboardDriver keyboardDriver;
+    private GamePadGLFWImpl gamePad;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -46,6 +48,9 @@ public class GUIApplication extends Application {
         keyboardDriver = new JFXKeyboardDriver();
         keyboardDriver.reset();
         emulator.getKeyboard().setKeyboardDriver(keyboardDriver);
+
+        gamePad = new GamePadGLFWImpl();
+        emulator.getKempston().setGamePad(gamePad);
 
         // Get controller and pass emulator reference to it
         MainController controller = fxmlLoader.getController();

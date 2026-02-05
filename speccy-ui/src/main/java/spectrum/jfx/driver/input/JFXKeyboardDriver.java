@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.input;
+package spectrum.jfx.driver.input;
 
 import javafx.scene.input.KeyCode;
 import lombok.extern.slf4j.Slf4j;

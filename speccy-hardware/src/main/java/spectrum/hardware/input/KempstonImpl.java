@@ -13,6 +13,15 @@ public class KempstonImpl implements Kempston {
         this.gamePad = gamePad;
     }
 
+    public KempstonImpl() {
+
+    }
+
+    @Override
+    public void setGamePad(GamePad gamePad) {
+        this.gamePad = gamePad;
+    }
+
     @Override
     public void init() {
         if (gamePad == null) {

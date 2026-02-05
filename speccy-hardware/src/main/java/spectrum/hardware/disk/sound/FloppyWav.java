@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.disk;
+package spectrum.hardware.disk.sound;
 
 import lombok.SneakyThrows;
 

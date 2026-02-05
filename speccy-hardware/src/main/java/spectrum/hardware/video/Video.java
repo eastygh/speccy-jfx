@@ -5,7 +5,7 @@ import spectrum.hardware.ula.ClockListener;
 import spectrum.hardware.ula.OutPortListener;
 
 /**
- * Video interface for Spectrum hardware.
+ * Video interface for Spectrum driver.
  */
 public interface Video extends Device, ClockListener, OutPortListener {
 

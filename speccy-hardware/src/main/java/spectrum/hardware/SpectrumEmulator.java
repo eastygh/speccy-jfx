@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware;
+package spectrum.hardware;
 
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -11,6 +11,7 @@ import spectrum.hardware.debug.DebugListener;
 import spectrum.hardware.debug.DebugManager;
 import spectrum.hardware.debug.DebugManagerImpl;
 import spectrum.hardware.disk.DiskController;
+import spectrum.hardware.disk.sound.FloppySoundEngineImpl;
 import spectrum.hardware.input.Kempston;
 import spectrum.hardware.input.KempstonImpl;
 import spectrum.hardware.input.Keyboard;
@@ -19,6 +20,7 @@ import spectrum.hardware.machine.*;
 import spectrum.hardware.memory.Memory;
 import spectrum.hardware.sound.BeeperImpl;
 import spectrum.hardware.sound.Sound;
+import spectrum.hardware.sound.ay.AY38912;
 import spectrum.hardware.tape.CassetteDeckImpl;
 import spectrum.hardware.ula.ClockListener;
 import spectrum.hardware.ula.InPortListener;
@@ -27,9 +29,6 @@ import spectrum.hardware.ula.UlaImpl;
 import spectrum.hardware.util.EmulatorUtils;
 import spectrum.hardware.video.ScanlineVideoImpl;
 import spectrum.hardware.video.Video;
-import spectrum.jfx.hardware.disk.FloppySoundEngineImpl;
-import spectrum.jfx.hardware.input.GamePadGLFWImpl;
-import spectrum.hardware.sound.ay.AY38912;
 import z80core.NotifyOps;
 
 import java.io.IOException;
@@ -131,7 +130,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
         // For pushback tape sound
         cassetteDeck.setSound(sound);
 
-        this.kempston = new KempstonImpl(new GamePadGLFWImpl());
+        this.kempston = new KempstonImpl();
         devices.add(kempston);
         this.ula.addPortListener(0x1F, kempston);
         this.kempston.init();
@@ -306,7 +305,7 @@ public class SpectrumEmulator implements NotifyOps, HardwareProvider, Emulator {
 
             debugManager.postExecuteCheck(this);
         }
-        // Render frame by hardware
+        // Render frame by driver
         video.endFrame();
         ula.requestInterrupt();
         clock.endFrame();

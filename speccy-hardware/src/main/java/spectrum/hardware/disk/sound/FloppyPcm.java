@@ -1,4 +1,4 @@
-package spectrum.jfx.hardware.disk;
+package spectrum.hardware.disk.sound;
 
 import java.io.File;
 import java.util.Objects;

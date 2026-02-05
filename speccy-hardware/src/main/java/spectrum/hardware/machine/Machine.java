@@ -41,7 +41,7 @@ public class Machine {
         if (provider != null) {
             consumer.accept(provider.getCassetteDeck(), provider);
         } else {
-            log.error("No hardware found");
+            log.error("No driver found");
         }
     }
 

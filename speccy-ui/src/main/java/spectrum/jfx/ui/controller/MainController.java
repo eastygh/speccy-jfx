@@ -24,7 +24,6 @@ import spectrum.hardware.machine.Machine;
 import spectrum.hardware.memory.Memory;
 import spectrum.hardware.video.VideoDriver;
 import spectrum.hardware.video.ZoomLevel;
-import spectrum.jfx.hardware.video.JFXVideoDriver;
 import spectrum.jfx.ui.localization.LocalizationManager;
 import spectrum.jfx.ui.localization.LocalizationManager.LocalizationChangeListener;
 import spectrum.jfx.ui.settings.AppSettings;

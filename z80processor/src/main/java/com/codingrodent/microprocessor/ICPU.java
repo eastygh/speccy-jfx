@@ -20,7 +20,7 @@ package com.codingrodent.microprocessor;
 public interface ICPU {
 
     /**
-     * Reset the processor to a known state. Equivalent to a hardware reset.
+     * Reset the processor to a known state. Equivalent to a driver reset.
      */
     void reset();
 
